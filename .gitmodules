@@ -1,0 +1,4 @@
+[submodule "glm"]
+	path = lib/glm
+	url = git@github.com:g-truc/glm.git
+	branch = master
