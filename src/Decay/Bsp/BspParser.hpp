@@ -69,13 +69,13 @@ namespace Decay::Bsp
         [[nodiscard]] std::vector<type> fun_vec() const\
         {\
             std::size_t index = static_cast<std::size_t>(LumpType::lumpType);\
-        std::vector<type> rtn(m_DataLength[index]);\
-        std::copy(\
-        static_cast<char*>(m_Data[index]),\
-        static_cast<char*>(m_Data[index]) + m_DataLength[index],\
-        static_cast<char*>(static_cast<void*>(rtn.data()))\
-        );\
-        return rtn;\
+            std::vector<type> rtn(m_DataLength[index]);\
+            std::copy(\
+                static_cast<char*>(m_Data[index]),\
+                static_cast<char*>(m_Data[index]) + m_DataLength[index],\
+                static_cast<char*>(static_cast<void*>(rtn.data()))\
+            );\
+            return rtn;\
         }\
         [[nodiscard]] std::size_t fun_count() const\
         {\
