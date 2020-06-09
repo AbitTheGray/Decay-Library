@@ -178,6 +178,6 @@ namespace Decay::Bsp
     BspParser::~BspParser()
     {
         for(std::size_t i = 0; i < LumpType_Size; i++)
-            free(m_Data[i]);
+            std::free(m_Data[i]);
     }
 }

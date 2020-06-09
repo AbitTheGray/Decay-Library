@@ -98,6 +98,7 @@ namespace Decay::Bsp
         static const std::size_t MipTextureLevels = 4;
         struct Texture
         {
+            /// Must be null-terminated.
             char Name[MaxTextureName];
             uint32_t Width, Height;
             /// MipMap offset relative to start of this struct.
@@ -109,7 +110,6 @@ namespace Decay::Bsp
                     if(Name[i] == '\0')
                         return std::string(Name, i);
                 return std::string();
-
             }
             [[nodiscard]] inline bool IsPacked() const
             {
