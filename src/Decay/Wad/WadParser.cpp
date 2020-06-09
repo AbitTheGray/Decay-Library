@@ -1,9 +1,20 @@
 #include "WadParser.hpp"
 
+// Use to test images if you are getting weird results.
+// Will replace palette for all images with HSL/HSV noise.
+//#define WAD_PALETTE_DUMMY 1
+
+// Use to replace all images by their palette.
+//#define WAD_PALETTE_RESULT 1
+
 #include <fstream>
 #include <iostream>
 
 #include <stb_image_write.h>
+
+#ifdef WAD_PALETTE_DUMMY
+    #include <glm/gtx/color_space.hpp>
+#endif
 
 namespace Decay::Wad
 {
@@ -84,8 +95,10 @@ namespace Decay::Wad
         for(const Entry& entry : entries)
         {
             file.seekg(entry.Offset);
+
             std::size_t dataLength = entry.DiskSize;
             void* data = std::malloc(dataLength);
+            file.read(static_cast<char*>(data), dataLength);
 
             if(entry.Compression)
             {
@@ -135,12 +148,12 @@ namespace Decay::Wad
         Image image = {};
         in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
         in.read(reinterpret_cast<char*>(&image.Height), sizeof(image.Height));
-
-        //FIXME image.Width and image.Height are of invalid size
-        throw std::runtime_error("Function must be fixed before use");
+        assert(image.Width > 0);
+        assert(image.Height > 0);
 
         // Calculate data length
         std::size_t dataLength = static_cast<std::size_t>(image.Width) * image.Height;
+        assert(dataLength > 0);
 
         // Read data
         image.Data.resize(dataLength);
@@ -149,24 +162,51 @@ namespace Decay::Wad
         // Read palette length
         uint16_t paletteLength;
         in.read(reinterpret_cast<char*>(&paletteLength), sizeof(paletteLength));
+        assert(paletteLength > 0);
+        assert(paletteLength <= 256);
 
         // Read palette
         image.Palette.resize(paletteLength);
         in.read(reinterpret_cast<char*>(image.Palette.data()), paletteLength);
+
+#ifdef WAD_PALETTE_DUMMY
+        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteLength; i += 360 / paletteLength, pi++)
+        {
+            double hue = i;
+            double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
+            double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
+            glm::dvec3 hsv = {hue, saturation, lightness};
+            glm::dvec3 rgb = glm::rgbColor(hsv);
+
+            image.Palette[pi] = {rgb.r, rgb.g, rgb.b};
+        }
+#endif
+
+#ifdef WAD_PALETTE_RESULT
+        image.Width = 16;
+        image.Height = paletteLength / 16 + (paletteLength % 16 ? 1 : 0);
+
+        image.Data.resize(image.Width * image.Height);
+        for(std::size_t i = 0; i < paletteLength; i++)
+            image.Data[i] = i;
+
+        for(std::size_t i = paletteLength; i < image.Width * image.Height; i++)
+            image.Data[i] = paletteLength - 1;
+#endif
 
         return image;
     }
 
     void WadParser::Image::WriteRgbPng(const std::filesystem::path& filename) const
     {
-        auto pixels = AsRgb();
+        std::vector<glm::i8vec3> pixels = AsRgb();
         assert(pixels.size() == Width * Height);
-        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), sizeof(glm::i8vec3));
+        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), Width * 3);
     }
     void WadParser::Image::WriteRgbaPng(const std::filesystem::path& filename) const
     {
-        auto pixels = AsRgba();
+        std::vector<glm::i8vec4> pixels = AsRgba();
         assert(pixels.size() == Width * Height);
-        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), sizeof(glm::i8vec4));
+        stbi_write_png(filename.c_str(), Width, Height, 4, pixels.data(), Width * 4);
     }
 }
