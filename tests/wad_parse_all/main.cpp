@@ -14,13 +14,14 @@ int main()
 
         try
         {
-            std::cout << dir.path() <<std::endl;
+            std::cout << dir.path() << std::endl;
 
             auto wadIt = WadParser(dir.path());
 
             std::size_t countTexture = 0;
             std::size_t countImage = 0;
             std::size_t countFont = 0;
+            std::size_t countOther = 0;
 
             for(const auto& item : wadIt.GetItems())
             {
@@ -36,12 +37,17 @@ int main()
                         countFont++;
                         continue;
                     default:
+                        countOther++;
                         break;
                 }
                 std::cout << item.Name << " = " << static_cast<uint32_t>(static_cast<uint8_t>(item.Type)) << std::endl;
             }
 
-            std::cout << "Texture: " << countTexture << ", Image: " << countImage << ", Font: " << countFont << std::endl;
+            std::cout << "Texture: " << countTexture <<
+                       ", Image: " << countImage <<
+                       ", Font: " << countFont <<
+                       ", Other: " << countOther <<
+            std::endl;
         }
         catch(std::exception& ex)
         {
