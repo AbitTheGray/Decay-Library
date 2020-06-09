@@ -1,9 +1,44 @@
 #include "BspParser.hpp"
 
 #include <fstream>
+#include <iostream>
 
 namespace Decay::Bsp
 {
+    std::array<std::size_t, BspParser::LumpType_Size> BspParser::s_DataMaxLength = {
+            MaxEntities,
+            MaxPlanes,
+            MaxTextures,
+            MaxVertices,
+            MaxVisibility,
+            MaxNodes,
+            MaxTextureMapping,
+            MaxFaces,
+            MaxLighting,
+            MaxClipNodes,
+            MaxLeaves,
+            MaxMarkSurfaces,
+            MaxEdges,
+            MaxSurfaceEdges,
+            MaxModels,
+    };
+    std::array<std::size_t, BspParser::LumpType_Size> BspParser::s_DataElementSize = {
+            0, // sizeof(char), Not so simple
+            sizeof(Plane),
+            0, // sizeof(Texture), Not so simple
+            sizeof(glm::vec3),
+            0, // Visibility
+            sizeof(Node),
+            sizeof(TextureMapping),
+            sizeof(Face),
+            0, // Lighting
+            sizeof(ClipNode),
+            sizeof(Leaf),
+            sizeof(MarkSurface),
+            sizeof(Edge),
+            sizeof(SurfaceEdges),
+            sizeof(Model),
+    };
 
     BspParser::BspParser(const std::filesystem::path& filename)
     {
@@ -52,6 +87,17 @@ namespace Decay::Bsp
 
         // Tests
         {
+            for(std::size_t i = 0; i < LumpType_Size; i++)
+            {
+                if(s_DataElementSize[i] != 0)
+                {
+#ifdef BSP_DEBUG
+                    std::cout << i << ": " << m_DataLength[i] << " < " << (s_DataMaxLength[i] * s_DataElementSize[i]) << " (" << s_DataMaxLength[i] << " * " << s_DataElementSize[i] << ")" << std::endl;
+#endif
+                    assert(m_DataLength[i] < s_DataMaxLength[i] * s_DataElementSize[i]);
+                }
+            }
+
             // Entities
             {
                 //TODO
@@ -59,7 +105,7 @@ namespace Decay::Bsp
 
             // Planes
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::Planes)] % sizeof(Plane) == 0);
             }
 
             // Textures
@@ -79,12 +125,12 @@ namespace Decay::Bsp
 
             // Nodes
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::Nodes)] % sizeof(Node) == 0);
             }
 
-            // Texture Info
+            // Texture Mapping
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::TextureMapping)] % sizeof(TextureMapping) == 0);
             }
 
             // Faces
@@ -99,17 +145,17 @@ namespace Decay::Bsp
 
             // Clip Nodes
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::ClipNodes)] % sizeof(ClipNode) == 0);
             }
 
             // Leaves
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::Leaves)] % sizeof(Leaf) == 0);
             }
 
             // Mark Surface
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::MarkSurface)] % sizeof(MarkSurface) == 0);
             }
 
             // Edges
@@ -119,12 +165,12 @@ namespace Decay::Bsp
 
             // Surface Edges
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::SurfaceEdges)] % sizeof(SurfaceEdges) == 0);
             }
 
             // Models
             {
-                //TODO
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::Models)] % sizeof(Model) == 0);
             }
         }
     }
