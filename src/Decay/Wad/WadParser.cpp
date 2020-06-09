@@ -114,4 +114,41 @@ namespace Decay::Wad
             item.Data = nullptr;
         }
     }
+
+    WadParser::Image WadParser::ReadImage(const WadParser::Item& item)
+    {
+        struct memoryBuffer : std::streambuf
+        {
+            memoryBuffer(char* begin, char* end)
+            {
+                this->setg(begin, begin, end);
+            }
+        };
+        memoryBuffer itemDataBuffer(
+                reinterpret_cast<char*>(item.Data),
+                reinterpret_cast<char*>(item.Data) + item.Size
+        );
+        std::istream in(&itemDataBuffer);
+
+        Image image = {};
+        in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
+        in.read(reinterpret_cast<char*>(&image.Height), sizeof(image.Height));
+
+        // Calculate data length
+        std::size_t dataLength = static_cast<std::size_t>(image.Width) * image.Height;
+
+        // Read data
+        image.Data.resize(dataLength);
+        in.read(reinterpret_cast<char*>(image.Data.data()), dataLength);
+
+        // Read palette length
+        uint16_t paletteLength;
+        in.read(reinterpret_cast<char*>(&paletteLength), sizeof(paletteLength));
+
+        // Read palette
+        image.Palette.resize(paletteLength);
+        in.read(reinterpret_cast<char*>(image.Palette.data()), paletteLength);
+
+        return image;
+    }
 }
