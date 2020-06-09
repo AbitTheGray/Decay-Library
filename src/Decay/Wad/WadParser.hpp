@@ -56,10 +56,20 @@ namespace Decay::Wad
     public:
         struct Image
         {
-            uint32_t Width, Height;
+            int32_t Width, Height;
             /// Length = Width * Height
             std::vector<uint8_t> Data;
             std::vector<glm::i8vec3> Palette;
+
+        public:
+            [[nodiscard]] inline std::vector<glm::i8vec3> AsPixels() const
+            {
+                std::vector<glm::i8vec3> pixels(Data.size());
+                for(std::size_t i = 0; i < Data.size(); i++)
+                    pixels[i] = Palette[Data[i]];
+                return pixels;
+            }
+            void WritePng(const std::filesystem::path& filename) const;
         };
 
         [[nodiscard]] static Image ReadImage(const Item& item);

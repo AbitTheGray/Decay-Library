@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <stb_image_write.h>
+
 namespace Decay::Wad
 {
     WadParser::WadParser(const std::filesystem::path& filename)
@@ -134,6 +136,9 @@ namespace Decay::Wad
         in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
         in.read(reinterpret_cast<char*>(&image.Height), sizeof(image.Height));
 
+        //FIXME image.Width and image.Height are of invalid size
+        throw std::runtime_error("Function must be fixed before use");
+
         // Calculate data length
         std::size_t dataLength = static_cast<std::size_t>(image.Width) * image.Height;
 
@@ -150,5 +155,12 @@ namespace Decay::Wad
         in.read(reinterpret_cast<char*>(image.Palette.data()), paletteLength);
 
         return image;
+    }
+
+    void WadParser::Image::WritePng(const std::filesystem::path& filename) const
+    {
+        auto pixels = AsPixels();
+        assert(pixels.size() == Width * Height);
+        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), sizeof(glm::i8vec3));
     }
 }

@@ -40,6 +40,8 @@ add_library(Decay::Library ALIAS DecayLib)
 target_link_libraries(DecayLib -static-libgcc -static-libstdc++ stdc++fs)
 target_link_libraries(DecayLib glm)
 
+target_include_directories(DecayLib PRIVATE lib/stb/)
+
 #--------------------------------
 # Source
 #--------------------------------

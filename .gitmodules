@@ -2,3 +2,7 @@
 	path = lib/glm
 	url = git@github.com:g-truc/glm.git
 	branch = master
+[submodule "stb"]
+	path = lib/stb
+	url = git@github.com:nothings/stb.git
+	branch = master
