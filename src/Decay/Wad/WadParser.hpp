@@ -62,14 +62,32 @@ namespace Decay::Wad
             std::vector<glm::i8vec3> Palette;
 
         public:
-            [[nodiscard]] inline std::vector<glm::i8vec3> AsPixels() const
+            [[nodiscard]] inline std::vector<glm::i8vec3> AsRgb() const
             {
                 std::vector<glm::i8vec3> pixels(Data.size());
                 for(std::size_t i = 0; i < Data.size(); i++)
                     pixels[i] = Palette[Data[i]];
                 return pixels;
             }
-            void WritePng(const std::filesystem::path& filename) const;
+            [[nodiscard]] inline std::vector<glm::i8vec4> AsRgba() const
+            {
+                uint8_t lastPaletteIndex = (Palette.size() - 1);
+                bool lastPaletteTransparent = Palette[lastPaletteIndex] == glm::i8vec3(0x00, 0x00, 0xFF);
+
+                std::vector<glm::i8vec4> pixels(Data.size());
+                for(std::size_t i = 0; i < Data.size(); i++)
+                {
+                    auto paletteIndex = Data[i];
+
+                    if(paletteIndex == lastPaletteIndex && lastPaletteTransparent)
+                        pixels[i] = glm::i8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
+                    else
+                        pixels[i] = glm::i8vec4(Palette[paletteIndex], 0x00); // Solid
+                }
+                return pixels;
+            }
+            void WriteRgbPng(const std::filesystem::path& filename) const;
+            void WriteRgbaPng(const std::filesystem::path& filename) const;
         };
 
         [[nodiscard]] static Image ReadImage(const Item& item);

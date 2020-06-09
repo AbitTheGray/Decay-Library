@@ -157,10 +157,16 @@ namespace Decay::Wad
         return image;
     }
 
-    void WadParser::Image::WritePng(const std::filesystem::path& filename) const
+    void WadParser::Image::WriteRgbPng(const std::filesystem::path& filename) const
     {
-        auto pixels = AsPixels();
+        auto pixels = AsRgb();
         assert(pixels.size() == Width * Height);
         stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), sizeof(glm::i8vec3));
+    }
+    void WadParser::Image::WriteRgbaPng(const std::filesystem::path& filename) const
+    {
+        auto pixels = AsRgba();
+        assert(pixels.size() == Width * Height);
+        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), sizeof(glm::i8vec4));
     }
 }
