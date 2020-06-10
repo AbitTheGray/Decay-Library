@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+    <mime-type type="application/goldsrc-wad2">
+        <comment>GoldSource Graphic Resources (v2)</comment>
+        <glob pattern="*.wad"/>
+        <magic priority="80">
+            <match type="little32" offset="0" value="843333975"/>
+        </magic>
+        <acronym>WAD2</acronym>
+    </mime-type>
+</mime-info>

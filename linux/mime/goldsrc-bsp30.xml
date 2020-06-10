@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+    <mime-type type="application/goldsrc-bsp30">
+        <comment>GoldSource Map</comment>
+        <glob pattern="*.bsp"/>
+        <magic priority="80">
+            <match type="little32" offset="0" value="30"/>
+        </magic>
+        <acronym>BSP</acronym>
+    </mime-type>
+</mime-info>
