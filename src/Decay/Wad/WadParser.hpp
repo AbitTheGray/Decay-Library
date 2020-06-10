@@ -33,16 +33,6 @@ namespace Decay::Wad
             ItemType Type;
             std::size_t Size;
             void* Data;
-
-        public:
-            [[nodiscard]] std::istream DataAsStream() const
-            {
-                MemoryBuffer itemDataBuffer(
-                        reinterpret_cast<char*>(Data),
-                        reinterpret_cast<char*>(Data) + Size
-                );
-                return std::istream(&itemDataBuffer);
-            }
         };
 
     private:
