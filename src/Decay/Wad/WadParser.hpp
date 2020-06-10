@@ -59,30 +59,30 @@ namespace Decay::Wad
             int32_t Width, Height;
             /// Length = Width * Height
             std::vector<uint8_t> Data;
-            std::vector<glm::i8vec3> Palette;
+            std::vector<glm::u8vec3> Palette;
 
         public:
-            [[nodiscard]] inline std::vector<glm::i8vec3> AsRgb() const
+            [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb() const
             {
-                std::vector<glm::i8vec3> pixels(Data.size());
+                std::vector<glm::u8vec3> pixels(Data.size());
                 for(std::size_t i = 0; i < Data.size(); i++)
                     pixels[i] = Palette[Data[i]];
                 return pixels;
             }
-            [[nodiscard]] inline std::vector<glm::i8vec4> AsRgba() const
+            [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba() const
             {
                 uint8_t lastPaletteIndex = (Palette.size() - 1);
-                bool lastPaletteTransparent = Palette[lastPaletteIndex] == glm::i8vec3(0x00, 0x00, 0xFF);
+                bool lastPaletteTransparent = Palette[lastPaletteIndex] == glm::u8vec3(0x00, 0x00, 0xFF);
 
-                std::vector<glm::i8vec4> pixels(Data.size());
+                std::vector<glm::u8vec4> pixels(Data.size());
                 for(std::size_t i = 0; i < Data.size(); i++)
                 {
                     auto paletteIndex = Data[i];
 
                     if(paletteIndex == lastPaletteIndex && lastPaletteTransparent)
-                        pixels[i] = glm::i8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
+                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
                     else
-                        pixels[i] = glm::i8vec4(Palette[paletteIndex], 0x00); // Solid
+                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0x00); // Solid
                 }
                 return pixels;
             }

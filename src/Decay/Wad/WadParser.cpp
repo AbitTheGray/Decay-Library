@@ -199,13 +199,13 @@ namespace Decay::Wad
 
     void WadParser::Image::WriteRgbPng(const std::filesystem::path& filename) const
     {
-        std::vector<glm::i8vec3> pixels = AsRgb();
+        std::vector<glm::u8vec3> pixels = AsRgb();
         assert(pixels.size() == Width * Height);
         stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), Width * 3);
     }
     void WadParser::Image::WriteRgbaPng(const std::filesystem::path& filename) const
     {
-        std::vector<glm::i8vec4> pixels = AsRgba();
+        std::vector<glm::u8vec4> pixels = AsRgba();
         assert(pixels.size() == Width * Height);
         stbi_write_png(filename.c_str(), Width, Height, 4, pixels.data(), Width * 4);
     }
