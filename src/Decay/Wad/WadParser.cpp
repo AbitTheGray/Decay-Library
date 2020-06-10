@@ -186,14 +186,14 @@ namespace Decay::Wad
         std::vector<glm::u8vec3> pixels = AsRgb();
         assert(pixels.size() == Width * Height);
         assert(Width <= std::numeric_limits<int32_t>::max() / 3);
-        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
+        stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
     void WadParser::Image::WriteRgbaPng(const std::filesystem::path& filename) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();
         assert(pixels.size() == Width * Height);
         assert(Width <= std::numeric_limits<int32_t>::max() / 4);
-        stbi_write_png(filename.c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
+        stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
     }
 
     WadParser::Font WadParser::ReadFont(const WadParser::Item& item)
@@ -342,7 +342,7 @@ namespace Decay::Wad
         assert(dimension.x <= std::numeric_limits<int32_t>::max() / 3);
 
         stbi_write_png(
-                filename.c_str(),
+                filename.string().c_str(),
                 dimension.x,
                 dimension.y,
                 3,
@@ -362,7 +362,7 @@ namespace Decay::Wad
         assert(dimension.x <= std::numeric_limits<int32_t>::max() / 4);
 
         stbi_write_png(
-                filename.c_str(),
+                filename.string().c_str(),
                 dimension.x,
                 dimension.y,
                 4,

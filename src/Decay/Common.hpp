@@ -95,6 +95,7 @@ namespace Decay
             return false;
 
 #ifdef _WIN32
+        // May not be needed as MinGW supports `strcasecmp`
         return stricmp(str0.data(), str1.data()) == 0;
 #else
         return strcasecmp(str0.data(), str1.data()) == 0;
