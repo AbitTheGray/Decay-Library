@@ -80,13 +80,7 @@ namespace Decay::Wad
             /// Must be null-terminated.
             char Name[EntryNameLength];
 
-            [[nodiscard]] std::string GetName() const
-            {
-                for(std::size_t i = 0; i < EntryNameLength; i++)
-                    if(Name[i] == '\0')
-                        return std::string(Name, i);
-                return std::string();
-            }
+            [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, EntryNameLength); }
         };
 
         std::vector<Entry> entries(entriesCount);
@@ -132,18 +126,7 @@ namespace Decay::Wad
 
     WadParser::Image WadParser::ReadImage(const WadParser::Item& item)
     {
-        struct memoryBuffer : std::streambuf
-        {
-            memoryBuffer(char* begin, char* end)
-            {
-                this->setg(begin, begin, end);
-            }
-        };
-        memoryBuffer itemDataBuffer(
-                reinterpret_cast<char*>(item.Data),
-                reinterpret_cast<char*>(item.Data) + item.Size
-        );
-        std::istream in(&itemDataBuffer);
+        std::istream in = item.DataAsStream();
 
         Image image = {};
         in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
@@ -201,12 +184,149 @@ namespace Decay::Wad
     {
         std::vector<glm::u8vec3> pixels = AsRgb();
         assert(pixels.size() == Width * Height);
-        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), Width * 3);
+        assert(Width <= std::numeric_limits<int32_t>::max() / 3);
+        stbi_write_png(filename.c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
     void WadParser::Image::WriteRgbaPng(const std::filesystem::path& filename) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();
         assert(pixels.size() == Width * Height);
-        stbi_write_png(filename.c_str(), Width, Height, 4, pixels.data(), Width * 4);
+        assert(Width <= std::numeric_limits<int32_t>::max() / 4);
+        stbi_write_png(filename.c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
+    }
+
+    WadParser::Font WadParser::ReadFont(const WadParser::Item& item)
+    {
+        std::istream in = item.DataAsStream();
+
+        Font font = {};
+
+        // Dimensions
+        {
+            glm::u32vec4 dimensions; // width, height, row count + height
+            in.read(reinterpret_cast<char*>(&dimensions), sizeof(dimensions));
+            font.Width = dimensions.x;
+            font.Height = dimensions.y;
+            font.RowCount = dimensions.z;
+            font.RowHeight = dimensions.w;
+        }
+        assert(font.Width == 256);
+        assert(font.RowCount > 0);
+        assert(font.RowHeight > 0);
+        assert(font.Height == font.RowCount * font.RowHeight);
+
+        // Character offsets
+        in.read(reinterpret_cast<char*>(&font.Characters), sizeof(FontChar) * Font::CharacterCount);
+
+        // Calculate data length
+        std::size_t dataLength = static_cast<std::size_t>(font.Width) * font.Height;
+        assert(dataLength > 0);
+
+        // Read data
+        font.Data.resize(dataLength);
+        in.read(reinterpret_cast<char*>(font.Data.data()), dataLength);
+
+        // Read palette length
+        uint16_t paletteLength;
+        in.read(reinterpret_cast<char*>(&paletteLength), sizeof(paletteLength));
+        assert(paletteLength > 0);
+        assert(paletteLength <= 256);
+
+        // Read palette
+        font.Palette.resize(paletteLength);
+        in.read(reinterpret_cast<char*>(font.Palette.data()), paletteLength);
+
+        return font;
+    }
+
+    WadParser::Texture WadParser::ReadTexture(const WadParser::Item& item)
+    {
+        std::istream in = item.DataAsStream();
+
+        Texture texture = {};
+
+        // Name
+        {
+            char name[Texture::MaxNameLength];
+            in.read(name, Texture::MaxNameLength);
+            texture.Name = Cstr2Str(name, Texture::MaxNameLength);
+            assert(texture.Name.length() > 0);
+            assert(texture.Name == item.Name);
+        }
+
+        // Dimensions
+        in.read(reinterpret_cast<char*>(&texture.Width), sizeof(Texture::Width) + sizeof(Texture::Height));
+        assert(texture.Width > (1u << Texture::MipMapLevels));
+        assert(texture.Height > (1u << Texture::MipMapLevels));
+        assert(IsMultipleOf2(texture.Width));
+        assert(IsMultipleOf2(texture.Height));
+
+        // Offsets
+        uint32_t mipMapOffsets[Texture::MipMapLevels];
+        in.read(reinterpret_cast<char*>(mipMapOffsets), sizeof(uint32_t) * Texture::MipMapLevels);
+
+        for(std::size_t level = 0; level < Texture::MipMapLevels; level++)
+        {
+            in.seekg(mipMapOffsets[level]);
+
+            texture.MipMapDimensions[level] = { texture.Width >> level, texture.Height >> level };
+            std::size_t dataLength = static_cast<std::size_t>(texture.MipMapDimensions[level].x) * texture.MipMapDimensions[level].y;
+
+            std::vector<uint8_t>& data = texture.MipMapData[level];
+            data.resize(dataLength);
+            in.read(reinterpret_cast<char*>(data.data()), dataLength);
+        }
+
+        // 2 Dummy bytes
+        // after last MipMap level
+        uint8_t dummy[2];
+        in.read(reinterpret_cast<char*>(dummy), sizeof(uint8_t) * 2);
+        assert(dummy[0] == 0x00u);
+        assert(dummy[1] == 0x01u);
+
+        // Palette
+        in.read(reinterpret_cast<char*>(texture.Palette.data()), sizeof(glm::u8vec3) * Texture::PaletteSize);
+
+        return texture;
+    }
+
+    void WadParser::Texture::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
+    {
+        assert(level < MipMapLevels);
+
+        std::vector<glm::u8vec3> pixels = AsRgb(level);
+        glm::u32vec2 dimension = MipMapDimensions[level];
+
+        assert(pixels.size() == dimension.x * dimension.y);
+        assert(dimension.x <= std::numeric_limits<int32_t>::max() / 3);
+
+        stbi_write_png(
+                filename.c_str(),
+                dimension.x,
+                dimension.y,
+                3,
+                pixels.data(),
+                static_cast<int32_t>(dimension.x) * 3
+                );
+    }
+
+    void WadParser::Texture::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
+    {
+        assert(level < MipMapLevels);
+
+        std::vector<glm::u8vec4> pixels = AsRgba(level);
+        glm::u32vec2 dimension = MipMapDimensions[level];
+
+        assert(pixels.size() == dimension.x * dimension.y);
+        assert(dimension.x <= std::numeric_limits<int32_t>::max() / 4);
+
+        stbi_write_png(
+                filename.c_str(),
+                dimension.x,
+                dimension.y,
+                4,
+                pixels.data(),
+                static_cast<int32_t>(dimension.x) * 4
+        );
     }
 }

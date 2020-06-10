@@ -4,6 +4,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#include "../Common.hpp"
+
 namespace Decay::Bsp
 {
     class BspParser
@@ -104,13 +106,7 @@ namespace Decay::Bsp
             /// MipMap offset relative to start of this struct.
             uint32_t MipMaps[MipTextureLevels];
 
-            [[nodiscard]] std::string GetName() const
-            {
-                for(std::size_t i = 0; i < MaxTextureName; i++)
-                    if(Name[i] == '\0')
-                        return std::string(Name, i);
-                return std::string();
-            }
+            [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, MaxTextureName); }
             [[nodiscard]] inline bool IsPacked() const
             {
                 assert(MipMaps[0] < sizeof(Texture));

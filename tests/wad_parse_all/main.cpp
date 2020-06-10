@@ -27,7 +27,7 @@ int main()
             {
                 switch(item.Type)
                 {
-                    case WadParser::ItemType::MipMapTexture:
+                    case WadParser::ItemType::Texture:
                         countTexture++;
                         continue;
                     case WadParser::ItemType::Image:

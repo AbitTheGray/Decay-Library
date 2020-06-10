@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
+#include "../Common.hpp"
+
 namespace Decay::Wad
 {
     class WadParser
@@ -21,7 +23,7 @@ namespace Decay::Wad
             /// Simple image with any size.
             Image = 0x42,
             /// Image with mipmap levels.
-            MipMapTexture = 0x43,
+            Texture = 0x43,
             /// 256 ASCII characters.
             Font = 0x46,
         };
@@ -31,6 +33,16 @@ namespace Decay::Wad
             ItemType Type;
             std::size_t Size;
             void* Data;
+
+        public:
+            [[nodiscard]] std::istream DataAsStream() const
+            {
+                MemoryBuffer itemDataBuffer(
+                        reinterpret_cast<char*>(Data),
+                        reinterpret_cast<char*>(Data) + Size
+                );
+                return std::istream(&itemDataBuffer);
+            }
         };
 
     private:
@@ -50,13 +62,55 @@ namespace Decay::Wad
         }\
 
         WADPARSER_GET_COUNT(GetImageCount, Image)
-        WADPARSER_GET_COUNT(GetTextureCount, MipMapTexture)
+        WADPARSER_GET_COUNT(GetTextureCount, Texture)
         WADPARSER_GET_COUNT(GetFontCount, Font)
 
     public:
-        struct Image
+#define WADPARSER_READ_ITEM(type, funcName, funcNameAll) \
+        [[nodiscard]] static type funcName(const Item& item);\
+        \
+        [[nodiscard]] inline type funcName(const std::string& name) const\
+        {\
+            for(const Item& item : m_Items)\
+                if(item.Type == ItemType::Image)\
+                    if(item.Name == name)\
+                        return WadParser::funcName(item);\
+            throw std::runtime_error("Item not found");\
+        }\
+        [[nodiscard]] inline type funcName(const char* name) const\
+        {\
+            for(const Item& item : m_Items)\
+                if(item.Type == ItemType::type)\
+                    if(item.Name == name)\
+                        return WadParser::funcName(item);\
+            throw std::runtime_error("Item not found");\
+        }\
+        [[nodiscard]] inline std::vector<type> funcNameAll() const\
+        {\
+            std::vector<type> result = {};\
+            for(const Item& item : m_Items)\
+            {\
+                if(item.Type == ItemType::type)\
+                {\
+                    try\
+                    {\
+                        result.emplace_back(funcName(item));\
+                    }\
+                    catch(std::exception& ex)\
+                    {\
+                        std::cerr << "Problem in batch-loading from WAD during " << item.Name << ": " << ex.what() << std::endl;\
+                    }\
+                }\
+            }\
+            return result;\
+        }
+
+    // Image
+    public:
+        class Image
         {
-            int32_t Width, Height;
+        public:
+            uint32_t Width, Height;
             /// Length = Width * Height
             std::vector<uint8_t> Data;
             std::vector<glm::u8vec3> Palette;
@@ -71,15 +125,14 @@ namespace Decay::Wad
             }
             [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba() const
             {
-                uint8_t lastPaletteIndex = (Palette.size() - 1);
-                bool lastPaletteTransparent = Palette[lastPaletteIndex] == glm::u8vec3(0x00, 0x00, 0xFF);
+                bool paletteTransparent = Palette.size() == 256 && Palette[255] == glm::u8vec3(0x00, 0x00, 0xFF);
 
                 std::vector<glm::u8vec4> pixels(Data.size());
                 for(std::size_t i = 0; i < Data.size(); i++)
                 {
                     auto paletteIndex = Data[i];
 
-                    if(paletteIndex == lastPaletteIndex && lastPaletteTransparent)
+                    if(paletteIndex == 255 && paletteTransparent)
                         pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
                     else
                         pixels[i] = glm::u8vec4(Palette[paletteIndex], 0x00); // Solid
@@ -90,46 +143,72 @@ namespace Decay::Wad
             void WriteRgbaPng(const std::filesystem::path& filename) const;
         };
 
-        [[nodiscard]] static Image ReadImage(const Item& item);
+        WADPARSER_READ_ITEM(Image, ReadImage, ReadAllImages)
 
-        [[nodiscard]] inline Image ReadImage(const std::string& name) const
+    // Font
+    public:
+        struct FontChar
         {
-            for(const Item& item : m_Items)
-                if(item.Type == ItemType::Image)
-                    if(item.Name == name)
-                        return ReadImage(item);
-
-            throw std::runtime_error("Item not found");
-        }
-        [[nodiscard]] inline Image ReadImage(const char* name) const
+            uint16_t Offset;
+            uint16_t Width;
+        };
+        static_assert(sizeof(FontChar) == sizeof(uint32_t));
+        class Font : public Image
         {
-            for(const Item& item : m_Items)
-                if(item.Type == ItemType::Image)
-                    if(item.Name == name)
-                        return ReadImage(item);
+        public:
+            uint32_t RowCount;
+            uint32_t RowHeight;
+            static const std::size_t CharacterCount = 256;
+            FontChar Characters[CharacterCount];
+        };
 
-            throw std::runtime_error("Item not found");
-        }
-        [[nodiscard]] inline std::vector<Image> ReadAllImages() const
+        WADPARSER_READ_ITEM(Font, ReadFont, ReadAllFonts)
+
+    // Texture
+    public:
+        struct Texture
         {
-            std::vector<Image> images = {};
+            static const std::size_t MaxNameLength = 16;
+            std::string Name;
+            uint32_t Width, Height;
+            static const std::size_t MipMapLevels = 4;
+            glm::u32vec2 MipMapDimensions[MipMapLevels];
+            std::vector<uint8_t> MipMapData[MipMapLevels];
+            static const std::size_t PaletteSize = 256;
+            std::array<glm::u8vec3, PaletteSize> Palette;
 
-            for(const Item& item : m_Items)
+        public:
+            [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
             {
-                if(item.Type == ItemType::Image)
-                {
-                    try
-                    {
-                        images.emplace_back(ReadImage(item));
-                    }
-                    catch(std::exception& ex)
-                    {
-                        std::cerr << "Problem in batch-loading of images from WAD during " << item.Name << ": " << ex.what() << std::endl;
-                    }
-                }
-            }
+                assert(level < MipMapLevels);
 
-            return images;
-        }
+                std::vector<glm::u8vec3> pixels(MipMapData[level].size());
+                for(std::size_t i = 0; i < MipMapData[level].size(); i++)
+                    pixels[i] = Palette[MipMapData[level][i]];
+                return pixels;
+            }
+            [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba(std::size_t level = 0) const
+            {
+                assert(level < MipMapLevels);
+
+                bool paletteTransparent = Palette[255] == glm::u8vec3(0x00, 0x00, 0xFF);
+
+                std::vector<glm::u8vec4> pixels(MipMapData[level].size());
+                for(std::size_t i = 0; i < MipMapData[level].size(); i++)
+                {
+                    auto paletteIndex = MipMapData[level][i];
+
+                    if(paletteIndex == 255 && paletteTransparent)
+                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
+                    else
+                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0x00); // Solid
+                }
+                return pixels;
+            }
+            void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+            void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+        };
+
+        WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures)
     };
 }
