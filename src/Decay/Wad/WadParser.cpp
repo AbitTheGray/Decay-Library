@@ -126,7 +126,8 @@ namespace Decay::Wad
 
     WadParser::Image WadParser::ReadImage(const WadParser::Item& item)
     {
-        std::istream in = item.DataAsStream();
+        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
+        std::istream in(&itemDataBuffer);
 
         Image image = {};
         in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
@@ -197,7 +198,8 @@ namespace Decay::Wad
 
     WadParser::Font WadParser::ReadFont(const WadParser::Item& item)
     {
-        std::istream in = item.DataAsStream();
+        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
+        std::istream in(&itemDataBuffer);
 
         Font font = {};
 
@@ -210,7 +212,7 @@ namespace Decay::Wad
             font.RowCount = dimensions.z;
             font.RowHeight = dimensions.w;
         }
-        assert(font.Width == 256);
+        assert(font.Width == 256); //FIXME It is defined that fonts have Width=256 ( https://developer.valvesoftware.com/wiki/WAD ) but 2 tested fonts did not have
         assert(font.RowCount > 0);
         assert(font.RowHeight > 0);
         assert(font.Height == font.RowCount * font.RowHeight);
@@ -236,12 +238,26 @@ namespace Decay::Wad
         font.Palette.resize(paletteLength);
         in.read(reinterpret_cast<char*>(font.Palette.data()), paletteLength);
 
+#ifdef WAD_PALETTE_DUMMY
+        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteLength; i += 360 / paletteLength, pi++)
+        {
+            double hue = i;
+            double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
+            double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
+            glm::dvec3 hsv = {hue, saturation, lightness};
+            glm::dvec3 rgb = glm::rgbColor(hsv);
+
+            font.Palette[pi] = {rgb.r, rgb.g, rgb.b};
+        }
+#endif
+
         return font;
     }
 
     WadParser::Texture WadParser::ReadTexture(const WadParser::Item& item)
     {
-        std::istream in = item.DataAsStream();
+        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
+        std::istream in(&itemDataBuffer);
 
         Texture texture = {};
 
@@ -251,15 +267,23 @@ namespace Decay::Wad
             in.read(name, Texture::MaxNameLength);
             texture.Name = Cstr2Str(name, Texture::MaxNameLength);
             assert(texture.Name.length() > 0);
-            assert(texture.Name == item.Name);
+#ifdef DEBUG
+            if(item.Name != texture.Name)
+            {
+                std::cerr << "Item and texture names do not match: " << item.Name << " != " << texture.Name << std::endl;
+                assert(StringCaseInsensitiveEqual(item.Name, texture.Name));
+            }
+#endif
         }
 
         // Dimensions
         in.read(reinterpret_cast<char*>(&texture.Width), sizeof(Texture::Width) + sizeof(Texture::Height));
-        assert(texture.Width > (1u << Texture::MipMapLevels));
-        assert(texture.Height > (1u << Texture::MipMapLevels));
-        assert(IsMultipleOf2(texture.Width));
-        assert(IsMultipleOf2(texture.Height));
+        assert(texture.Width >= (1u << Texture::MipMapLevels));
+        assert(texture.Height >= (1u << Texture::MipMapLevels));
+        if(!IsMultipleOf2(texture.Width))
+            assert(texture.Width % 16 == 0);
+        if(!IsMultipleOf2(texture.Height))
+            assert(texture.Height % 16 == 0);
 
         // Offsets
         uint32_t mipMapOffsets[Texture::MipMapLevels];
@@ -276,16 +300,33 @@ namespace Decay::Wad
             data.resize(dataLength);
             in.read(reinterpret_cast<char*>(data.data()), dataLength);
         }
+        assert(texture.Width == texture.MipMapDimensions[0].x);
+        assert(texture.Height == texture.MipMapDimensions[0].y);
 
         // 2 Dummy bytes
         // after last MipMap level
         uint8_t dummy[2];
         in.read(reinterpret_cast<char*>(dummy), sizeof(uint8_t) * 2);
-        assert(dummy[0] == 0x00u);
-        assert(dummy[1] == 0x01u);
+        if(dummy[0] != 0x00u)
+            std::cerr << "Texture dummy[0] byte not equal to 0x00 but " << static_cast<uint32_t>(dummy[0]) << " was read." << std::endl;
+        if(dummy[1] != 0x01u)
+            std::cerr << "Texture dummy[1] byte not equal to 0x01 but " << static_cast<uint32_t>(dummy[1]) << " was read." << std::endl;
 
         // Palette
         in.read(reinterpret_cast<char*>(texture.Palette.data()), sizeof(glm::u8vec3) * Texture::PaletteSize);
+
+#ifdef WAD_PALETTE_DUMMY
+        for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)
+        {
+            double hue = i;
+            double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
+            double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
+            glm::dvec3 hsv = {hue, saturation, lightness};
+            glm::dvec3 rgb = glm::rgbColor(hsv);
+
+            texture.Palette[pi] = {rgb.r, rgb.g, rgb.b};
+        }
+#endif
 
         return texture;
     }

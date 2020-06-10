@@ -133,9 +133,9 @@ namespace Decay::Wad
                     auto paletteIndex = Data[i];
 
                     if(paletteIndex == 255 && paletteTransparent)
-                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
+                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0x00); // Transparent
                     else
-                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0x00); // Solid
+                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFF); // Solid
                 }
                 return pixels;
             }
@@ -199,9 +199,9 @@ namespace Decay::Wad
                     auto paletteIndex = MipMapData[level][i];
 
                     if(paletteIndex == 255 && paletteTransparent)
-                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0xFF); // Transparent
+                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0x00); // Transparent
                     else
-                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0x00); // Solid
+                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFF); // Solid
                 }
                 return pixels;
             }
