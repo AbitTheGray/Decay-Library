@@ -2,10 +2,12 @@
 <mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
     <mime-type type="application/goldsrc-wad3">
         <comment>GoldSource Graphic Resources (v3)</comment>
-        <glob pattern="*.wad"/>
-        <magic priority="80">
+        <glob pattern="*.wad" weight="80"/>
+        <glob pattern="*.WAD" weight="80"/>
+        <magic priority="90">
             <match type="little32" offset="0" value="860111191"/>
         </magic>
         <acronym>WAD3</acronym>
+        <expanded-acronym>Where's All the Data</expanded-acronym>
     </mime-type>
 </mime-info>
