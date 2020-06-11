@@ -6,16 +6,16 @@
 #include <glm/glm.hpp>
 
 #include "../Common.hpp"
-#include "../Wad/WadParser.hpp"
+#include "../Wad/WadFile.hpp"
 
 namespace Decay::Bsp
 {
-    class BspParser
+    class BspFile
     {
     public:
-        explicit BspParser(const std::filesystem::path& filename);
+        explicit BspFile(const std::filesystem::path& filename);
 
-        ~BspParser();
+        ~BspFile();
 
     public:
         enum class LumpType : uint8_t
@@ -340,7 +340,7 @@ namespace Decay::Bsp
 
         [[nodiscard]] uint32_t GetTextureCount() const;
 
-        [[nodiscard]] std::vector<Wad::WadParser::Texture> GetTextures() const;
+        [[nodiscard]] std::vector<Wad::WadFile::Texture> GetTextures() const;
 
     public:
         struct TreeVertex
@@ -367,10 +367,10 @@ namespace Decay::Bsp
 
         public:
             std::shared_ptr<SmartNode> MainNode;
-            std::vector<Wad::WadParser::Texture> Textures;
+            std::vector<Wad::WadFile::Texture> Textures;
         };
 
-        [[nodiscard]] std::shared_ptr<NodeTree> AsNodeTree() const
+        [[nodiscard]] inline std::shared_ptr<NodeTree> AsNodeTree() const
         {
             std::shared_ptr<NodeTree> tree = std::make_shared<NodeTree>();
 

@@ -1,13 +1,13 @@
-#include <Decay/Wad/WadParser.hpp>
+#include <Decay/Wad/WadFile.hpp>
 #include <iostream>
 
 int main()
 {
     using namespace Decay::Wad;
 
-    auto wad = WadParser("../../../half-life/valve/halflife.wad");
+    auto wad = WadFile("../../../half-life/valve/halflife.wad");
 
-    WadParser::Texture texture = wad.ReadTexture("AAATRIGGER");
+    WadFile::Texture texture = wad.ReadTexture("AAATRIGGER");
 
     //TODO Check texture data against expected
 

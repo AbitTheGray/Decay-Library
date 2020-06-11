@@ -1,4 +1,4 @@
-#include "WadParser.hpp"
+#include "WadFile.hpp"
 
 // Use to test images if you are getting weird results.
 // Will replace palette for all images with HSL/HSV noise.
@@ -18,7 +18,7 @@
 
 namespace Decay::Wad
 {
-    WadParser::WadParser(const std::filesystem::path& filename)
+    WadFile::WadFile(const std::filesystem::path& filename)
     {
         if(!std::filesystem::exists(filename))
             throw std::runtime_error("File not found");
@@ -115,7 +115,7 @@ namespace Decay::Wad
         }
     }
 
-    WadParser::~WadParser()
+    WadFile::~WadFile()
     {
         for(Item& item : m_Items)
         {
@@ -124,7 +124,7 @@ namespace Decay::Wad
         }
     }
 
-    WadParser::Image WadParser::ReadImage(const WadParser::Item& item)
+    WadFile::Image WadFile::ReadImage(const WadFile::Item& item)
     {
         MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
         std::istream in(&itemDataBuffer);
@@ -181,14 +181,14 @@ namespace Decay::Wad
         return image;
     }
 
-    void WadParser::Image::WriteRgbPng(const std::filesystem::path& filename) const
+    void WadFile::Image::WriteRgbPng(const std::filesystem::path& filename) const
     {
         std::vector<glm::u8vec3> pixels = AsRgb();
         assert(pixels.size() == Width * Height);
         assert(Width <= std::numeric_limits<int32_t>::max() / 3);
         stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
-    void WadParser::Image::WriteRgbaPng(const std::filesystem::path& filename) const
+    void WadFile::Image::WriteRgbaPng(const std::filesystem::path& filename) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();
         assert(pixels.size() == Width * Height);
@@ -196,7 +196,7 @@ namespace Decay::Wad
         stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
     }
 
-    WadParser::Font WadParser::ReadFont(const WadParser::Item& item)
+    WadFile::Font WadFile::ReadFont(const WadFile::Item& item)
     {
         MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
         std::istream in(&itemDataBuffer);
@@ -254,7 +254,7 @@ namespace Decay::Wad
         return font;
     }
 
-    WadParser::Texture WadParser::ReadTexture(const WadParser::Item& item)
+    WadFile::Texture WadFile::ReadTexture(const WadFile::Item& item)
     {
         MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
         std::istream in(&itemDataBuffer);
@@ -334,7 +334,7 @@ namespace Decay::Wad
         return texture;
     }
 
-    void WadParser::Texture::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
+    void WadFile::Texture::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
     {
         assert(level < MipMapLevels);
 
@@ -354,7 +354,7 @@ namespace Decay::Wad
                 );
     }
 
-    void WadParser::Texture::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
+    void WadFile::Texture::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
     {
         assert(level < MipMapLevels);
 

@@ -1,4 +1,4 @@
-#include <Decay/Wad/WadParser.hpp>
+#include <Decay/Wad/WadFile.hpp>
 #include <iostream>
 
 int main()
@@ -16,7 +16,7 @@ int main()
         {
             std::cout << dir.path() << std::endl;
 
-            auto wadIt = WadParser(dir.path());
+            auto wadIt = WadFile(dir.path());
 
             std::size_t countTexture = 0;
             std::size_t countImage = 0;
@@ -27,13 +27,13 @@ int main()
             {
                 switch(item.Type)
                 {
-                    case WadParser::ItemType::Texture:
+                    case WadFile::ItemType::Texture:
                         countTexture++;
                         continue;
-                    case WadParser::ItemType::Image:
+                    case WadFile::ItemType::Image:
                         countImage++;
                         continue;
-                    case WadParser::ItemType::Font:
+                    case WadFile::ItemType::Font:
                         countFont++;
                         continue;
                     default:

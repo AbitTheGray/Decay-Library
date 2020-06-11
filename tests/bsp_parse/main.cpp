@@ -1,4 +1,4 @@
-#include <Decay/Bsp/BspParser.hpp>
+#include <Decay/Bsp/BspFile.hpp>
 #include <iostream>
 
 int main()
@@ -6,7 +6,7 @@ int main()
     using namespace Decay::Bsp;
 
     std::cout << "de_dust2.bsp:" << std::endl;
-    auto bsp = BspParser("../../../half-life/cstrike/maps/de_dust2.bsp");
+    auto bsp = BspFile("../../../half-life/cstrike/maps/de_dust2.bsp");
 
     std::cout << "- Vertices: " << bsp.GetVertexCount() << std::endl;
     std::cout << "- Faces: " << bsp.GetFaceCount() << std::endl;

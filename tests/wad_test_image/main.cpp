@@ -1,13 +1,13 @@
-#include <Decay/Wad/WadParser.hpp>
+#include <Decay/Wad/WadFile.hpp>
 #include <iostream>
 
 int main()
 {
     using namespace Decay::Wad;
 
-    auto wad = WadParser("../../../half-life/valve/gfx.wad");
+    auto wad = WadFile("../../../half-life/valve/gfx.wad");
 
-    WadParser::Image image = wad.ReadImage("LAMBDA");
+    WadFile::Image image = wad.ReadImage("LAMBDA");
 
     //TODO Check image data against expected
 

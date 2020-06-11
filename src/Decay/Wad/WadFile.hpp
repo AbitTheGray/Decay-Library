@@ -9,12 +9,12 @@
 
 namespace Decay::Wad
 {
-    class WadParser
+    class WadFile
     {
     public:
-        explicit WadParser(const std::filesystem::path& filename);
+        explicit WadFile(const std::filesystem::path& filename);
 
-        ~WadParser();
+        ~WadFile();
 
     public:
         // https://developer.valvesoftware.com/wiki/WAD
@@ -64,7 +64,7 @@ namespace Decay::Wad
             for(const Item& item : m_Items)\
                 if(item.Type == ItemType::Image)\
                     if(item.Name == name)\
-                        return WadParser::funcName(item);\
+                        return WadFile::funcName(item);\
             throw std::runtime_error("Item not found");\
         }\
         [[nodiscard]] inline type funcName(const char* name) const\
@@ -72,7 +72,7 @@ namespace Decay::Wad
             for(const Item& item : m_Items)\
                 if(item.Type == ItemType::type)\
                     if(item.Name == name)\
-                        return WadParser::funcName(item);\
+                        return WadFile::funcName(item);\
             throw std::runtime_error("Item not found");\
         }\
         [[nodiscard]] inline std::vector<type> funcNameAll() const\

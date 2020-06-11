@@ -1,4 +1,4 @@
-#include "BspParser.hpp"
+#include "BspFile.hpp"
 
 // Use to test images if you are getting weird results.
 // Will replace palette for all images with HSL/HSV noise.
@@ -12,7 +12,7 @@
 
 namespace Decay::Bsp
 {
-    std::array<std::size_t, BspParser::LumpType_Size> BspParser::s_DataMaxLength = {
+    std::array<std::size_t, BspFile::LumpType_Size> BspFile::s_DataMaxLength = {
             MaxEntities,
             MaxPlanes,
             MaxTextures,
@@ -29,7 +29,7 @@ namespace Decay::Bsp
             MaxSurfaceEdges,
             MaxModels,
     };
-    std::array<std::size_t, BspParser::LumpType_Size> BspParser::s_DataElementSize = {
+    std::array<std::size_t, BspFile::LumpType_Size> BspFile::s_DataElementSize = {
             0, // sizeof(char), Not so simple
             sizeof(Plane),
             0, // sizeof(Texture), Not so simple
@@ -47,7 +47,7 @@ namespace Decay::Bsp
             sizeof(Model),
     };
 
-    BspParser::BspParser(const std::filesystem::path& filename)
+    BspFile::BspFile(const std::filesystem::path& filename)
     {
         if(!std::filesystem::exists(filename))
             throw std::runtime_error("File not found");
@@ -182,13 +182,13 @@ namespace Decay::Bsp
         }
     }
 
-    BspParser::~BspParser()
+    BspFile::~BspFile()
     {
         for(std::size_t i = 0; i < LumpType_Size; i++)
             std::free(m_Data[i]);
     }
 
-    uint32_t BspParser::GetTextureCount() const
+    uint32_t BspFile::GetTextureCount() const
     {
         MemoryBuffer itemDataBuffer(
                 reinterpret_cast<char*>(m_Data[static_cast<uint8_t>(LumpType::Textures)]),
@@ -202,7 +202,7 @@ namespace Decay::Bsp
         return count;
     }
 
-    std::vector<Wad::WadParser::Texture> BspParser::GetTextures() const
+    std::vector<Wad::WadFile::Texture> BspFile::GetTextures() const
     {
         MemoryBuffer itemDataBuffer(
                 reinterpret_cast<char*>(m_Data[static_cast<uint8_t>(LumpType::Textures)]),
@@ -217,7 +217,7 @@ namespace Decay::Bsp
         std::vector<uint32_t> offsets(count);
         in.read(reinterpret_cast<char*>(offsets.data()), sizeof(uint32_t) * count);
 
-        std::vector<Wad::WadParser::Texture> textures(count);
+        std::vector<Wad::WadFile::Texture> textures(count);
         for(std::size_t i = 0; i < count; i++)
         {
             assert(offsets[i] >= sizeof(uint32_t) + sizeof(uint32_t) * count);
@@ -227,7 +227,7 @@ namespace Decay::Bsp
             Texture texture = {};
             in.read(reinterpret_cast<char*>(&texture), sizeof(Texture));
 
-            Wad::WadParser::Texture wadTexture = {
+            Wad::WadFile::Texture wadTexture = {
                     texture.GetName(),
                     texture.Width,
                     texture.Height
@@ -262,7 +262,7 @@ namespace Decay::Bsp
                     std::cerr << "Texture dummy[1] byte not equal to 0x01 but " << static_cast<uint32_t>(dummy[1]) << " was read." << std::endl;
 
                 // Palette
-                in.read(reinterpret_cast<char*>(wadTexture.Palette.data()), sizeof(glm::u8vec3) * Wad::WadParser::Texture::PaletteSize);
+                in.read(reinterpret_cast<char*>(wadTexture.Palette.data()), sizeof(glm::u8vec3) * Wad::WadFile::Texture::PaletteSize);
 
 #ifdef BSP_PALETTE_DUMMY
                 for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)
@@ -284,7 +284,7 @@ namespace Decay::Bsp
         return textures;
     }
 
-    void BspParser::ProcessNode_Children(const std::shared_ptr<SmartNode>& smartNode, int16_t childIndex, const std::shared_ptr<NodeTree>& tree) const
+    void BspFile::ProcessNode_Children(const std::shared_ptr<SmartNode>& smartNode, int16_t childIndex, const std::shared_ptr<NodeTree>& tree) const
     {
         if(childIndex > 0)
         {
@@ -300,7 +300,7 @@ namespace Decay::Bsp
         }
     }
 
-    void BspParser::ProcessNode_Visual(const std::shared_ptr<SmartNode>& smartNode, const BspParser::Node& node, const std::shared_ptr<NodeTree>& tree) const
+    void BspFile::ProcessNode_Visual(const std::shared_ptr<SmartNode>& smartNode, const BspFile::Node& node, const std::shared_ptr<NodeTree>& tree) const
     {
         for(std::size_t fi = node.FirstFaceIndex, fic = 0; fic < node.FaceCount; fi++, fic++)
         {
@@ -315,7 +315,7 @@ namespace Decay::Bsp
             auto textureIndex = textureMapping.Texture;
             assert(textureIndex < tree->Textures.size());
 
-            Wad::WadParser::Texture& texture = tree->Textures[textureIndex];
+            Wad::WadFile::Texture& texture = tree->Textures[textureIndex];
             auto& indices = smartNode->Indices[textureIndex];
 
 
@@ -410,7 +410,7 @@ namespace Decay::Bsp
         }
     }
 
-    void BspParser::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
+    void BspFile::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec3> pixels = AsRgb();
         assert(pixels.size() == Width * Height);
@@ -418,7 +418,7 @@ namespace Decay::Bsp
         stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
 
-    void BspParser::TextureParsed::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
+    void BspFile::TextureParsed::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();
         assert(pixels.size() == Width * Height);

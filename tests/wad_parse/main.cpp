@@ -1,4 +1,4 @@
-#include <Decay/Wad/WadParser.hpp>
+#include <Decay/Wad/WadFile.hpp>
 #include <iostream>
 
 int main()
@@ -6,7 +6,7 @@ int main()
     using namespace Decay::Wad;
 
     std::cout << "halflife.wad:" << std::endl;
-    auto wad = WadParser("../../../half-life/valve/halflife.wad");
+    auto wad = WadFile("../../../half-life/valve/halflife.wad");
 
     std::cout << "- Total Items: " << wad.GetItems().size() << std::endl;
     std::cout << "  - Images: " << wad.GetImageCount() << std::endl;
