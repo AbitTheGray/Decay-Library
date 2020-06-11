@@ -11,4 +11,16 @@ int main()
     std::cout << "- Vertices: " << bsp.GetVertexCount() << std::endl;
     std::cout << "- Faces: " << bsp.GetFaceCount() << std::endl;
     std::cout << "- Edges: " << bsp.GetEdgeCount() << std::endl;
+
+
+    std::cout << std::endl;
+
+
+    auto tree = bsp.AsNodeTree();
+
+    std::cout << "Tree:" << std::endl;
+    std::cout << "- Vertices: " << tree->Vertices.size() << std::endl;
+    std::cout << "- Textures: " << tree->Textures.size() << std::endl;
+    std::cout << "- Main Node: " << std::endl;
+    std::cout << "  - Textures used: " << tree->MainNode->Indices.size() << " (top level)" << std::endl;
 }

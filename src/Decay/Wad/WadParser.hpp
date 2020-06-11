@@ -160,7 +160,15 @@ namespace Decay::Wad
         {
             static const std::size_t MaxNameLength = 16;
             std::string Name;
-            uint32_t Width, Height;
+            union
+            {
+                struct
+                {
+                    uint32_t Width, Height;
+                };
+                glm::u32vec2 Size;
+            };
+            static_assert(sizeof(Size) == sizeof(Width) + sizeof(Height));
 
             static const std::size_t MipMapLevels = 4;
             glm::u32vec2 MipMapDimensions[MipMapLevels];

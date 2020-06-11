@@ -188,7 +188,7 @@ namespace Decay::Bsp
             std::free(m_Data[i]);
     }
 
-    std::vector<Wad::WadParser::Texture> BspParser::GetTextures() const
+    uint32_t BspParser::GetTextureCount() const
     {
         MemoryBuffer itemDataBuffer(
                 reinterpret_cast<char*>(m_Data[static_cast<uint8_t>(LumpType::Textures)]),
@@ -199,16 +199,32 @@ namespace Decay::Bsp
         uint32_t count;
         in.read(reinterpret_cast<char*>(&count), sizeof(count));
 
+        return count;
+    }
+
+    std::vector<Wad::WadParser::Texture> BspParser::GetTextures() const
+    {
+        MemoryBuffer itemDataBuffer(
+                reinterpret_cast<char*>(m_Data[static_cast<uint8_t>(LumpType::Textures)]),
+                m_DataLength[static_cast<uint8_t>(LumpType::Textures)]
+        );
+        std::istream in(&itemDataBuffer);
+
+        uint32_t count;
+        in.read(reinterpret_cast<char*>(&count), sizeof(count));
+        assert(count < MaxTextures);
+
         std::vector<uint32_t> offsets(count);
         in.read(reinterpret_cast<char*>(offsets.data()), sizeof(uint32_t) * count);
 
         std::vector<Wad::WadParser::Texture> textures(count);
         for(std::size_t i = 0; i < count; i++)
         {
-            assert(offsets[i] > sizeof(uint32_t) + sizeof(uint32_t) * count);
+            assert(offsets[i] >= sizeof(uint32_t) + sizeof(uint32_t) * count);
+            assert(offsets[i] < m_DataLength[static_cast<uint8_t>(LumpType::Textures)]);
             in.seekg(offsets[i]);
 
-            Texture texture;
+            Texture texture = {};
             in.read(reinterpret_cast<char*>(&texture), sizeof(Texture));
 
             Wad::WadParser::Texture wadTexture = {
@@ -216,6 +232,7 @@ namespace Decay::Bsp
                     texture.Width,
                     texture.Height
             };
+            assert(!wadTexture.Name.empty());
 
             if(texture.IsPacked())
             {
@@ -245,8 +262,7 @@ namespace Decay::Bsp
                     std::cerr << "Texture dummy[1] byte not equal to 0x01 but " << static_cast<uint32_t>(dummy[1]) << " was read." << std::endl;
 
                 // Palette
-                std::array<uint8_t, Wad::WadParser::Texture::PaletteSize> imagePalette = {};
-                in.read(reinterpret_cast<char*>(imagePalette.data()), sizeof(glm::u8vec3) * Wad::WadParser::Texture::PaletteSize);
+                in.read(reinterpret_cast<char*>(wadTexture.Palette.data()), sizeof(glm::u8vec3) * Wad::WadParser::Texture::PaletteSize);
 
 #ifdef BSP_PALETTE_DUMMY
                 for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)
@@ -262,10 +278,136 @@ namespace Decay::Bsp
 #endif
             }
 
-            textures[i] = wadTexture;
+            textures[i] = std::move(wadTexture);
         }
 
         return textures;
+    }
+
+    void BspParser::ProcessNode_Children(const std::shared_ptr<SmartNode>& smartNode, int16_t childIndex, const std::shared_ptr<NodeTree>& tree) const
+    {
+        if(childIndex > 0)
+        {
+            const Node& node = GetRawNodes()[childIndex];
+            smartNode->ChildNodes.emplace_back(ProcessNode(node, tree));
+        }
+        else
+        {
+            childIndex = ~static_cast<uint16_t>(childIndex);
+
+            const Leaf& leaf = GetRawLeaves()[childIndex];
+            //TODO Process leaf
+        }
+    }
+
+    void BspParser::ProcessNode_Visual(const std::shared_ptr<SmartNode>& smartNode, const BspParser::Node& node, const std::shared_ptr<NodeTree>& tree) const
+    {
+        for(std::size_t fi = node.FirstFaceIndex, fic = 0; fic < node.FaceCount; fi++, fic++)
+        {
+            assert(fi < GetFaceCount());
+            const Face& face = GetRawFaces()[fi];
+            if(face.SurfaceEdgeCount == 0)
+                continue;
+
+            // Texture info
+            assert(face.TextureMapping < GetTextureMappingCount());
+            const TextureMapping& textureMapping = GetRawTextureMapping()[face.TextureMapping];
+            auto textureIndex = textureMapping.Texture;
+            assert(textureIndex < tree->Textures.size());
+
+            Wad::WadParser::Texture& texture = tree->Textures[textureIndex];
+            auto& indices = smartNode->Indices[textureIndex];
+
+
+            //TODO Lighting (style + offset)
+
+
+            // Get vertex indices from: Face -> Surface Edge -> Edge (-> Vertex)
+            assert(face.SurfaceEdgeCount >= 3); // To at least for a triangle
+            std::vector<uint16_t> faceIndices(face.SurfaceEdgeCount);
+            for(
+                    std::size_t sei = face.FirstSurfaceEdge, seii = 0;
+                    seii < face.SurfaceEdgeCount;
+                    sei++, seii++
+                    )
+            {
+                assert(sei < GetSurfaceEdgeCount());
+                const SurfaceEdges& surfaceEdge = GetRawSurfaceEdges()[sei];
+
+                uint16_t index;
+                if(surfaceEdge >= 0)
+                {
+                    assert(surfaceEdge < GetEdgeCount());
+                    index = GetRawEdges()[surfaceEdge].First;
+                }
+                else
+                {
+                    assert(-surfaceEdge < GetEdgeCount());
+                    index = GetRawEdges()[-surfaceEdge].Second;
+                }
+
+                faceIndices[seii] = index;
+            }
+
+            // Triangulate the face
+            {
+                // Main index
+                uint16_t mainIndex = tree->Vertices.size();
+
+                auto mainVertex = GetRawVertices()[faceIndices[0]];
+                tree->Vertices.emplace_back(
+                        TreeVertex {
+                                mainVertex,
+                                glm::vec2 {
+                                        textureMapping.GetTexelU(mainVertex, texture.Size),
+                                        textureMapping.GetTexelV(mainVertex, texture.Size)
+                                }
+                        }
+                );
+
+                // Second index
+                uint16_t secondIndex = tree->Vertices.size();
+
+                auto secondVertex = GetRawVertices()[faceIndices[1]];
+                tree->Vertices.emplace_back(
+                        TreeVertex {
+                                secondVertex,
+                                glm::vec2 {
+                                        textureMapping.GetTexelU(secondVertex, texture.Size),
+                                        textureMapping.GetTexelV(secondVertex, texture.Size)
+                                }
+                        }
+                );
+
+                // Reserve space in `tree->Vertices`
+                tree->Vertices.reserve((face.SurfaceEdgeCount - 2) * 3);
+
+                // Other indices
+                for(std::size_t ii = 2; ii < face.SurfaceEdgeCount; ii++)
+                {
+                    uint16_t thirdIndex = tree->Vertices.size();
+
+                    auto thirdVertex = GetRawVertices()[faceIndices[ii]];
+                    tree->Vertices.emplace_back(
+                            TreeVertex {
+                                    thirdVertex,
+                                    glm::vec2 {
+                                            textureMapping.GetTexelU(thirdVertex, texture.Size),
+                                            textureMapping.GetTexelV(thirdVertex, texture.Size)
+                                    }
+                            }
+                    );
+
+                    // Add triangle to indices
+                    indices.emplace_back(mainIndex);
+                    indices.emplace_back(secondIndex);
+                    indices.emplace_back(thirdIndex);
+
+                    // Current 3rd index is 2nd index for next
+                    secondIndex = thirdIndex;
+                }
+            }
+        }
     }
 
     void BspParser::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const

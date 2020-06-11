@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <vector>
+#include <map>
 #include <glm/glm.hpp>
 
 #include "../Common.hpp"
@@ -35,11 +36,11 @@ namespace Decay::Bsp
             SurfaceEdges,
             Models
         };
-        static const std::size_t LumpType_Size = (uint8_t)LumpType::Models + 1;
+        static const std::size_t LumpType_Size = static_cast<uint8_t>(LumpType::Models) + 1;
 
     public:
         std::array<void*, LumpType_Size> m_Data = {};
-        std::array<uint32_t , LumpType_Size> m_DataLength = {};
+        std::array<uint32_t, LumpType_Size> m_DataLength = {};
         static std::array<std::size_t, LumpType_Size> s_DataMaxLength;
         static std::array<std::size_t, LumpType_Size> s_DataElementSize;
 
@@ -108,12 +109,13 @@ namespace Decay::Bsp
             uint32_t MipMaps[MipTextureLevels];
 
             [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, MaxTextureName); }
+
             [[nodiscard]] inline bool IsPacked() const
             {
-                assert(MipMaps[0] < sizeof(Texture));
-                assert(MipMaps[1] < sizeof(Texture));
-                assert(MipMaps[2] < sizeof(Texture));
-                assert(MipMaps[3] < sizeof(Texture));
+                assert(MipMaps[0] == 0 || MipMaps[0] >= sizeof(Texture));
+                assert(MipMaps[1] == 0 || MipMaps[1] > sizeof(Texture));
+                assert(MipMaps[2] == 0 || MipMaps[2] > sizeof(Texture));
+                assert(MipMaps[3] == 0 || MipMaps[3] > sizeof(Texture));
 
                 return MipMaps[0] && MipMaps[1] && MipMaps[2] && MipMaps[3];
             }
@@ -144,11 +146,11 @@ namespace Decay::Bsp
             uint32_t TextureFlags;
 
         public:
-            [[nodiscard]] inline float GetTexelU(const glm::vec3& position, const glm::vec2& textureSize) const noexcept
+            [[nodiscard]] inline float GetTexelU(const glm::vec3& position, const glm::u32vec2& textureSize) const noexcept
             {
                 return (S.x * position.x + S.y * position.y + S.z * position.z + SShift) / textureSize.x;
             }
-            [[nodiscard]] inline float GetTexelV(const glm::vec3& position, const glm::vec2& textureSize) const noexcept
+            [[nodiscard]] inline float GetTexelV(const glm::vec3& position, const glm::u32vec2& textureSize) const noexcept
             {
                 return (T.x * position.x + T.y * position.y + T.z * position.z + TShift) / textureSize.y;
             }
@@ -162,9 +164,9 @@ namespace Decay::Bsp
             uint16_t PlaneSide;
 
             /// Index of the first Surface Edge
-            uint32_t FirstEdge;
+            uint32_t FirstSurfaceEdge;
             /// Number of consecutive Surface Edges
-            uint16_t EdgeCount;
+            uint16_t SurfaceEdgeCount;
 
             /// Index of the Texture Info structure
             uint16_t TextureMapping;
@@ -289,6 +291,7 @@ namespace Decay::Bsp
                     {0, 0}
             };
             std::vector<uint8_t> MipMapData[MipMapLevels];
+
             [[nodiscard]] bool HasData() const noexcept { return MipMapDimensions[0].x == 0; }
 
             static const std::size_t PaletteSize = 256;
@@ -307,6 +310,7 @@ namespace Decay::Bsp
                     pixels[i] = Palette[MipMapData[level][i]];
                 return pixels;
             }
+
             [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba(std::size_t level = 0) const
             {
                 assert(level < MipMapLevels);
@@ -328,10 +332,72 @@ namespace Decay::Bsp
                 }
                 return pixels;
             }
+
             void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+
             void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
         };
 
+        [[nodiscard]] uint32_t GetTextureCount() const;
+
         [[nodiscard]] std::vector<Wad::WadParser::Texture> GetTextures() const;
+
+    public:
+        struct TreeVertex
+        {
+            glm::vec3 Position;
+            glm::vec2 UV;
+        };
+
+        class SmartNode : std::enable_shared_from_this<SmartNode>
+        {
+        public:
+            /// [ textureIndex ] = vertex indices
+            std::map<uint16_t, std::vector<uint16_t>> Indices;
+
+        public:
+            std::vector<std::shared_ptr<SmartNode>> ChildNodes;
+            //std::vector<std::shared_ptr<Leaf>> Leaves;
+        };
+
+        class NodeTree : std::enable_shared_from_this<NodeTree>
+        {
+        public:
+            std::vector<TreeVertex> Vertices;
+
+        public:
+            std::shared_ptr<SmartNode> MainNode;
+            std::vector<Wad::WadParser::Texture> Textures;
+        };
+
+        [[nodiscard]] std::shared_ptr<NodeTree> AsNodeTree() const
+        {
+            std::shared_ptr<NodeTree> tree = std::make_shared<NodeTree>();
+
+            // Textures
+            tree->Textures = GetTextures();
+
+            // Nodes
+            tree->MainNode = ProcessNode(GetRawNodes()[0], tree);
+
+            return std::move(tree);
+        }
+
+        [[nodiscard]] inline std::shared_ptr<SmartNode> ProcessNode(const Node& node, const std::shared_ptr<NodeTree>& tree) const
+        {
+            std::shared_ptr<SmartNode> smartNode = std::make_shared<SmartNode>();
+            {
+                ProcessNode_Visual(smartNode, node, tree);
+
+                ProcessNode_Children(smartNode, node.ChildrenIndex[0], tree);
+                ProcessNode_Children(smartNode, node.ChildrenIndex[1], tree);
+            }
+            return std::move(smartNode);
+        }
+
+        void ProcessNode_Children(const std::shared_ptr<SmartNode>& smartNode, int16_t childIndex, const std::shared_ptr<NodeTree>& tree) const;
+
+        void ProcessNode_Visual(const std::shared_ptr<SmartNode>& smartNode, const Node& node, const std::shared_ptr<NodeTree>& tree) const;
+
     };
 }
