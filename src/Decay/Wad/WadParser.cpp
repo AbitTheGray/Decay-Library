@@ -293,7 +293,10 @@ namespace Decay::Wad
         {
             in.seekg(mipMapOffsets[level]);
 
-            texture.MipMapDimensions[level] = { texture.Width >> level, texture.Height >> level };
+            texture.MipMapDimensions[level] = {
+                    texture.Width >> level,
+                    texture.Height >> level
+            };
             std::size_t dataLength = static_cast<std::size_t>(texture.MipMapDimensions[level].x) * texture.MipMapDimensions[level].y;
 
             std::vector<uint8_t>& data = texture.MipMapData[level];

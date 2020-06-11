@@ -161,9 +161,11 @@ namespace Decay::Wad
             static const std::size_t MaxNameLength = 16;
             std::string Name;
             uint32_t Width, Height;
+
             static const std::size_t MipMapLevels = 4;
             glm::u32vec2 MipMapDimensions[MipMapLevels];
             std::vector<uint8_t> MipMapData[MipMapLevels];
+
             static const std::size_t PaletteSize = 256;
             std::array<glm::u8vec3, PaletteSize> Palette;
 

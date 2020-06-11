@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "../Common.hpp"
+#include "../Wad/WadParser.hpp"
 
 namespace Decay::Bsp
 {
@@ -273,5 +274,58 @@ namespace Decay::Bsp
         LUMP_ENTRY(GetSurfaceEdges, GetSurfaceEdgeCount, GetRawSurfaceEdges, SurfaceEdges, SurfaceEdges);
         LUMP_ENTRY(GetModels, GetModelCount, GetRawModels, Model, Models);
 
+    public:
+        struct TextureParsed
+        {
+            static const std::size_t MaxNameLength = 16;
+            std::string Name;
+            uint32_t Width, Height;
+
+            static const std::size_t MipMapLevels = 4;
+            glm::u32vec2 MipMapDimensions[MipMapLevels] = {
+                    {0, 0},
+                    {0, 0},
+                    {0, 0},
+                    {0, 0}
+            };
+            std::vector<uint8_t> MipMapData[MipMapLevels];
+            [[nodiscard]] bool HasData() const noexcept { return MipMapDimensions[0].x == 0; }
+
+            static const std::size_t PaletteSize = 256;
+            std::array<glm::u8vec3, PaletteSize> Palette;
+
+        public:
+            [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
+            {
+                assert(level < MipMapLevels);
+
+                std::vector<glm::u8vec3> pixels(MipMapData[level].size());
+                for(std::size_t i = 0; i < MipMapData[level].size(); i++)
+                    pixels[i] = Palette[MipMapData[level][i]];
+                return pixels;
+            }
+            [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba(std::size_t level = 0) const
+            {
+                assert(level < MipMapLevels);
+
+                bool paletteTransparent = Palette[255] == glm::u8vec3(0x00, 0x00, 0xFF);
+
+                std::vector<glm::u8vec4> pixels(MipMapData[level].size());
+                for(std::size_t i = 0; i < MipMapData[level].size(); i++)
+                {
+                    auto paletteIndex = MipMapData[level][i];
+
+                    if(paletteIndex == 255 && paletteTransparent)
+                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0x00); // Transparent
+                    else
+                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFF); // Solid
+                }
+                return pixels;
+            }
+            void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+            void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+        };
+
+        [[nodiscard]] std::vector<Wad::WadParser::Texture> GetTextures() const;
     };
 }

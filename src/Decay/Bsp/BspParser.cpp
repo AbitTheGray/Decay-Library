@@ -1,5 +1,10 @@
 #include "BspParser.hpp"
 
+// Use to test images if you are getting weird results.
+// Will replace palette for all images with HSL/HSV noise.
+// Equivalent to WAD_PALETTE_DUMMY
+//#define BSP_PALETTE_DUMMY 1
+
 #include <fstream>
 #include <iostream>
 
@@ -179,5 +184,85 @@ namespace Decay::Bsp
     {
         for(std::size_t i = 0; i < LumpType_Size; i++)
             std::free(m_Data[i]);
+    }
+
+    std::vector<Wad::WadParser::Texture> BspParser::GetTextures() const
+    {
+        MemoryBuffer itemDataBuffer(
+                reinterpret_cast<char*>(m_Data[static_cast<uint8_t>(LumpType::Textures)]),
+                m_DataLength[static_cast<uint8_t>(LumpType::Textures)]
+        );
+        std::istream in(&itemDataBuffer);
+
+        uint32_t count;
+        in.read(reinterpret_cast<char*>(&count), sizeof(count));
+
+        std::vector<uint32_t> offsets(count);
+        in.read(reinterpret_cast<char*>(offsets.data()), sizeof(uint32_t) * count);
+
+        std::vector<Wad::WadParser::Texture> textures(count);
+        for(std::size_t i = 0; i < count; i++)
+        {
+            assert(offsets[i] > sizeof(uint32_t) + sizeof(uint32_t) * count);
+            in.seekg(offsets[i]);
+
+            Texture texture;
+            in.read(reinterpret_cast<char*>(&texture), sizeof(Texture));
+
+            Wad::WadParser::Texture wadTexture = {
+                    texture.GetName(),
+                    texture.Width,
+                    texture.Height
+            };
+
+            if(texture.IsPacked())
+            {
+                // MipMap data
+                for(std::size_t level = 0; level < MipTextureLevels; level++)
+                {
+                    wadTexture.MipMapDimensions[level] = {
+                            texture.Width >> level,
+                            texture.Height >> level
+                    };
+                    std::size_t dataLength = static_cast<std::size_t>(wadTexture.MipMapDimensions[level].x) * wadTexture.MipMapDimensions[level].y;
+
+                    std::vector<uint8_t>& data = wadTexture.MipMapData[level];
+                    data.resize(dataLength);
+                    in.read(reinterpret_cast<char*>(data.data()), dataLength);
+                }
+                assert(texture.Width == imageSize[0].x);
+                assert(texture.Height == imageSize[0].y);
+
+                // 2 Dummy bytes
+                // after last MipMap level
+                uint8_t dummy[2];
+                in.read(reinterpret_cast<char*>(dummy), sizeof(uint8_t) * 2);
+                if(dummy[0] != 0x00u)
+                    std::cerr << "Texture dummy[0] byte not equal to 0x00 but " << static_cast<uint32_t>(dummy[0]) << " was read." << std::endl;
+                if(dummy[1] != 0x01u)
+                    std::cerr << "Texture dummy[1] byte not equal to 0x01 but " << static_cast<uint32_t>(dummy[1]) << " was read." << std::endl;
+
+                // Palette
+                std::array<uint8_t, Wad::WadParser::Texture::PaletteSize> imagePalette = {};
+                in.read(reinterpret_cast<char*>(imagePalette.data()), sizeof(glm::u8vec3) * Wad::WadParser::Texture::PaletteSize);
+
+#ifdef BSP_PALETTE_DUMMY
+                for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)
+                {
+                    double hue = i;
+                    double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
+                    double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
+                    glm::dvec3 hsv = {hue, saturation, lightness};
+                    glm::dvec3 rgb = glm::rgbColor(hsv);
+
+                    texture.Palette[pi] = {rgb.r, rgb.g, rgb.b};
+                }
+#endif
+            }
+
+            textures[i] = wadTexture;
+        }
+
+        return textures;
     }
 }
