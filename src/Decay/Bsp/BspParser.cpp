@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <stb_image_write.h>
+
 namespace Decay::Bsp
 {
     std::array<std::size_t, BspParser::LumpType_Size> BspParser::s_DataMaxLength = {
@@ -230,8 +232,8 @@ namespace Decay::Bsp
                     data.resize(dataLength);
                     in.read(reinterpret_cast<char*>(data.data()), dataLength);
                 }
-                assert(texture.Width == imageSize[0].x);
-                assert(texture.Height == imageSize[0].y);
+                assert(texture.Width == wadTexture.MipMapDimensions[0].x);
+                assert(texture.Height == wadTexture.MipMapDimensions[0].y);
 
                 // 2 Dummy bytes
                 // after last MipMap level
@@ -264,5 +266,21 @@ namespace Decay::Bsp
         }
 
         return textures;
+    }
+
+    void BspParser::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
+    {
+        std::vector<glm::u8vec3> pixels = AsRgb();
+        assert(pixels.size() == Width * Height);
+        assert(Width <= std::numeric_limits<int32_t>::max() / 3);
+        stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
+    }
+
+    void BspParser::TextureParsed::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
+    {
+        std::vector<glm::u8vec4> pixels = AsRgba();
+        assert(pixels.size() == Width * Height);
+        assert(Width <= std::numeric_limits<int32_t>::max() / 4);
+        stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
     }
 }
