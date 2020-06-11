@@ -38,10 +38,19 @@ All libraries are used as `static library` to maximize optimization and limit pr
       - Some seem weird but it may be correct
     - ~~Fonts~~
       - **Currently fail to load, requires fixing**
+      
+## Compile & Use
+
+Compilation tested using GCC and MinGW, C++20 support required.
+
+Look into `tests` directory for different usages.
+
+All tests expect `half-life` directory (the one containing `valve`, `cstrike`, `platform`...) in project directory (same as `lib`, `src`...).
+It is recommended to keep it where it is and use [Symbolic link](https://en.wikipedia.org/wiki/Symbolic_link).
 
 ## Linux tools
 
-Inside `linux` directory, there are MIME type definitions for supported BSP and WAD files for [KDE](https://kde.org/).
+Inside `linux` directory, there are [MIME type](https://en.wikipedia.org/wiki/Media_type#Mime.types) definitions for supported BSP and WAD files for [KDE](https://kde.org/).
 
 They recommend having only 1 `.xml` file per application but several are used sor simplicity.
 All have weight `80` (same as `application/x-doom`) but are defined by file headers.
