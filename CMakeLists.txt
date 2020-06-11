@@ -31,9 +31,9 @@ add_subdirectory(lib/glm)
 # Source
 #--------------------------------
 
-file(GLOB_RECURSE DS1_SOURCE src/*.hpp src/*.cpp src/*.h src/*.c)
+file(GLOB_RECURSE DECAY_LIBRARY_SOURCE src/*.hpp src/*.cpp src/*.h src/*.c)
 
-add_library(DecayLib STATIC ${DS1_SOURCE})
+add_library(DecayLib STATIC ${DECAY_LIBRARY_SOURCE})
 target_include_directories(DecayLib PUBLIC src/)
 add_library(Decay::Library ALIAS DecayLib)
 
