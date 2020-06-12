@@ -207,7 +207,7 @@ namespace Decay::Bsp
                 assert(i2 <= Vertices.size());
 
                 //THINK Convert indices back to plygon face
-                out << "f " << i0 << '/' << i0 << ' ' << i1 << '/' << i1 << ' ' << i2 << '/' << i2 << ' ' << std::endl;
+                out << "f " << i0 << '/' << i0 << ' ' << i1 << '/' << i1 << ' ' << i2 << '/' << i2 << std::endl;
             }
         }
 
