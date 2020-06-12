@@ -22,6 +22,12 @@ namespace Decay::Bsp
         std::vector<Vertex> Vertices;
 
     public:
+        class SmartLeaf : std::enable_shared_from_this<SmartLeaf>
+        {
+        public:
+            /// [ textureIndex ] = vertex indices
+            std::map<uint16_t, std::vector<uint16_t>> Indices;
+        };
         class SmartNode : std::enable_shared_from_this<SmartNode>
         {
         public:
@@ -30,7 +36,7 @@ namespace Decay::Bsp
 
         public:
             std::vector<std::shared_ptr<SmartNode>> ChildNodes;
-            //std::vector<std::shared_ptr<Leaf>> Leaves;
+            std::vector<std::shared_ptr<SmartLeaf>> Leaves;
         };
         std::shared_ptr<SmartNode> MainNode;
 
@@ -46,6 +52,8 @@ namespace Decay::Bsp
             }
             return std::move(smartNode);
         }
+
+        [[nodiscard]] std::shared_ptr<SmartLeaf> ProcessLeaf(const BspFile::Leaf& leaf);
 
         void UpdateNode_ChildIndex(const std::shared_ptr<SmartNode>& smartNode, int16_t childIndex);
 
