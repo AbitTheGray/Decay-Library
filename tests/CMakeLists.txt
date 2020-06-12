@@ -4,6 +4,8 @@
 
 add_subdirectory(bsp_parse)
 
+add_subdirectory(bsp_export_obj)
+
 #--------------------------------
 # WAD (Textures)
 #--------------------------------
