@@ -179,9 +179,8 @@ namespace Decay::Bsp
         // Vertices
         for(const auto& vec : Vertices)
         {
-            //TODO Fix up axis
-            out << "v " << vec.Position.x << ' ' << vec.Position.y << ' ' << vec.Position.z << std::endl;
-            out << "vt " << vec.UV.x << ' ' << vec.UV.y << std::endl;
+            out << "v " << -vec.Position.x << ' ' << vec.Position.z << ' ' << vec.Position.y << std::endl;
+            out << "vt " << 1-vec.UV.x << ' ' << vec.UV.y << std::endl;
         }
 
         out.flush();
