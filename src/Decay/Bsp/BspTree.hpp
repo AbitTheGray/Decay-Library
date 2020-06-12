@@ -53,6 +53,8 @@ namespace Decay::Bsp
             return std::move(smartNode);
         }
 
+        void ProcessFace(const BspFile::Face& face, std::map<uint16_t, std::vector<uint16_t>>& indicesMap);
+
         [[nodiscard]] std::shared_ptr<SmartLeaf> ProcessLeaf(const BspFile::Leaf& leaf);
 
         void UpdateNode_ChildIndex(const std::shared_ptr<SmartNode>& smartNode, int16_t childIndex);
