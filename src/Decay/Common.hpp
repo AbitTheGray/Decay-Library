@@ -26,7 +26,7 @@ namespace Decay
         std::size_t m_Offset = 0;
 
     protected:
-        pos_type seekoff(off_type relative, std::ios_base::seekdir direction, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out) override
+        pos_type seekoff(off_type relative, std::ios_base::seekdir direction, std::ios_base::openmode mode) override
         {
             std::size_t offset;
             switch(direction)
@@ -48,7 +48,7 @@ namespace Decay
             return seekpos(offset, mode);
         }
 
-        pos_type seekpos(pos_type offset, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out) override
+        pos_type seekpos(pos_type offset, std::ios_base::openmode mode) override
         {
             if(mode & std::ios_base::in)
             {

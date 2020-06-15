@@ -302,7 +302,7 @@ namespace Decay::Bsp
             {
                 assert(level < MipMapLevels);
 
-                if(MipMapData[level].size() == 0)
+                if(MipMapData[level].empty())
                     throw std::runtime_error("Texture does not contain data");
 
                 std::vector<glm::u8vec3> pixels(MipMapData[level].size());
@@ -315,7 +315,7 @@ namespace Decay::Bsp
             {
                 assert(level < MipMapLevels);
 
-                if(MipMapData[level].size() == 0)
+                if(MipMapData[level].empty())
                     throw std::runtime_error("Texture does not contain data");
 
                 bool paletteTransparent = Palette[255] == glm::u8vec3(0x00, 0x00, 0xFF);

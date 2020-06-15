@@ -7,11 +7,11 @@ namespace Decay::Bsp
     class BspTree
     {
     public:
-        BspTree(std::shared_ptr<BspFile> bsp);
+        explicit BspTree(std::shared_ptr<BspFile> bsp);
 
     public:
-        std::shared_ptr<BspFile> Bsp;
-        std::vector<Wad::WadFile::Texture> Textures;
+        const std::shared_ptr<BspFile> Bsp;
+        const std::vector<Wad::WadFile::Texture> Textures;
 
     public:
         struct Vertex
