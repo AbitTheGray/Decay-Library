@@ -229,10 +229,12 @@ namespace Decay::Bsp
             /// Bounding Box
             glm::vec3 bbMin, bbMax;
             glm::vec3 Origin;
-            /// The first one has proofed to index the root node of the mini BSP tree used for rendering.
-            /// The other three indexes could probably be used for collision detection.
+            /// [0] = root node of Model's BSP tree (used for rendering)
+            /// [1],[2] = BSP trees used for collision (at least the [1] one)
+            /// [3] = 0
             int32_t Headnodes[4];
-            int32_t nVisLeafs;
+            /// Number of leaves
+            int32_t VisLeafCount;
             /// Direct indexes into the faces array, not taking the redirecting by the marksurfaces.
             int32_t FirstFaceIndex, FaceCount;
         };

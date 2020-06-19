@@ -6,7 +6,7 @@ namespace Decay::Bsp
 {
 
     BspTree::BspTree(std::shared_ptr<BspFile> bsp)
-     : Bsp(std::move(bsp)), Textures(Bsp->GetTextures()), MainNode(ProcessNode(Bsp->GetRawNodes()[0]))
+     : Bsp(std::move(bsp)), Textures(Bsp->GetTextures()), Models(ProcessModels())
     {
 
     }
@@ -186,7 +186,7 @@ namespace Decay::Bsp
         out.flush();
 
         // Indices
-        auto textureIndices = FlattenIndices();
+        auto textureIndices = FlattenIndices_Models();
         for(const auto& it : textureIndices)
         {
             const auto& textureId = it.first;

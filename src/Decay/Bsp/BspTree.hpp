@@ -28,6 +28,7 @@ namespace Decay::Bsp
             /// [ textureIndex ] = vertex indices
             std::map<uint16_t, std::vector<uint16_t>> Indices;
         };
+
         class SmartNode : std::enable_shared_from_this<SmartNode>
         {
         public:
@@ -38,7 +39,56 @@ namespace Decay::Bsp
             std::vector<std::shared_ptr<SmartNode>> ChildNodes;
             std::vector<std::shared_ptr<SmartLeaf>> Leaves;
         };
-        std::shared_ptr<SmartNode> MainNode;
+
+        class SmartModel : std::enable_shared_from_this<SmartModel>
+        {
+        public:
+            SmartModel(glm::vec3 bbMin, glm::vec3 bbMax, glm::vec3 origin)
+             : BB_Min(bbMin), BB_Max(bbMax), Origin(origin)
+            {
+            }
+
+        public:
+            glm::vec3 BB_Min;
+            glm::vec3 BB_Max;
+
+            glm::vec3 Origin;
+
+            std::shared_ptr<SmartNode> Node;
+
+            /// [ textureIndex ] = vertex indices
+            std::map<uint16_t, std::vector<uint16_t>> Indices;
+        };
+        std::vector<std::shared_ptr<SmartModel>> Models;
+
+    private:
+        [[nodiscard]] inline std::vector<std::shared_ptr<SmartModel>> ProcessModels()
+        {
+            std::vector<std::shared_ptr<SmartModel>> models(Bsp->GetModelCount());
+            for(std::size_t mi = 0; mi < models.size(); mi++)
+            {
+                BspFile::Model& model = Bsp->GetRawModels()[mi];
+                models[mi] = ProcessModel(model);
+            }
+            return models;
+        }
+        [[nodiscard]] std::shared_ptr<SmartModel> ProcessModel(const BspFile::Model& model)
+        {
+            std::shared_ptr<SmartModel> smartModel = std::make_shared<SmartModel>(
+                model.bbMin, model.bbMax,
+                model.Origin
+            );
+
+            //smartModel->Node = ProcessNode(Bsp->GetRawNodes()[model.Headnodes[0]]);
+
+            for(int32_t fi = model.FirstFaceIndex, fii = 0; fii < model.FaceCount; fi++, fii++)
+            {
+                BspFile::Face& face = Bsp->GetRawFaces()[fi];
+                ProcessFace(face, smartModel->Indices);
+            }
+
+            return smartModel;
+        }
 
     private:
         [[nodiscard]] inline std::shared_ptr<SmartNode> ProcessNode(const BspFile::Node& node)
@@ -62,16 +112,36 @@ namespace Decay::Bsp
         void Insert_Visual(const std::shared_ptr<SmartNode>& smartNode, const BspFile::Node& node);
 
     public:
-        [[nodiscard]] inline std::map<uint16_t, std::vector<uint16_t>> FlattenIndices() const
+        [[nodiscard]] inline std::map<uint16_t, std::vector<uint16_t>> FlattenIndices_Models() const
         {
             std::map<uint16_t, std::vector<uint16_t>> indices = {};
+
+            for(auto& model : Models)
             {
-                FlattenIndices(MainNode, indices);
+                for(auto& kvp : model->Indices)
+                {
+                    std::vector<uint16_t>& ind = indices[kvp.first];
+                    ind.reserve(kvp.second.size());
+
+                    std::copy(kvp.second.begin(), kvp.second.end(), back_inserter(ind));
+                }
             }
+
+            return indices;
+        }
+
+    public:
+        [[nodiscard]] inline std::map<uint16_t, std::vector<uint16_t>> FlattenIndices_Nodes() const
+        {
+            std::map<uint16_t, std::vector<uint16_t>> indices = {};
+
+            for(auto& model : Models)
+                FlattenIndices_Node(model->Node, indices);
+
             return indices;
         }
     private:
-        static void FlattenIndices(const std::shared_ptr<SmartNode>& smartNode, std::map<uint16_t, std::vector<uint16_t>>& indices)
+        static void FlattenIndices_Node(const std::shared_ptr<SmartNode>& smartNode, std::map<uint16_t, std::vector<uint16_t>>& indices)
         {
             const std::map<uint16_t, std::vector<uint16_t>>& smartIndices = smartNode->Indices;
             for(const auto& it : smartIndices)
@@ -81,12 +151,12 @@ namespace Decay::Bsp
             }
 
             for(const std::shared_ptr<SmartLeaf>& leaf : smartNode->Leaves)
-                FlattenIndices(leaf, indices);
+                FlattenIndices_Leaf(leaf, indices);
 
             for(const std::shared_ptr<SmartNode>& subNode : smartNode->ChildNodes)
-                FlattenIndices(subNode, indices);
+                FlattenIndices_Node(subNode, indices);
         }
-        inline static void FlattenIndices(const std::shared_ptr<SmartLeaf>& smartLeaf, std::map<uint16_t, std::vector<uint16_t>>& indices)
+        inline static void FlattenIndices_Leaf(const std::shared_ptr<SmartLeaf>& smartLeaf, std::map<uint16_t, std::vector<uint16_t>>& indices)
         {
             const auto& smartIndices = smartLeaf->Indices;
             for(const auto& it : smartIndices)
