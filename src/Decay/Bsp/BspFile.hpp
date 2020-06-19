@@ -146,13 +146,21 @@ namespace Decay::Bsp
             uint32_t TextureFlags;
 
         public:
+            [[nodiscard]] inline float GetTexelS(const glm::vec3& position) const noexcept
+            {
+                return (S.x * position.x + S.y * position.y + S.z * position.z + SShift);
+            }
+            [[nodiscard]] inline float GetTexelT(const glm::vec3& position) const noexcept
+            {
+                return (T.x * position.x + T.y * position.y + T.z * position.z + TShift);
+            }
             [[nodiscard]] inline float GetTexelU(const glm::vec3& position, const glm::u32vec2& textureSize) const noexcept
             {
-                return (S.x * position.x + S.y * position.y + S.z * position.z + SShift) / textureSize.x;
+                return GetTexelS(position) / textureSize.x;
             }
             [[nodiscard]] inline float GetTexelV(const glm::vec3& position, const glm::u32vec2& textureSize) const noexcept
             {
-                return (T.x * position.x + T.y * position.y + T.z * position.z + TShift) / textureSize.y;
+                return GetTexelT(position) / textureSize.y;
             }
         };
 
