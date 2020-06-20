@@ -93,8 +93,6 @@ namespace Decay::Bsp
                             }
                     }
             );
-            if(mainVertex.x == -1952 && mainVertex.z == 32 && mainVertex.y == 1152)
-                std::cout << faceIndices[0] << std::endl;
 
             // Second index
             auto secondVertex = Bsp->GetRawVertices()[faceIndices[1]];
@@ -111,8 +109,6 @@ namespace Decay::Bsp
                             }
                     }
             );
-            if(secondVertex.x == -1952 && secondVertex.z == 32 && secondVertex.y == 1152)
-                std::cout << faceIndices[0] << std::endl;
 
             // Other indices
             assert(face.SurfaceEdgeCount >= 3);
@@ -132,8 +128,6 @@ namespace Decay::Bsp
                                 }
                         }
                 );
-                if(thirdVertex.x == -1952 && thirdVertex.z == 32 && thirdVertex.y == 1152)
-                    std::cout << faceIndices[0] << std::endl;
 
                 // Add triangle to indices
                 smartFace.Indices.emplace_back(mainIndex);
@@ -204,35 +198,8 @@ namespace Decay::Bsp
                     out << "f " << i0 << '/' << i0 << ' ' << i1 << '/' << i1 << ' ' << i2 << '/' << i2 << std::endl;
                 }
             }
+
+            out.flush();
         }
-
-        /*
-        auto textureIndices = FlattenIndices_Models();
-        for(const auto& it : textureIndices)
-        {
-            const auto& textureId = it.first;
-            //TODO Define texture + mtl
-
-            const auto& indices = it.second;
-
-            assert(indices.size() % 3 == 0);
-            for(std::size_t i = 0; i < indices.size(); i += 3)
-            {
-                // +1 because OBJ starts at 1 instead of 0
-                uint16_t i0 = indices[i + 0] + 1;
-                uint16_t i1 = indices[i + 1] + 1;
-                uint16_t i2 = indices[i + 2] + 1;
-
-                assert(i0 <= Vertices.size());
-                assert(i1 <= Vertices.size());
-                assert(i2 <= Vertices.size());
-
-                //THINK Convert indices back to plygon face
-                out << "f " << i0 << '/' << i0 << ' ' << i1 << '/' << i1 << ' ' << i2 << '/' << i2 << std::endl;
-            }
-        }
-         */
-
-        out.flush();
     }
 }
