@@ -2,6 +2,10 @@
 
 #include "BspFile.hpp"
 
+// Enabling this adds vertices without duplicates.
+// Takes more time to process but decreases Vertex size.
+#define BSP_NO_DUPLICATES
+
 namespace Decay::Bsp
 {
     class BspTree
@@ -94,9 +98,15 @@ namespace Decay::Bsp
         /// Calling functions should still use `Vertices.reserve()` to make sure there is enough space when adding multiple vertices.
         [[nodiscard]] inline uint16_t AddVertex(const Vertex& vertex)
         {
-            uint16_t index = Vertices.size();
+#ifdef BSP_NO_DUPLICATES
+            {
+                auto it = std::find(Vertices.begin(), Vertices.end(), vertex);
+                if(it != Vertices.end())
+                    return it - Vertices.begin();
+            }
+#endif
 
-            //TODO Avoid duplicates
+            uint16_t index = Vertices.size();
             Vertices.emplace_back(vertex);
             return index;
         }
