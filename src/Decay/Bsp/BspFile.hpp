@@ -230,7 +230,7 @@ namespace Decay::Bsp
             uint16_t Second;
         };
 
-        typedef int16_t SurfaceEdges;
+        typedef int32_t SurfaceEdges;
 
         struct Model
         {
