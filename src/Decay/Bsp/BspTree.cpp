@@ -8,7 +8,7 @@ namespace Decay::Bsp
     BspTree::BspTree(std::shared_ptr<BspFile> bsp)
      : Bsp(std::move(bsp)),
      Textures(Bsp->GetTextures()),
-     Vertices(Bsp->GetVertexCount()),
+     Vertices(),
      Models(Bsp->GetModelCount())
     {
         for(std::size_t mi = 0; mi < Models.size(); mi++)
