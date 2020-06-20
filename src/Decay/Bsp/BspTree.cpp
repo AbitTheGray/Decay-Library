@@ -178,7 +178,7 @@ namespace Decay::Bsp
 
             for(auto& kvp : model->Indices)
             {
-                out << "usemtl texture_" << kvp.first << std::endl;
+                out << "usemtl texture_" << Textures[kvp.first].Name << std::endl;
 
                 auto& indices = kvp.second;
 
