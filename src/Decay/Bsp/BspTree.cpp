@@ -340,7 +340,7 @@ namespace Decay::Bsp
                 rgba = texture.AsRgba();
 
             writeFunc(
-                    (directory / (texture.Name + textureExtension)).c_str(),
+                    (directory / (texture.Name + textureExtension)).string().c_str(),
                     texture.Width,
                     texture.Height,
                     rgba.data()
