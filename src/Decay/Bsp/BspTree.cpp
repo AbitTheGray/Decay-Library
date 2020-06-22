@@ -318,6 +318,9 @@ namespace Decay::Bsp
         if(!std::filesystem::exists(directory))
             std::filesystem::create_directory(directory);
 
+        assert(textureExtension.size() > 1);
+        assert(textureExtension[0] == '.');
+
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = GetImageWriteFunction(textureExtension);
 
         for(auto& texture : Textures)

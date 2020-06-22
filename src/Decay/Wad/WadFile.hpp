@@ -210,5 +210,7 @@ namespace Decay::Wad
         };
 
         WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures)
+
+        void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
     };
 }

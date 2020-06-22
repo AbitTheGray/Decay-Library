@@ -12,6 +12,8 @@
 
 #include <stb_image_write.h>
 
+#include "../Bsp/BspTree.hpp"
+
 #ifdef WAD_PALETTE_DUMMY
     #include <glm/gtx/color_space.hpp>
 #endif
@@ -332,6 +334,29 @@ namespace Decay::Wad
 #endif
 
         return texture;
+    }
+
+    void WadFile::ExportTextures(const std::filesystem::path& directory, const std::string& extension) const
+    {
+        if(!std::filesystem::exists(directory))
+            std::filesystem::create_directory(directory);
+
+        assert(extension.size() > 1);
+        assert(extension[0] == '.');
+
+        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = Bsp::BspTree::GetImageWriteFunction(extension);
+
+        for(auto& texture : ReadAllTextures())
+        {
+            std::vector<glm::u8vec4> rgba = texture.AsRgba();
+
+            writeFunc(
+                    (directory / (texture.Name + extension)).string().c_str(),
+                    texture.Width,
+                    texture.Height,
+                    rgba.data()
+            );
+        }
     }
 
     void WadFile::Texture::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
