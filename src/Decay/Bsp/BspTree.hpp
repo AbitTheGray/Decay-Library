@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "BspFile.hpp"
 
 // Enabling this adds vertices without duplicates.
@@ -140,5 +142,15 @@ namespace Decay::Bsp
         /// Materials for OBJ.
         void ExportMtl(const std::filesystem::path& filename, const std::string& textureExtension = ".png") const;
         void ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension = ".png", bool dummyForMissing = false) const;
+
+    public:
+        /// Extension always starts with period.
+        /// Supported extensions:
+        /// - .png
+        /// - .bmp
+        /// - .tga
+        /// - .jpg / .jpeg (maximum quality
+        /// - .raw (uint32_t width, uint32_t width, uint32_t... rgba_data)
+        static std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> GetImageWriteFunction(const std::string& extension);
     };
 }

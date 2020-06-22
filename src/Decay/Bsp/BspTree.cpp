@@ -1,7 +1,6 @@
 #include "BspTree.hpp"
 
 #include <fstream>
-#include <functional>
 
 #include <stb_image_write.h>
 
@@ -235,15 +234,11 @@ namespace Decay::Bsp
         }
     }
 
-    void BspTree::ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension, bool dummyForMissing) const
+    std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> BspTree::GetImageWriteFunction(const std::string& extension)
     {
-        if(!std::filesystem::exists(directory))
-            std::filesystem::create_directory(directory);
-
-        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc;
-        if(textureExtension == ".png" || textureExtension == ".PNG")
+        if(extension == ".png" || extension == ".PNG")
         {
-            writeFunc = [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
+            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
             {
                 // Write to file
                 stbi_write_png(
@@ -256,9 +251,9 @@ namespace Decay::Bsp
                 );
             };
         }
-        else if(textureExtension == ".bmp" || textureExtension == ".BMP")
+        else if(extension == ".bmp" || extension == ".BMP")
         {
-            writeFunc = [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
+            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
             {
                 stbi_write_bmp(
                         path,
@@ -269,9 +264,9 @@ namespace Decay::Bsp
                 );
             };
         }
-        else if(textureExtension == ".tga" || textureExtension == ".TGA")
+        else if(extension == ".tga" || extension == ".TGA")
         {
-            writeFunc = [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
+            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
             {
                 stbi_write_tga(
                         path,
@@ -282,9 +277,9 @@ namespace Decay::Bsp
                 );
             };
         }
-        else if(textureExtension == ".jpg" || textureExtension == ".JPG" || textureExtension == ".jpeg" || textureExtension == ".JPEG")
+        else if(extension == ".jpg" || extension == ".JPG" || extension == ".jpeg" || extension == ".JPEG")
         {
-            writeFunc = [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
+            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
             {
                 stbi_write_jpg(
                         path,
@@ -296,9 +291,9 @@ namespace Decay::Bsp
                 );
             };
         }
-        else if(textureExtension == ".raw" || textureExtension == ".RAW")
+        else if(extension == ".raw" || extension == ".RAW")
         {
-            writeFunc = [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
+            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
             {
                 std::fstream out(path, std::ios_base::out | std::ios_base::trunc);
 
@@ -312,6 +307,14 @@ namespace Decay::Bsp
         }
         else
             throw std::runtime_error("Unsupported texture extension for export");
+    }
+
+    void BspTree::ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension, bool dummyForMissing) const
+    {
+        if(!std::filesystem::exists(directory))
+            std::filesystem::create_directory(directory);
+
+        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = GetImageWriteFunction(textureExtension);
 
         for(auto& texture : Textures)
         {
