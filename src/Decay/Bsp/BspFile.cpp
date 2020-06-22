@@ -178,6 +178,7 @@ namespace Decay::Bsp
             // Models
             {
                 assert(m_DataLength[static_cast<uint8_t>(LumpType::Models)] % sizeof(Model) == 0);
+                assert(m_DataLength[static_cast<uint8_t>(LumpType::Models)] >= sizeof(Model)); // There must be at least 1 model
             }
         }
     }

@@ -15,7 +15,7 @@ namespace Decay::Bsp
     {
         for(std::size_t mi = 0; mi < Models.size(); mi++)
         {
-            BspFile::Model& model = Bsp->GetRawModels()[mi];
+            const BspFile::Model& model = Bsp->GetRawModels()[mi];
             Models[mi] = ProcessModel(model);
         }
     }

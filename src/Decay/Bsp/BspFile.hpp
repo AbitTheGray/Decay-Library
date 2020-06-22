@@ -259,11 +259,11 @@ namespace Decay::Bsp
             );\
             return rtn;\
         }\
-        [[nodiscard]] std::size_t fun_count() const\
+        [[nodiscard]] std::size_t fun_count() const noexcept\
         {\
             return m_DataLength[static_cast<uint8_t>(LumpType::lumpType)] / sizeof(type);\
         }\
-        [[nodiscard]] type* fun_raw() const\
+        [[nodiscard]] const type* fun_raw() const noexcept\
         {\
             return static_cast<type*>(m_Data[static_cast<uint8_t>(LumpType::lumpType)]);\
         }
@@ -285,6 +285,8 @@ namespace Decay::Bsp
         /// otherwise, the value is multiplied by -1 and the second vertex of the indexed edge is used.
         LUMP_ENTRY(GetSurfaceEdges, GetSurfaceEdgeCount, GetRawSurfaceEdges, SurfaceEdges, SurfaceEdges);
         LUMP_ENTRY(GetModels, GetModelCount, GetRawModels, Model, Models);
+
+        inline const Model& GetMainModel() const { return GetRawModels()[0]; }
 
     public:
         struct TextureParsed

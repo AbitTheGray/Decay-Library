@@ -23,6 +23,8 @@ int main()
     std::cout << "Tree:" << std::endl;
     std::cout << "- Vertices: " << tree.Vertices.size() << std::endl;
     std::cout << "- Textures: " << tree.Textures.size() << std::endl;
-    std::cout << "- Main Node: " << std::endl;
-    std::cout << "  - Textures used: " << tree.MainNode->Indices.size() << " (top level)" << std::endl;
+
+    auto mainModel = tree.Models[0];
+    std::cout << "- Main Model: " << std::endl;
+    std::cout << "  - Textures used: " << mainModel->Indices.size() << " (top level)" << std::endl;
 }

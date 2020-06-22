@@ -1,5 +1,4 @@
 #include <Decay/Wad/WadFile.hpp>
-#include <iostream>
 
 int main()
 {

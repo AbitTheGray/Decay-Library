@@ -84,7 +84,7 @@ namespace Decay::Bsp
 
             for(int32_t fi = model.FirstFaceIndex, fii = 0; fii < model.FaceCount; fi++, fii++)
             {
-                BspFile::Face& face = Bsp->GetRawFaces()[fi];
+                const BspFile::Face& face = Bsp->GetRawFaces()[fi];
                 Face smartFace = ProcessFace(face);
 
                 auto& indices = smartModel->Indices[smartFace.TextureId];
