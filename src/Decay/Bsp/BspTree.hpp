@@ -4,14 +4,6 @@
 
 #include "BspFile.hpp"
 
-// Enabling this adds vertices without duplicates.
-// Takes more time to process but decreases Vertex size.
-#define BSP_NO_DUPLICATES
-
-// Enable to export OBJ not as triangles but as polygons.
-// Still processes faces to triangles so they must be processed back (not slow).
-#define BSP_OBJ_POLYGONS
-
 namespace Decay::Bsp
 {
     class BspTree
