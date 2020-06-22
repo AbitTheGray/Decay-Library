@@ -36,18 +36,22 @@ int main(int argc, const char** argv)
     }
 }
 
+static const char* ansi_reset = "\033[m";
+static const char* ansi_bold = "\033[1m";
+static const char* ansi_description = "\033[36m";
+
 int Exec_help(int argc, const char** argv)
 {
     for(auto& it : Commands)
     {
         auto& command = it.second;
-        std::cout << "\t" << it.first;
+        std::cout << "\t" << ansi_bold << it.first << ansi_reset;
 
         if(!command.Help_Params.empty())
             std::cout << ' ' << command.Help_Params;
 
         assert(!command.Help_Description.empty());
-        std::cout << "\t\t" << command.Help_Description << std::endl;
+        std::cout << "\t\t" << ansi_description << command.Help_Description << ansi_reset << std::endl;
     }
 
     return 0;
