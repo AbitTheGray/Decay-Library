@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include <Decay/Bsp/BspFile.hpp>
 #include <Decay/Bsp/BspTree.hpp>
 
@@ -11,4 +9,6 @@ int main()
 
     auto tree = std::make_shared<BspTree>(bsp);
     tree->ExportFlatObj("de_dust2.obj");
+    tree->ExportMtl("de_dust2.mtl", "textures");
+    tree->ExportTextures("textures");
 }

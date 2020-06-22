@@ -140,7 +140,7 @@ namespace Decay::Bsp
         void ExportFlatObj(const std::filesystem::path& filename) const;
         /// Wavefront OBJ - Materials
         /// Materials for OBJ.
-        void ExportMtl(const std::filesystem::path& filename, const std::string& textureExtension = ".png") const;
+        void ExportMtl(const std::filesystem::path& filename, const std::filesystem::path& texturePath = ".", const std::string& textureExtension = ".png") const;
         void ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension = ".png", bool dummyForMissing = false) const;
 
     public:

@@ -205,7 +205,7 @@ namespace Decay::Bsp
         }
     }
 
-    void BspTree::ExportMtl(const std::filesystem::path& filename, const std::string& textureExtension) const
+    void BspTree::ExportMtl(const std::filesystem::path& filename, const std::filesystem::path& texturePath, const std::string& textureExtension) const
     {
         std::fstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
 
@@ -222,13 +222,17 @@ namespace Decay::Bsp
 
         for(auto& texture : Textures)
         {
+            auto imgPath = texturePath == "." ?
+                    std::filesystem::path(texture.Name + textureExtension) :
+                    texturePath / (texture.Name + textureExtension);
+
             out << "newmtl texture_" << texture.Name << std::endl;
             out << "Ka 1.0 1.0 1.0" << std::endl;
             out << "Kd 1.0 1.0 1.0" << std::endl;
             out << "Ks 0.0 0.0 0.0" << std::endl;
             out << "illum 1" << std::endl;
-            out << "map_Ka " << texture.Name << textureExtension << std::endl;
-            out << "map_Kd " << texture.Name << textureExtension << std::endl;
+            out << "map_Ka " << imgPath << std::endl;
+            out << "map_Kd " << imgPath << std::endl;
 
             out.flush();
         }
