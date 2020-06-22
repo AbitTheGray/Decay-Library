@@ -16,3 +16,5 @@ add_subdirectory(wad_parse_all)
 add_subdirectory(wad_test_image)
 add_subdirectory(wad_test_font)
 add_subdirectory(wad_test_texture)
+
+add_subdirectory(wad_export_textures)

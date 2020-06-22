@@ -1,0 +1,3 @@
+add_executable(Test_Wad_ExportTextures main.cpp)
+
+target_link_libraries(Test_Wad_ExportTextures DecayLib)
