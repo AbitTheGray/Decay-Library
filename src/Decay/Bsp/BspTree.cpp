@@ -315,7 +315,12 @@ namespace Decay::Bsp
 
     void BspTree::ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension, bool dummyForMissing) const
     {
-        if(!std::filesystem::exists(directory))
+        if(std::filesystem::exists(directory))
+        {
+            if(!std::filesystem::is_directory(directory))
+                throw std::runtime_error("`directory` argument does not point to directory");
+        }
+        else
             std::filesystem::create_directory(directory);
 
         assert(textureExtension.size() > 1);

@@ -43,7 +43,23 @@ target_link_libraries(DecayLib glm)
 target_include_directories(DecayLib PRIVATE lib/stb/)
 
 #--------------------------------
-# Source
+# Source - Command
+#--------------------------------
+
+option(DECAY_LIBRARY_CMD "Enable Commandline interface/executable utility." ON)
+if(DECAY_LIBRARY_CMD)
+    file(GLOB_RECURSE DECAY_LIBRARY_CMD_SOURCE src_cmd/*.hpp src_cmd/*.cpp src_cmd/*.h src_cmd/*.c)
+
+    add_executable(DecayLib_Command ${DECAY_LIBRARY_CMD_SOURCE})
+    add_executable(Decay::LibraryCmd ALIAS DecayLib_Command)
+
+    target_link_libraries(DecayLib_Command DecayLib)
+    target_link_libraries(DecayLib_Command -static-libgcc -static-libstdc++ stdc++fs)
+    target_link_libraries(DecayLib_Command glm)
+endif()
+
+#--------------------------------
+# Tests
 #--------------------------------
 
 if(BUILD_TESTING)
