@@ -137,7 +137,7 @@ namespace Decay::Bsp
     public:
         /// Wavefront OBJ
         /// Text-based model format.
-        void ExportFlatObj(const std::filesystem::path& filename) const;
+        void ExportFlatObj(const std::filesystem::path& filename, const std::filesystem::path& mtlFilename = {}) const;
         /// Wavefront OBJ - Materials
         /// Materials for OBJ.
         void ExportMtl(const std::filesystem::path& filename, const std::filesystem::path& texturePath = ".", const std::string& textureExtension = ".png") const;

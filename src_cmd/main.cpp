@@ -168,7 +168,10 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     try
     {
-        tree->ExportFlatObj(objFilename);
+        tree->ExportFlatObj(
+                objFilename,
+                std::filesystem::relative(mtlFilename, objFilename.parent_path())
+        );
     }
     catch(std::runtime_error& ex)
     {
@@ -180,7 +183,11 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     try
     {
-        tree->ExportMtl(mtlFilename, texturesDirectory, ".png");
+        tree->ExportMtl(
+                mtlFilename,
+                std::filesystem::relative(texturesDirectory, mtlFilename.parent_path()),
+                ".png"
+        );
     }
     catch(std::runtime_error& ex)
     {
@@ -192,7 +199,11 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     try
     {
-        tree->ExportTextures(texturesDirectory, ".png", true);
+        tree->ExportTextures(
+                texturesDirectory,
+                ".png",
+                true
+        );
     }
     catch(std::runtime_error& ex)
     {

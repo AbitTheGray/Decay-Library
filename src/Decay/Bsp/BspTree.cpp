@@ -146,7 +146,7 @@ namespace Decay::Bsp
         return smartFace;
     }
 
-    void BspTree::ExportFlatObj(const std::filesystem::path& filename) const
+    void BspTree::ExportFlatObj(const std::filesystem::path& filename, const std::filesystem::path& mtlFilename) const
     {
         std::fstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
 
@@ -158,6 +158,10 @@ namespace Decay::Bsp
             std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
             out << "# Exported: " << std::ctime(&nowTime) << std::endl;
         }
+
+        // MTL file
+        if(!mtlFilename.empty())
+            out << "mtllib " << mtlFilename << std::endl;
 
         out.flush();
 
@@ -180,6 +184,7 @@ namespace Decay::Bsp
 
             for(auto& kvp : model->Indices)
             {
+                out << "g texture_" << Textures[kvp.first].Name << std::endl;
                 out << "usemtl texture_" << Textures[kvp.first].Name << std::endl;
 
                 auto& indices = kvp.second;
@@ -233,6 +238,8 @@ namespace Decay::Bsp
             out << "illum 1" << std::endl;
             out << "map_Ka " << imgPath << std::endl;
             out << "map_Kd " << imgPath << std::endl;
+
+            out << std::endl;
 
             out.flush();
         }
