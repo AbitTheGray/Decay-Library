@@ -169,7 +169,7 @@ namespace Decay::Bsp
         for(const auto& vec : Vertices)
         {
             out << "v " << -vec.Position.x << ' ' << vec.Position.z << ' ' << vec.Position.y << std::endl;
-            out << "vt " << 1-vec.UV.x << ' ' << vec.UV.y << std::endl;
+            out << "vt " << vec.UV.x << ' ' << 1-vec.UV.y << std::endl;
         }
 
         out.flush();
