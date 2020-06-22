@@ -7,10 +7,23 @@ set(BUILD_SHARED_LIBS OFF)
 cmake_policy(SET CMP0077 NEW) # set() overrides option()
 
 #--------------------------------
-# Debug Options
+# Options
 #--------------------------------
 
 add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>") # Define DEBUG in Debug builds
+
+# Takes more time to process but decreases Vertex array size.
+# There can still be position duplicates as they would have different texture coordinates
+option(DECAY_BSP_NO_DUPLICATES "Avoid duplicate vertices when parsing BSP" ON)
+if(DECAY_BSP_NO_DUPLICATES)
+    add_compile_definitions("BSP_NO_DUPLICATES")
+endif()
+
+# Still processes faces to triangles so they must be processed back (not slow).
+option(DECAY_OBJ_POLYGONS "Exporting as OBJ uses polygons instead of triangles" ON)
+if(DECAY_OBJ_POLYGONS)
+    add_compile_definitions("BSP_OBJ_POLYGONS")
+endif()
 
 #--------------------------------
 # Compiler configuration

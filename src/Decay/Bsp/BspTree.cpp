@@ -169,7 +169,7 @@ namespace Decay::Bsp
         for(const auto& vec : Vertices)
         {
             out << "v " << -vec.Position.x << ' ' << vec.Position.z << ' ' << vec.Position.y << std::endl;
-            out << "vt " << 1-vec.UV.x << ' ' << vec.UV.y << std::endl;
+            out << "vt " << vec.UV.x << ' ' << 1-vec.UV.y << std::endl;
         }
 
         out.flush();
@@ -178,16 +178,22 @@ namespace Decay::Bsp
         //for(auto& model : Models)
         for(std::size_t mi = 0; mi < Models.size(); mi++)
         {
-            auto& model = Models[mi];
+            out << std::endl;
 
             out << "o Model_" << mi << std::endl;
 
-            for(auto& kvp : model->Indices)
+            for(auto& kvp : Models[mi]->Indices)
             {
+                out << std::endl;
+
                 out << "g texture_" << Textures[kvp.first].Name << std::endl;
                 out << "usemtl texture_" << Textures[kvp.first].Name << std::endl;
 
                 auto& indices = kvp.second;
+
+#ifdef BSP_OBJ_POLYGONS
+                bool prevPolygon = false;
+#endif
 
                 assert(indices.size() % 3 == 0);
                 for(std::size_t ii = 0; ii < indices.size(); ii += 3)
@@ -201,8 +207,41 @@ namespace Decay::Bsp
                     assert(i1 <= Vertices.size());
                     assert(i2 <= Vertices.size());
 
-                    //THINK Convert indices back to plygon face
+#ifdef BSP_OBJ_POLYGONS
+                    if(prevPolygon)
+                        out  << ' ' << i2 << '/' << i2;
+                    else
+                        out << "f " << i0 << '/' << i0 << ' ' << i1 << '/' << i1 << ' ' << i2 << '/' << i2;
+#else
                     out << "f " << i0 << '/' << i0 << ' ' << i1 << '/' << i1 << ' ' << i2 << '/' << i2 << std::endl;
+#endif
+
+#ifdef BSP_OBJ_POLYGONS
+                    // Is there another triangle?
+                    if(ii + 3 < indices.size())
+                    {
+                        uint16_t i3 = indices[ii + 0 + 3] + 1;
+                        uint16_t i4 = indices[ii + 1 + 3] + 1;
+                        uint16_t i5 = indices[ii + 2 + 3] + 1;
+
+                        // Format of output from polygon->triangles function
+                        // [ii + 0] is same
+                        // old [ii + 2] -> new [ii + 1]
+                        // Only new index is new [ii + 2]
+                        prevPolygon = (i0 == i3 && i2 == i4);
+
+                        // Next triangle is not from same polygon
+                        if(!prevPolygon)
+                            out << std::endl;
+                    }
+                    else
+                    {
+                        //prevPolygon = false; // Not needed as there are no more indices
+                        out << std::endl;
+                    }
+#else
+                    out << std::endl;
+#endif
                 }
             }
 

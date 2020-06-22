@@ -4,10 +4,6 @@
 
 #include "BspFile.hpp"
 
-// Enabling this adds vertices without duplicates.
-// Takes more time to process but decreases Vertex size.
-#define BSP_NO_DUPLICATES
-
 namespace Decay::Bsp
 {
     class BspTree
