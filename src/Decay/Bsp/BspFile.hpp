@@ -336,9 +336,9 @@ namespace Decay::Bsp
                     auto paletteIndex = MipMapData[level][i];
 
                     if(paletteIndex == 255 && paletteTransparent)
-                        pixels[i] = glm::u8vec4(0x00, 0x00, 0xFF, 0x00); // Transparent
+                        pixels[i] = glm::u8vec4(0x00u, 0x00u, 0xFFu, 0x00u); // Transparent
                     else
-                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFF); // Solid
+                        pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFFu); // Solid
                 }
                 return pixels;
             }
