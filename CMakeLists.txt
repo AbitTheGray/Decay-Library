@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(DecayLib CXX)
+project(DecayLib C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -75,6 +75,7 @@ if(DECAY_LIBRARY_API)
     file(GLOB_RECURSE DECAY_LIBRARY_API_SOURCE src_c_api/*.hpp src_c_api/*.cpp src_c_api/*.h src_c_api/*.c)
 
     add_library(DecayLib_API SHARED ${DECAY_LIBRARY_API_SOURCE})
+    target_include_directories(DecayLib_API PUBLIC src_c_api/)
     add_library(Decay::LibraryAPI ALIAS DecayLib_API)
 
     target_link_libraries(DecayLib_API DecayLib)
