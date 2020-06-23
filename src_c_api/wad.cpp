@@ -4,7 +4,7 @@
 
 using namespace Decay::Wad;
 
-static void CopyString(const std::string& str, char* dest, int maxLength)
+inline static void CopyString(const std::string& str, char* dest, int maxLength)
 {
     if(str.size() > maxLength)
     {
@@ -22,12 +22,26 @@ static void CopyString(const std::string& str, char* dest, int maxLength)
 
 wad_texture** wad_load_textures(const char* path, int* length)
 {
-    std::shared_ptr<WadFile> wad = std::make_shared<WadFile>(path);
+    *length = 0;
+
+    if(path == nullptr)
+        return nullptr;
+
+    std::filesystem::path filename(path);
+    if(!std::filesystem::exists(filename))
+        return nullptr; // File not found
+    if(!std::filesystem::is_regular_file(filename))
+        return nullptr; // Path target is not a file
+
+    std::shared_ptr<WadFile> wad = std::make_shared<WadFile>(filename);
 
     auto textures = wad->ReadAllTextures();
 
     assert(textures.size() < std::numeric_limits<int>::max());
     *length = textures.size();
+    if(*length == 0)
+        return nullptr;
+
     wad_texture** wadTextures = static_cast<wad_texture**>(malloc(*length * sizeof(wad_texture*)));
 
     for(std::size_t i = 0; i < textures.size(); i++)
@@ -67,15 +81,13 @@ wad_texture** wad_load_textures(const char* path, int* length)
     return wadTextures;
 }
 
-void wad_free_texture(wad_texture* texture)
-{
-    free(texture);
-}
-
 void wad_free_textures(int length, wad_texture** textures)
 {
+    if(length == 0 || textures == nullptr)
+        return;
+
     for(; length >= 0; length--)
-        wad_free_texture(textures[length]);
+        free(textures[length]);
 
     free(textures);
 }

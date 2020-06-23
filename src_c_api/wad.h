@@ -23,8 +23,10 @@ extern "C"
         wad_rgba data;
     } wad_texture;
 
+    /// Load all textures inside WAD2 / WAD3 file
+    /// Returns `nullptr` if there were no textures, file was not found or there was problem with loading
     wad_texture** wad_load_textures(const char* path, int* length);
-    void wad_free_texture(wad_texture* texture);
+    /// Release textures loaded from WAD file
     void wad_free_textures(int length, wad_texture** textures);
 
     //TODO Font
