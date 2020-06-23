@@ -9,8 +9,10 @@ std::vector<std::shared_ptr<BspFile>> BspFiles = {};
 
 inline static std::shared_ptr<BspFile> GetBspPointer(bsp_file* bspFile)
 {
+    BspFile* ptr = reinterpret_cast<BspFile*>(bspFile);
+
     for(auto& bsp : BspFiles)
-        if(bsp.get() == bspFile)
+        if(bsp.get() == ptr)
             return bsp;
     return nullptr;
 }
@@ -28,7 +30,7 @@ bsp_file* bsp_file_load(const char* path)
 
     try
     {
-        return BspFiles.emplace_back(std::make_shared<BspFile>(path)).get();
+        return reinterpret_cast<bsp_file*>(BspFiles.emplace_back(std::make_shared<BspFile>(path)).get());
     }
     catch(std::exception& ex)
     {
@@ -39,11 +41,13 @@ bsp_file* bsp_file_load(const char* path)
 
 void bsp_file_free(bsp_file* bspFile)
 {
+    BspFile* ptr = reinterpret_cast<BspFile*>(bspFile);
+
     std::size_t i;
     for(i = 0; i < BspFiles.size(); i++)
     {
         const auto& vptr = BspFiles[i];
-        if(vptr.get() == bspFile)
+        if(vptr.get() == ptr)
             break;
     }
 
@@ -62,22 +66,24 @@ bsp_tree* bsp_tree_create(bsp_file* bspFile)
 
     try
     {
-        return BspTrees.emplace_back(std::make_shared<BspTree>(bsp)).get();
+        return reinterpret_cast<bsp_tree*>(BspTrees.emplace_back(std::make_shared<BspTree>(bsp)).get());
     }
     catch(std::exception& ex)
     {
-        std::cerr << "bsp_file_load(\"" << path << "\") resulted in: " << ex.what() << std::endl;
+        std::cerr << "bsp_tree_create(bspFile) resulted in: " << ex.what() << std::endl;
         return nullptr;
     }
 }
 
 void bsp_tree_free(bsp_tree* bspTree)
 {
+    BspTree* ptr = reinterpret_cast<BspTree*>(bspTree);
+
     std::size_t i;
     for(i = 0; i < BspTrees.size(); i++)
     {
         const auto& vptr = BspTrees[i];
-        if(vptr.get() == bspTree)
+        if(vptr.get() == ptr)
             break;
     }
 

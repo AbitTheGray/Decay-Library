@@ -4,8 +4,8 @@
 extern "C"
 {
 #endif
-    typedef void bsp_file;
-    typedef void bsp_tree;
+    typedef struct {char dummy;} bsp_file;
+    typedef struct {char dummy;} bsp_tree;
 
     /// Load BSP from filesystem
     /// Returns `nullptr` if file was not found or there was problem with loading
