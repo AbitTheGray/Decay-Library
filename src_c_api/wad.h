@@ -27,6 +27,9 @@ extern "C"
     void wad_free_texture(wad_texture* texture);
     void wad_free_textures(int length, wad_texture** textures);
 
+    //TODO Font
+    //TODO Image
+
 #ifdef __cplusplus
 };
 #endif
