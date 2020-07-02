@@ -203,7 +203,7 @@ namespace Decay::Wad
                     else
                         pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFF); // Solid
                 }
-                return pixels;
+                return std::move(pixels);
             }
             void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
             void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;

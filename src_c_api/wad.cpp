@@ -62,19 +62,40 @@ wad_texture** wad_load_textures(const char* path, int* length)
         }
         else
         {
-            wadTextures[i] = static_cast<wad_texture*>(malloc(sizeof(uint32_t) * 2 + sizeof(wad_rgba) * tex.Width * tex.Height));
-            wadTextures[i]->width = tex.Width;
-            wadTextures[i]->height = tex.Height;
+            try
+            {
+                static_assert(sizeof(wad_rgba) == sizeof(glm::u8vec4));
 
-            CopyString(tex.Name, wadTextures[i]->name, 16);
+                std::size_t dataLength = tex.Width * tex.Height;
 
-            assert(tex.Width * tex.Height == tex.MipMapData[0].size());
+                wadTextures[i] = static_cast<wad_texture*>(malloc(sizeof(wad_texture) - sizeof(wad_rgba) + sizeof(wad_rgba) * dataLength));
+                wadTextures[i]->width = tex.Width;
+                wadTextures[i]->height = tex.Height;
 
-            auto rgbaData = tex.AsRgba();
-            assert(tex.Width * tex.Height == rgbaData.size());
+                CopyString(tex.Name, wadTextures[i]->name, 16);
 
-            static_assert(sizeof(glm::u8vec4) == sizeof(wad_rgba));
-            std::copy(rgbaData.begin(), rgbaData.end(), reinterpret_cast<glm::u8vec4*>(&wadTextures[i]->data));
+                assert(tex.Width * tex.Height == tex.MipMapData[0].size());
+
+                std::vector<glm::u8vec4> rgbaData = tex.AsRgba();
+                assert(tex.Width * tex.Height == rgbaData.size());
+
+                static_assert(sizeof(glm::u8vec4) == sizeof(wad_rgba));
+                for(std::size_t tdi = 0; tdi < dataLength; tdi++)
+                {
+                    const glm::u8vec4& rgba = rgbaData[tdi];
+                    (&wadTextures[i]->data)[tdi] = { rgba.x, rgba.y, rgba.z, rgba.w };
+                }
+            }
+            catch(std::exception& ex)
+            {
+                wadTextures[i] = static_cast<wad_texture*>(malloc(sizeof(uint32_t) * 2 + sizeof(wad_rgba) * tex.Width * tex.Height));
+                wadTextures[i]->width = tex.Width;
+                wadTextures[i]->height = tex.Height;
+
+                CopyString(tex.Name, wadTextures[i]->name, 16);
+
+                std::fill(&wadTextures[i]->data, &wadTextures[i]->data + (tex.Width * tex.Height), wad_rgba{0, 0, 0, 0});
+            }
         }
     }
 

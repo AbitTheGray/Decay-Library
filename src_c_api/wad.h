@@ -4,12 +4,6 @@ static_assert(sizeof(unsigned int) == 4);
 static_assert(sizeof(unsigned char) == 1);
 
 #ifdef __cplusplus
-#define NULL nullptr
-#else
-#define NULL ((void*)0)
-#endif
-
-#ifdef __cplusplus
 extern "C"
 {
 #endif
