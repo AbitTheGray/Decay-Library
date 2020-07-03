@@ -9,10 +9,8 @@ std::vector<std::shared_ptr<BspFile>> BspFiles = {};
 
 inline static std::shared_ptr<BspFile> GetBspPointer(bsp_file* bspFile)
 {
-    BspFile* ptr = reinterpret_cast<BspFile*>(bspFile);
-
     for(auto& bsp : BspFiles)
-        if(bsp.get() == ptr)
+        if(bsp.get() == bspFile)
             return bsp;
     return nullptr;
 }
@@ -30,7 +28,7 @@ bsp_file* bsp_file_load(const char* path)
 
     try
     {
-        return reinterpret_cast<bsp_file*>(BspFiles.emplace_back(std::make_shared<BspFile>(path)).get());
+        return BspFiles.emplace_back(std::make_shared<BspFile>(path)).get();
     }
     catch(std::exception& ex)
     {
@@ -41,13 +39,11 @@ bsp_file* bsp_file_load(const char* path)
 
 void bsp_file_free(bsp_file* bspFile)
 {
-    BspFile* ptr = reinterpret_cast<BspFile*>(bspFile);
-
     std::size_t i;
     for(i = 0; i < BspFiles.size(); i++)
     {
         const auto& vptr = BspFiles[i];
-        if(vptr.get() == ptr)
+        if(vptr.get() == bspFile)
             break;
     }
 
@@ -77,17 +73,20 @@ bsp_tree* bsp_tree_create(bsp_file* bspFile)
 
 void bsp_tree_free(bsp_tree* bspTree)
 {
-    BspTree* ptr = reinterpret_cast<BspTree*>(bspTree);
-
     std::size_t i;
     for(i = 0; i < BspTrees.size(); i++)
     {
         const auto& vptr = BspTrees[i];
-        if(vptr.get() == ptr)
+        if(vptr.get() == bspTree)
             break;
     }
 
     if(i == BspTrees.size())
         return;
     BspTrees.erase(BspTrees.begin() + i);
+}
+
+bsp_vertex* bsp_vertices(bsp_tree* bspTree)
+{
+    return bspTree->Vertices.data();
 }

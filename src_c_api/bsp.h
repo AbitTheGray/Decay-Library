@@ -1,11 +1,28 @@
 #pragma once
 
 #ifdef __cplusplus
+#include <Decay/Bsp/BspTree.hpp>
+
+typedef Decay::Bsp::BspFile bsp_file;
+typedef Decay::Bsp::BspTree bsp_tree;
+
+typedef Decay::Bsp::BspTree::Vertex bsp_vertex;
+#else
+typedef struct {char dummy;} bsp_file;
+typedef struct {char dummy;} bsp_tree;
+
+typedef struct
+{
+    float x, y, z;
+    float u, v;
+    float s, t;
+} bsp_vertex;
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif
-    typedef struct {char dummy;} bsp_file;
-    typedef struct {char dummy;} bsp_tree;
 
     /// Load BSP from filesystem
     /// Returns `NULL` if file was not found or there was problem with loading
@@ -42,6 +59,10 @@ extern "C"
 
         return bspTree; // May be ` nullptr`
     }
+
+    /// Do not free `wad_rgba*` yourself
+    /// Pointer lifetime is same as `bsp_tree*`
+    bsp_vertex* bsp_vertices(bsp_tree* bspTree);
 
 
     //TODO extract textures from BSP
