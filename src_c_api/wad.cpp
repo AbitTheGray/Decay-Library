@@ -16,15 +16,16 @@ inline static void CopyString(const std::string& str, char* dest, int maxLength)
     std::copy(str.c_str(), str.c_str() + str.length(), dest);
 
     // Fill rest by '\0'
+    // This prevents memory bleeding
     if(str.length() < maxLength)
         std::fill(dest + str.length(), dest + maxLength, '\0');
 }
 
-wad_texture** wad_load_textures(const char* path, int* length)
+wad_texture* wad_load_textures(const char* path, int* length)
 {
     *length = 0;
 
-    if(path == nullptr)
+    if(path == nullptr || path[0] == '\0')
         return nullptr;
 
     std::filesystem::path filename(path);
@@ -33,7 +34,15 @@ wad_texture** wad_load_textures(const char* path, int* length)
     if(!std::filesystem::is_regular_file(filename))
         return nullptr; // Path target is not a file
 
-    std::shared_ptr<WadFile> wad = std::make_shared<WadFile>(filename);
+    std::shared_ptr<WadFile> wad;
+    try
+    {
+        wad = std::make_shared<WadFile>(filename);
+    }
+    catch(std::exception& ex)
+    {
+        return nullptr; // Failed to load WAD file
+    }
 
     auto textures = wad->ReadAllTextures();
 
@@ -42,73 +51,78 @@ wad_texture** wad_load_textures(const char* path, int* length)
     if(*length == 0)
         return nullptr;
 
-    wad_texture** wadTextures = static_cast<wad_texture**>(malloc(*length * sizeof(wad_texture*)));
+    /// Size of allocated memory for `wadTextures` array
+    std::size_t memorySize = *length * sizeof(wad_texture); // Instances of `wad_texture`
+    for(auto & tex : textures)
+        memorySize += sizeof(wad_rgba) * tex.Width * tex.Height;
+
+    wad_texture* wadTextures = static_cast<wad_texture*>(malloc(memorySize));
+    uint8_t* memoryEnd = reinterpret_cast<uint8_t*>(wadTextures) + memorySize;
+    /// Points to start of next data
+    /// No need to clear it as it will always be used.
+    wad_rgba* nextData = reinterpret_cast<wad_rgba*>(reinterpret_cast<uint8_t*>(wadTextures + *length));
 
     for(std::size_t i = 0; i < textures.size(); i++)
     {
         auto& tex = textures[i];
+        auto& wt = wadTextures[i];
+
+        wt.width = tex.Width;
+        wt.height = tex.Height;
+
 
         assert(tex.Name.size() < 16);
+        CopyString(tex.Name, wt.name, 16);
 
         if(tex.Width == 0 || tex.Height == 0)
+        [[unlikely]]
         {
-            wadTextures[i] = static_cast<wad_texture*>(malloc(sizeof(wad_texture)));
-            wadTextures[i]->width = 0;
-            wadTextures[i]->height = 0;
-
-            CopyString(tex.Name, wadTextures[i]->name, 16);
-
-            wadTextures[i]->data = wad_rgba{ 0, 0, 0, 0 };
+            wt.data = nullptr;
+            continue;
         }
-        else
+
+        try
         {
-            try
+            static_assert(sizeof(wad_rgba) == sizeof(glm::u8vec4));
+
+            std::size_t dataLength = tex.Width * tex.Height;
+
+            std::vector<glm::u8vec4> rgbaData = tex.AsRgba();
+            if(tex.Width * tex.Height != rgbaData.size())
+                continue;
+
+            // Copy RGBA data to `wad_texture`
+            wt.data = nextData;
+            for(std::size_t tdi = 0; tdi < dataLength; tdi++)
             {
-                static_assert(sizeof(wad_rgba) == sizeof(glm::u8vec4));
-
-                std::size_t dataLength = tex.Width * tex.Height;
-
-                wadTextures[i] = static_cast<wad_texture*>(malloc(sizeof(wad_texture) - sizeof(wad_rgba) + sizeof(wad_rgba) * dataLength));
-                wadTextures[i]->width = tex.Width;
-                wadTextures[i]->height = tex.Height;
-
-                CopyString(tex.Name, wadTextures[i]->name, 16);
-
-                assert(tex.Width * tex.Height == tex.MipMapData[0].size());
-
-                std::vector<glm::u8vec4> rgbaData = tex.AsRgba();
-                assert(tex.Width * tex.Height == rgbaData.size());
-
-                static_assert(sizeof(glm::u8vec4) == sizeof(wad_rgba));
-                for(std::size_t tdi = 0; tdi < dataLength; tdi++)
-                {
-                    const glm::u8vec4& rgba = rgbaData[tdi];
-                    (&wadTextures[i]->data)[tdi] = { rgba.x, rgba.y, rgba.z, rgba.w };
-                }
-            }
-            catch(std::exception& ex)
-            {
-                wadTextures[i] = static_cast<wad_texture*>(malloc(sizeof(uint32_t) * 2 + sizeof(wad_rgba) * tex.Width * tex.Height));
-                wadTextures[i]->width = tex.Width;
-                wadTextures[i]->height = tex.Height;
-
-                CopyString(tex.Name, wadTextures[i]->name, 16);
-
-                std::fill(&wadTextures[i]->data, &wadTextures[i]->data + (tex.Width * tex.Height), wad_rgba{0, 0, 0, 0});
+                const glm::u8vec4& rgba = rgbaData[tdi];
+                wt.data[tdi] = { rgba.x, rgba.y, rgba.z, rgba.w };
             }
         }
+        catch(std::exception& ex)
+        {
+            wt.data = nullptr;
+        }
+
+        nextData += tex.Width * tex.Height;
+    }
+
+    // Check for bleeding memory
+    if(reinterpret_cast<uint8_t*>(nextData) != memoryEnd)
+    [[unlikely]]
+    {
+        // Write error
+        std::cerr << "wadTextures array ended " << (memoryEnd - reinterpret_cast<uint8_t*>(nextData)) << " bytes before end of allocated memory" << std::endl;
+        // Fill memory by 0 to erase all bleeding data
+        std::fill(reinterpret_cast<uint8_t*>(nextData), memoryEnd, 0);
     }
 
     return wadTextures;
 }
 
-void wad_free_textures(int length, wad_texture** textures)
+void wad_free_textures(wad_texture* textures)
 {
-    if(length == 0 || textures == nullptr)
-        return;
-
-    for(; length >= 0; length--)
-        free(textures[length]);
-
+    // Allocated as single big blob
+    // Requires just this call
     free(textures);
 }

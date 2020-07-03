@@ -20,14 +20,14 @@ extern "C"
         unsigned int width, height;
         /// This is pointer to raw data
         /// First pixel starts here, more follow
-        wad_rgba data;
+        wad_rgba* data;
     } wad_texture;
 
     /// Load all textures inside WAD2 / WAD3 file
     /// Returns `nullptr` if there were no textures, file was not found or there was problem with loading
-    wad_texture** wad_load_textures(const char* path, int* length);
+    wad_texture* wad_load_textures(const char* path, int* length);
     /// Release textures loaded from WAD file
-    void wad_free_textures(int length, wad_texture** textures);
+    void wad_free_textures(wad_texture* textures);
 
     //TODO Font
     //TODO Image
