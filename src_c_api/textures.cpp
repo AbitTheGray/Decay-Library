@@ -1,3 +1,4 @@
+#include "bsp.h"
 #include "wad.h"
 
 #include <Decay/Wad/WadFile.hpp>
@@ -21,31 +22,8 @@ inline static void CopyString(const std::string& str, char* dest, int maxLength)
         std::fill(dest + str.length(), dest + maxLength, '\0');
 }
 
-wad_texture* wad_load_textures(const char* path, int* length)
+static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, int* length)
 {
-    *length = 0;
-
-    if(path == nullptr || path[0] == '\0')
-        return nullptr;
-
-    std::filesystem::path filename(path);
-    if(!std::filesystem::exists(filename))
-        return nullptr; // File not found
-    if(!std::filesystem::is_regular_file(filename))
-        return nullptr; // Path target is not a file
-
-    std::shared_ptr<WadFile> wad;
-    try
-    {
-        wad = std::make_shared<WadFile>(filename);
-    }
-    catch(std::exception& ex)
-    {
-        return nullptr; // Failed to load WAD file
-    }
-
-    auto textures = wad->ReadAllTextures();
-
     assert(textures.size() < std::numeric_limits<int>::max());
     *length = textures.size();
     if(*length == 0)
@@ -113,6 +91,39 @@ wad_texture* wad_load_textures(const char* path, int* length)
     }
 
     return wadTextures;
+}
+
+wad_texture* wad_load_textures(const char* path, int* length)
+{
+    *length = 0;
+
+    if(path == nullptr || path[0] == '\0')
+        return nullptr;
+
+    std::filesystem::path filename(path);
+    if(!std::filesystem::exists(filename))
+        return nullptr; // File not found
+    if(!std::filesystem::is_regular_file(filename))
+        return nullptr; // Path target is not a file
+
+    std::shared_ptr<WadFile> wad;
+    try
+    {
+        wad = std::make_shared<WadFile>(filename);
+    }
+    catch(std::exception& ex)
+    {
+        return nullptr; // Failed to load WAD file
+    }
+
+    return LoadTextures(wad->ReadAllTextures(), length);
+}
+
+wad_texture* bsp_tree_textures(bsp_tree* bspTree, int* length)
+{
+    *length = bspTree->Textures.size();
+
+    return LoadTextures(bspTree->Textures, length);
 }
 
 void wad_free_textures(wad_texture* textures)

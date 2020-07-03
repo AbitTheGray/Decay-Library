@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wad.h"
+
 #ifdef __cplusplus
 #include <Decay/Bsp/BspTree.hpp>
 
@@ -41,7 +43,7 @@ extern "C"
     void bsp_tree_free(bsp_tree* bspTree);
 
     /// Utility function to free `bsp_file*` and `bsp_tree*` using same function.
-    void bsp_free(bsp_file* bspFile, bsp_tree* bspTree)
+    static void bsp_free(bsp_file* bspFile, bsp_tree* bspTree)
     {
         bsp_file_free(bspFile);
         bsp_tree_free(bspTree);
@@ -50,7 +52,7 @@ extern "C"
     /// Loads `bsp_tree*` directly from file.
     /// May return `NULL`.
     /// Returned pointer must be freed using `bsp_tree_free(bsp_tree*)` (not required if `NULL`).
-    bsp_tree* bsp_tree_load(const char* path)
+    static bsp_tree* bsp_tree_load(const char* path)
     {
         bsp_file* bspFile = bsp_file_load(path);
         if(!bspFile)
@@ -85,7 +87,7 @@ extern "C"
     bsp_model* bsp_get_model(bsp_tree* bspTree, int modelId);
     /// Get main model (static world) from BSP Tree .
     /// `bsp_model*` lifetime is same as used `bsp_tree*`.
-    bsp_model* bsp_get_world_model(bsp_tree* bspTree)
+    static bsp_model* bsp_get_world_model(bsp_tree* bspTree)
     {
         return bsp_get_model(bspTree, 0);
     }
@@ -97,7 +99,15 @@ extern "C"
     /// If `textures` is not `NULL` then texture indexes are written into it. Caller has to allocate enough memory.
     int bsp_model_textures(bsp_model* model, int* textures);
 
-    //TODO extract textures from BSP
+
+    /// Load all textures inside BSP file
+    /// Returns `nullptr` if there were no textures, file was not found or there was problem with loading
+    wad_texture* bsp_tree_textures(bsp_tree* bspTree, int* length);
+    /// Release textures loaded from BSP file
+    static void bsp_free_textures(wad_texture* textures)
+    {
+        wad_free_textures(textures);
+    }
 
 #ifdef __cplusplus
 };
