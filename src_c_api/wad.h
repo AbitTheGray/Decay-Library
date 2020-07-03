@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+    #include <glm/glm.hpp>
+#endif
+
 static_assert(sizeof(unsigned int) == 4);
 static_assert(sizeof(unsigned char) == 1);
 
@@ -8,10 +12,15 @@ extern "C"
 {
 #endif
 
+#ifdef __cplusplus
+    typedef glm::u8vec4 wad_rgba;
+#else
     /// Equivalent to glm::u8vec4
     typedef struct {
         unsigned char r, g, b, a;
     } wad_rgba;
+#endif
+    static_assert(sizeof(wad_rgba) == 4); // 1 byte per channel, 4 channels (red, green, blue, alpha)
 
     typedef struct {
         /// Name of the texture

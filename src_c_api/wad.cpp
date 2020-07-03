@@ -83,8 +83,6 @@ wad_texture* wad_load_textures(const char* path, int* length)
 
         try
         {
-            static_assert(sizeof(wad_rgba) == sizeof(glm::u8vec4));
-
             std::size_t dataLength = tex.Width * tex.Height;
 
             std::vector<glm::u8vec4> rgbaData = tex.AsRgba();
@@ -94,10 +92,7 @@ wad_texture* wad_load_textures(const char* path, int* length)
             // Copy RGBA data to `wad_texture`
             wt.data = nextData;
             for(std::size_t tdi = 0; tdi < dataLength; tdi++)
-            {
-                const glm::u8vec4& rgba = rgbaData[tdi];
-                wt.data[tdi] = { rgba.x, rgba.y, rgba.z, rgba.w };
-            }
+                wt.data[tdi] = rgbaData[tdi];
         }
         catch(std::exception& ex)
         {
