@@ -76,6 +76,7 @@ All have weight `80` (same as `application/x-doom`) but are defined by file head
 
 Decay Library does not support and is not supported by any game engine.
 
-In future, it is planned to use [C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) for Unity3D (with additional scripts).
+In future, it is planned to use [C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) for [Unity3D](https://unity.com/) (with additional scripts to create, for example, working doors).
 
-Unreal Engine should be possible but is currently not planned.
+Version for [Unreal Engine](https://www.unrealengine.com/en-US/) should be possible but is currently not planned.
+If (or When) it will be in making, it will contain both C++ and Blueprint access.
