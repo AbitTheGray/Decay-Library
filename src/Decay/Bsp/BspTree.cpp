@@ -497,6 +497,15 @@ namespace Decay::Bsp
                     break;
                 }
 
+                // Special characters
+                case '\t':
+                case '\b':
+                [[unlikely]]
+                {
+                    std::cerr << "Unsupported " << (int)c << " character" << std::endl;
+                    break;
+                }
+
                 // Content of entity
                 default:
                 [[likely]]
