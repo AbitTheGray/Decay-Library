@@ -138,18 +138,18 @@ extern "C"
     /// Returns number of entities.
     /// If `entities` is not `NULL` then entities are written into it. Caller has to allocate enough memory.
     /// Lifetime of `bsp_entity*` is same as `bsp_tree*`.
-    int bsp_tree_entities(bsp_tree* bspTree, const bsp_entity** entities);
+    int bsp_tree_entities(const bsp_tree* bspTree, const bsp_entity** entities);
 
     /// Get entity's keys.
     /// Returns number of entities.
     /// If `keys` is not `NULL` then entities are written into it. Caller has to allocate enough memory.
     /// Lifetime of text values (strings) is same as `bsp_entity*` (same as `bsp_tree*`).
-    int bsp_entity_keys(bsp_entity* entity, const char** keys);
+    int bsp_entity_keys(const bsp_entity* entity, const char** keys);
 
     /// Get entity's value from `key`.
     /// Lifetime of text values (strings) is same as `bsp_entity*` (same as `bsp_tree*`).
     /// Returns `NULL` if the value was not found.
-    const char* bsp_entity_value(bsp_entity* entity, const char* key);
+    const char* bsp_entity_value(const bsp_entity* entity, const char* key);
 
 #ifdef __cplusplus
 };

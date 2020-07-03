@@ -4,7 +4,7 @@
 
 using namespace Decay::Bsp;
 
-int bsp_tree_entities(bsp_tree* bspTree, const bsp_entity** entities)
+int bsp_tree_entities(const bsp_tree* bspTree, const bsp_entity** entities)
 {
     if(entities != nullptr)
     {
@@ -15,7 +15,7 @@ int bsp_tree_entities(bsp_tree* bspTree, const bsp_entity** entities)
     return bspTree->Entities.size();
 }
 
-int bsp_entity_keys(bsp_entity* entity, const char** keys)
+int bsp_entity_keys(const bsp_entity* entity, const char** keys)
 {
     if(keys != nullptr)
     {
@@ -27,7 +27,7 @@ int bsp_entity_keys(bsp_entity* entity, const char** keys)
     return entity->size();
 }
 
-const char* bsp_entity_value(bsp_entity* entity, const char* key)
+const char* bsp_entity_value(const bsp_entity* entity, const char* key)
 {
     auto it = entity->find(key);
     if(it == entity->end())

@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
         else
             printf("%s (%ux%u) + data\n", texture.name, texture.width, texture.height);
     }
+    printf("\n");
 
     // Models
     {
@@ -61,6 +62,24 @@ int main(int argc, char* argv[])
                 if(indicesCount != bsp_model_get_indices(model, textureIndex, indices))
                     return 1;
             }
+        }
+    }
+
+    // Entities
+    {
+        int entityCount = bsp_tree_entities(bsp, NULL);
+        const bsp_entity** entities = malloc(sizeof(bsp_entity*) * entityCount);
+
+        if(entityCount == 0)
+        {
+            printf("No entities");
+        }
+        else
+        {
+            if(entityCount != bsp_tree_entities(bsp, entities))
+                return 0;
+
+            printf("classname of 1st entity: %s\n", bsp_entity_value(entities[0], "classname"));
         }
     }
 
