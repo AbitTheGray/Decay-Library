@@ -32,10 +32,11 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
     /// Size of allocated memory for `wadTextures` array
     std::size_t memorySize = *length * sizeof(wad_texture); // Instances of `wad_texture`
     for(auto & tex : textures)
-        memorySize += sizeof(wad_rgba) * tex.Width * tex.Height;
+        memorySize += sizeof(wad_rgba) * tex.MipMapData[0].size();
 
     wad_texture* wadTextures = static_cast<wad_texture*>(malloc(memorySize));
     uint8_t* memoryEnd = reinterpret_cast<uint8_t*>(wadTextures) + memorySize;
+
     /// Points to start of next data
     /// No need to clear it as it will always be used.
     wad_rgba* nextData = reinterpret_cast<wad_rgba*>(reinterpret_cast<uint8_t*>(wadTextures + *length));
@@ -45,13 +46,15 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
         auto& tex = textures[i];
         auto& wt = wadTextures[i];
 
-        wt.width = tex.Width;
-        wt.height = tex.Height;
-
-
+        // Copy name
         assert(tex.Name.size() < 16);
         CopyString(tex.Name, wt.name, 16);
 
+        // Copy size
+        wt.width = tex.Width;
+        wt.height = tex.Height;
+
+        // Invalid texture size
         if(tex.Width == 0 || tex.Height == 0)
         [[unlikely]]
         {
@@ -59,13 +62,25 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
             continue;
         }
 
+        // Texture does not contain RGBA data (only in BSP)
+        if(tex.MipMapData[0].empty())
+        {
+            wt.data = nullptr;
+            continue;
+        }
+
+        // Load data
         try
         {
             std::size_t dataLength = tex.Width * tex.Height;
 
+            // Convert texture to RGBA
             std::vector<glm::u8vec4> rgbaData = tex.AsRgba();
-            if(tex.Width * tex.Height != rgbaData.size())
+            if(dataLength != rgbaData.size())
+            {
+                wt.data = nullptr;
                 continue;
+            }
 
             // Copy RGBA data to `wad_texture`
             wt.data = nextData;
@@ -77,7 +92,7 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
             wt.data = nullptr;
         }
 
-        nextData += tex.Width * tex.Height;
+        nextData += tex.MipMapData[0].size();
     }
 
     // Check for bleeding memory

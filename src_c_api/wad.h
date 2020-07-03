@@ -20,12 +20,13 @@ extern "C"
 #endif
 
     typedef struct {
-        /// Name of the texture
+        /// Name of the texture.
         char name[16];
-        /// Dimensions
+        /// Dimensions.
         unsigned int width, height;
-        /// This is pointer to raw data
-        /// First pixel starts here, more follow
+        /// This is pointer to raw data.
+        /// First pixel starts here, more follow.
+        /// `NULL` if there are no data (only from BSP).
         wad_rgba* data;
     } wad_texture;
 
