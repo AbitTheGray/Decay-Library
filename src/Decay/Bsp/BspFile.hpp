@@ -71,7 +71,7 @@ namespace Decay::Bsp
 
     public:
         static const std::size_t Entities_MaxKey = 32;
-        static const std::size_t Entities_MaxValue = 32;
+        static const std::size_t Entities_MaxValue = 1024;
 
         enum class PlaneType : uint32_t
         {
