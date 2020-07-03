@@ -11,12 +11,24 @@ namespace Decay::Bsp
      : Bsp(std::move(bsp)),
      Textures(Bsp->GetTextures()),
      Vertices(),
-     Models(Bsp->GetModelCount())
+     Models(Bsp->GetModelCount()),
+     Entities(ParseEntities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount()))
     {
         for(std::size_t mi = 0; mi < Models.size(); mi++)
         {
             const BspFile::Model& model = Bsp->GetRawModels()[mi];
             Models[mi] = ProcessModel(model);
+        }
+
+        for(auto& ent : Entities)
+        {
+            auto classname = ent.find("classname");
+            auto name = ent.find("Name");
+
+            if(name == ent.end())
+                std::cout << (classname == ent.end() ? "???" : classname->second) << std::endl;
+            else
+                std::cout << (classname == ent.end() ? "???" : classname->second) << ": " << name->second << std::endl;
         }
     }
 
@@ -400,5 +412,117 @@ namespace Decay::Bsp
                     rgba.data()
             );
         }
+    }
+
+    std::vector<std::map<std::string, std::string>> BspTree::ParseEntities(const char* raw, std::size_t len)
+    {
+        std::vector<std::map<std::string, std::string>> entities = {};
+        std::map<std::string, std::string> entity = {};
+
+        const char* keyStart = nullptr;
+        const char* keyEnd = nullptr;
+
+        const char* valueStart = nullptr;
+
+        for(std::size_t i = 0; i < len; i++)
+        {
+            char c = raw[i];
+            switch(c)
+            {
+                case '\0':
+                [[unlikely]]
+                {
+                    break;
+                }
+
+                // Start of entity
+                case '{':
+                {
+                    if(!entity.empty())
+                    {
+                        if(keyStart == nullptr || (keyEnd != nullptr && valueStart == nullptr))
+                            std::cerr << "Non-empty entity at start of new entity" << std::endl;
+                    }
+                    break;
+                }
+
+                // End of entity
+                case '}':
+                {
+                    if(entity.empty())
+                    {
+                        std::cerr << "Empty entity after its end" << std::endl;
+                        break;
+                    }
+
+                    entities.emplace_back(entity);
+                    entity.clear();
+                    break;
+                }
+
+                // Key/Value encasement characters
+                case '"':
+                {
+                    if(keyStart == nullptr)
+                        keyStart = raw + i + 1;
+                    else if(keyEnd == nullptr)
+                        keyEnd = raw + i;
+                    else if(valueStart == nullptr)
+                        valueStart = raw + i + 1;
+                    else // valueEnd
+                    {
+                        entity.emplace(
+                            std::string(keyStart, keyEnd),
+                            std::string(valueStart, raw + i)
+                        );
+
+                        keyStart = nullptr;
+                        keyEnd = nullptr;
+                        valueStart = nullptr;
+                    }
+                }
+
+                // White character, valid anywhere
+                case ' ':
+                    break;
+
+                // New line
+                case '\n':
+                {
+                    if(keyStart != nullptr)
+                    {
+                        std::cerr << "Unexpected new-line character" << std::endl;
+                        break;
+                    }
+                    break;
+                }
+
+                // Content of entity
+                default:
+                [[likely]]
+                {
+                    if(keyStart == nullptr)
+                    [[unlikely]]
+                    {
+                        std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in key" << std::endl;
+                        break;
+                    }
+                    if(keyEnd != nullptr && valueStart == nullptr)
+                    [[unlikely]]
+                    {
+                        std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in value" << std::endl;
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if(keyStart != nullptr)
+            std::cerr << "Incomplete key-value pair after entity processing" << std::endl;
+        if(!entity.empty())
+            std::cerr << "Non-empty entity after entity processing" << std::endl;
+
+        return entities;
     }
 }

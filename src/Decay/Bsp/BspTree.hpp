@@ -14,6 +14,7 @@ namespace Decay::Bsp
     public:
         const std::shared_ptr<BspFile> Bsp;
         const std::vector<Wad::WadFile::Texture> Textures;
+        const std::vector<std::map<std::string, std::string>> Entities;
 
     public:
         struct Vertex
@@ -148,5 +149,9 @@ namespace Decay::Bsp
         /// - .jpg / .jpeg (maximum quality
         /// - .raw (uint32_t width, uint32_t width, uint32_t... rgba_data)
         static std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> GetImageWriteFunction(const std::string& extension);
+
+    public:
+        /// Parse raw entities string into vector of entities.
+        static std::vector<std::map<std::string, std::string>> ParseEntities(const char* raw, size_t len);
     };
 }
