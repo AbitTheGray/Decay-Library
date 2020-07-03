@@ -11,6 +11,8 @@ typedef Decay::Bsp::BspTree bsp_tree;
 typedef Decay::Bsp::BspTree::Vertex bsp_vertex;
 typedef Decay::Bsp::BspTree::Model bsp_model;
 
+typedef Decay::Bsp::BspTree::Entity bsp_entity;
+
 typedef glm::vec3 bsp_vec3;
 #else
 typedef struct {char dummy;} bsp_file;
@@ -23,6 +25,9 @@ typedef struct
     float s, t;
 } bsp_vertex;
 typedef struct {char dummy;} bsp_model;
+
+typedef struct {char dummy;} bsp_entity;
+
 typedef struct
 {
     float x, y, z;
@@ -127,6 +132,24 @@ extern "C"
     {
         wad_free_textures(textures);
     }
+
+
+    /// Get entities from BSP Tree.
+    /// Returns number of entities.
+    /// If `entities` is not `NULL` then entities are written into it. Caller has to allocate enough memory.
+    /// Lifetime of `bsp_entity*` is same as `bsp_tree*`.
+    int bsp_tree_entities(bsp_tree* bspTree, const bsp_entity** entities);
+
+    /// Get entity's keys.
+    /// Returns number of entities.
+    /// If `keys` is not `NULL` then entities are written into it. Caller has to allocate enough memory.
+    /// Lifetime of text values (strings) is same as `bsp_entity*` (same as `bsp_tree*`).
+    int bsp_entity_keys(bsp_entity* entity, const char** keys);
+
+    /// Get entity's value from `key`.
+    /// Lifetime of text values (strings) is same as `bsp_entity*` (same as `bsp_tree*`).
+    /// Returns `NULL` if the value was not found.
+    const char* bsp_entity_value(bsp_entity* entity, const char* key);
 
 #ifdef __cplusplus
 };
