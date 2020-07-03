@@ -85,3 +85,10 @@ void bsp_tree_free(bsp_tree* bspTree)
         return;
     BspTrees.erase(BspTrees.begin() + i);
 }
+
+bsp_vertex* bsp_vertices(bsp_tree* bspTree, int* length)
+{
+    *length = bspTree->Vertices.size();
+
+    return bspTree->Vertices.data();
+}

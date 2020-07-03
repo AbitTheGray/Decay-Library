@@ -1,5 +1,8 @@
 #include <bsp.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
     #error This is C file, not C++
 #endif
@@ -7,6 +10,59 @@
 int main(int argc, char* argv[])
 {
     bsp_tree* bsp = bsp_tree_load("../../../half-life/cstrike/maps/de_dust2.bsp");
+
+    // Vertices
+    {
+        int verticesCount = 0;
+        bsp_vertex* vertices = bsp_vertices(bsp, &verticesCount);
+    }
+
+
+    // Textures (bsp)
+    int texturesCount = 0;
+    wad_texture* textures = bsp_tree_textures(bsp, &texturesCount);
+
+    for(int textureIndex = 0; textureIndex < texturesCount; textureIndex++)
+    {
+        wad_texture texture = textures[textureIndex];
+
+        if(texture.data == NULL)
+            printf("%s (%ux%u)\n", texture.name, texture.width, texture.height);
+        else
+            printf("%s (%ux%u) + data\n", texture.name, texture.width, texture.height);
+    }
+
+    // Models
+    {
+        int modelCount = bsp_get_models(bsp, NULL);
+        bsp_model** models = malloc(sizeof(bsp_model*) * modelCount);
+
+        if(modelCount != bsp_get_models(bsp, models))
+            return 1;
+
+        // Loop models
+        for(int modelIndex = 0; modelIndex < modelCount; modelIndex++)
+        {
+            bsp_model* model = models[modelIndex];
+
+            int usedTextureCount = bsp_model_textures(model, NULL);
+            int* usedTextures = malloc(sizeof(int) * usedTextureCount);
+
+            if(usedTextureCount != bsp_model_textures(model, usedTextures))
+                return 1;
+
+            // Loop textures
+            for(int uti = 0; uti < usedTextureCount; uti++)
+            {
+                int textureIndex = usedTextures[uti];
+
+                int indicesCount = bsp_model_get_indices(model, textureIndex, NULL);
+                short* indices = malloc(sizeof(short) * indicesCount);
+                if(indicesCount != bsp_model_get_indices(model, textureIndex, indices))
+                    return 1;
+            }
+        }
+    }
 
     bsp_tree_free(bsp);
 }

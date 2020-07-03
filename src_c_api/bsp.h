@@ -73,7 +73,7 @@ extern "C"
 
     /// Do not free `wad_rgba*` yourself
     /// Pointer lifetime is same as `bsp_tree*`
-    bsp_vertex* bsp_vertices(bsp_tree* bspTree);
+    bsp_vertex* bsp_vertices(bsp_tree* bspTree, int* length);
 
     /// Get all models from BSP Tree.
     /// Returns number of models.
@@ -92,7 +92,7 @@ extern "C"
         return bsp_get_model(bspTree, 0);
     }
 
-    int bsp_model_get_indices(bsp_model* model, int textureIndex, int* indices);
+    int bsp_model_get_indices(bsp_model* model, int textureIndex, short* indices);
 
     /// Get textures used by specified `bsp_model`.
     /// Returns number of textures.

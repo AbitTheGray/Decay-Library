@@ -4,11 +4,6 @@
 
 using namespace Decay::Bsp;
 
-bsp_vertex* bsp_vertices(bsp_tree* bspTree)
-{
-    return bspTree->Vertices.data();
-}
-
 int bsp_get_models(bsp_tree* bspTree, bsp_model** models)
 {
     if(models != nullptr)
@@ -37,7 +32,7 @@ int bsp_model_textures(bsp_model* model, int* textures)
     return model->Indices.size();
 }
 
-int bsp_model_get_indices(bsp_model* model, int textureIndex, int* indices)
+int bsp_model_get_indices(bsp_model* model, int textureIndex, short* indices)
 {
     auto& ind = model->Indices[textureIndex];
 
