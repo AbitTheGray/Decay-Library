@@ -45,3 +45,13 @@ int bsp_model_get_indices(bsp_model* model, int textureIndex, short* indices)
 
     return ind.size();
 }
+
+bsp_vec3 bsp_model_origin(bsp_model* model)
+{
+    return model->Origin;
+}
+
+bsp_bounding_box bsp_model_bounding_box(bsp_model* model)
+{
+    return { model->BB_Min, model->BB_Max };
+}

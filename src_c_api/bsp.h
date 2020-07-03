@@ -10,6 +10,8 @@ typedef Decay::Bsp::BspTree bsp_tree;
 
 typedef Decay::Bsp::BspTree::Vertex bsp_vertex;
 typedef Decay::Bsp::BspTree::Model bsp_model;
+
+typedef glm::vec3 bsp_vec3;
 #else
 typedef struct {char dummy;} bsp_file;
 typedef struct {char dummy;} bsp_tree;
@@ -21,7 +23,15 @@ typedef struct
     float s, t;
 } bsp_vertex;
 typedef struct {char dummy;} bsp_model;
+typedef struct
+{
+    float x, y, z;
+} bsp_vec3;
 #endif
+typedef struct
+{
+    bsp_vec3 min, max;
+} bsp_bounding_box;
 
 #ifdef __cplusplus
 extern "C"
@@ -92,12 +102,21 @@ extern "C"
         return bsp_get_model(bspTree, 0);
     }
 
+    /// Get indices from model for specific texture index.
+    /// Returns number of indices (for the texture index).
+    /// Caller has to allocate array of `short*` and pass it as `indices` argument. Can be `NULL` to not write values.
     int bsp_model_get_indices(bsp_model* model, int textureIndex, short* indices);
 
     /// Get textures used by specified `bsp_model`.
     /// Returns number of textures.
     /// If `textures` is not `NULL` then texture indexes are written into it. Caller has to allocate enough memory.
     int bsp_model_textures(bsp_model* model, int* textures);
+
+    /// Get origin (coordinates shift) of the model.
+    bsp_vec3 bsp_model_origin(bsp_model* model);
+
+    /// Get Bounding-Box of the model.
+    bsp_bounding_box bsp_model_bounding_box(bsp_model* model);
 
 
     /// Load all textures inside BSP file
