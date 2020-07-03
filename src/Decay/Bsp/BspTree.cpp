@@ -1,6 +1,8 @@
 #include "BspTree.hpp"
 
 #include <fstream>
+#include <map>
+#include <vector>
 
 #include <stb_image_write.h>
 
@@ -12,23 +14,50 @@ namespace Decay::Bsp
      Textures(Bsp->GetTextures()),
      Vertices(),
      Models(Bsp->GetModelCount()),
-     Entities(ParseEntities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount()))
+     Entities(ParseEntities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount())),
+     Entities_Model(),
+     Entities_Name(),
+     Entities_Type()
     {
+        // Parse models
         for(std::size_t mi = 0; mi < Models.size(); mi++)
         {
             const BspFile::Model& model = Bsp->GetRawModels()[mi];
             Models[mi] = ProcessModel(model);
         }
 
-        for(auto& ent : Entities)
+        // Process entities into fast-access maps
+        for(const Entity& ent : Entities)
         {
             auto classname = ent.find("classname");
-            auto name = ent.find("Name");
+            auto name = ent.find("targetname");
+            auto model = ent.find("model");
 
-            if(name == ent.end())
-                std::cout << (classname == ent.end() ? "???" : classname->second) << std::endl;
-            else
-                std::cout << (classname == ent.end() ? "???" : classname->second) << ": " << name->second << std::endl;
+            if(classname != ent.end())
+                Entities_Type[classname->second].emplace_back(ent);
+
+            if(name != ent.end())
+                Entities_Name[name->second].emplace_back(ent);
+
+            if(model != ent.end())
+            {
+                if(model->second.size() > 1 && model->second[0] == '*')
+                {
+                    try
+                    {
+                        int value = std::stoi(model->second.data() + 1);
+                        Entities_Model.emplace(value, ent);
+                    }
+                    catch(std::invalid_argument& ex)
+                    {
+                        std::cerr << "Model '" << (model->second.data() + 1) << "' could not be parsed - No Conversion" << std::endl;
+                    }
+                    catch(std::out_of_range& ex)
+                    {
+                        std::cerr << "Model '" << (model->second.data() + 1) << "' could not be parsed - Out of Range" << std::endl;
+                    }
+                }
+            }
         }
     }
 

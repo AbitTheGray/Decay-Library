@@ -14,7 +14,13 @@ namespace Decay::Bsp
     public:
         const std::shared_ptr<BspFile> Bsp;
         const std::vector<Wad::WadFile::Texture> Textures;
-        const std::vector<std::map<std::string, std::string>> Entities;
+
+        typedef std::map<std::string, std::string> Entity;
+
+        const std::vector<Entity> Entities;
+        std::map<int, Entity> Entities_Model;
+        std::map<std::string, std::vector<Entity>> Entities_Name;
+        std::map<std::string, std::vector<Entity>> Entities_Type;
 
     public:
         struct Vertex
