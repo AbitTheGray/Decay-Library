@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
-project(DecayLib CXX)
+project(DecayLib C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-set(BUILD_SHARED_LIBS OFF)
 
 cmake_policy(SET CMP0077 NEW) # set() overrides option()
 
@@ -11,6 +10,15 @@ cmake_policy(SET CMP0077 NEW) # set() overrides option()
 #--------------------------------
 
 add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>") # Define DEBUG in Debug builds
+
+
+# Enable C API
+# Builds another target as Shared library
+option(DECAY_LIBRARY_API "Enable C API build." ON)
+
+# Enable Command-line utility target
+option(DECAY_LIBRARY_CMD "Enable Commandline interface/executable utility." ON)
+
 
 # Takes more time to process but decreases Vertex array size.
 # There can still be position duplicates as they would have different texture coordinates
@@ -55,11 +63,30 @@ target_link_libraries(DecayLib glm)
 
 target_include_directories(DecayLib PRIVATE lib/stb/)
 
+if(DECAY_LIBRARY_API)
+    target_compile_options(DecayLib PUBLIC -fPIC)
+endif()
+
+#--------------------------------
+# Source - C API
+#--------------------------------
+
+if(DECAY_LIBRARY_API)
+    file(GLOB_RECURSE DECAY_LIBRARY_API_SOURCE src_c_api/*.hpp src_c_api/*.cpp src_c_api/*.h src_c_api/*.c)
+
+    add_library(DecayLib_API SHARED ${DECAY_LIBRARY_API_SOURCE})
+    target_include_directories(DecayLib_API PUBLIC src_c_api/)
+    add_library(Decay::LibraryAPI ALIAS DecayLib_API)
+
+    target_link_libraries(DecayLib_API DecayLib)
+    target_link_libraries(DecayLib_API -static-libgcc -static-libstdc++ stdc++fs)
+    target_link_libraries(DecayLib_API glm)
+endif()
+
 #--------------------------------
 # Source - Command
 #--------------------------------
 
-option(DECAY_LIBRARY_CMD "Enable Commandline interface/executable utility." ON)
 if(DECAY_LIBRARY_CMD)
     file(GLOB_RECURSE DECAY_LIBRARY_CMD_SOURCE src_cmd/*.hpp src_cmd/*.cpp src_cmd/*.h src_cmd/*.c)
 

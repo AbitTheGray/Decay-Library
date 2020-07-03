@@ -2,6 +2,9 @@
 
 Library for parsing BSP and WAD files from GoldSource (and maybe more later).
 
+Also contains C API which can be used from other programming languages.
+[C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) is being worked on (for future use in Unity3D).
+
 ~~Can also used as Command-line program.~~
 
 ## Libraries
@@ -64,3 +67,11 @@ All have weight `80` (same as `application/x-doom`) but are defined by file head
 | `application/goldsrc-bsp30` | `goldsrc-bsp30.xml` | BSP version 30 |
 | `application/goldsrc-wad2` | `goldsrc-wad2.xml` | WAD2 |
 | `application/goldsrc-wad3` | `goldsrc-wad3.xml` | WAD3 |
+
+## Game Engines
+
+Decay Library does not support and is not supported by any game engine.
+
+In future, it is planned to use [C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) for Unity3D (with additional scripts).
+
+Unreal Engine should be possible but is currently not planned.

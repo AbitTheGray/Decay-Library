@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <vector>
+#include <map>
 #include <glm/glm.hpp>
 #include <iostream>
 
@@ -56,7 +57,7 @@ namespace Decay::Wad
         WADPARSER_GET_COUNT(GetFontCount, Font)
 
     public:
-#define WADPARSER_READ_ITEM(type, funcName, funcNameAll) \
+#define WADPARSER_READ_ITEM(type, funcName, funcNameAll, funcNameAll_map) \
         [[nodiscard]] static type funcName(const Item& item);\
         \
         [[nodiscard]] inline type funcName(const std::string& name) const\
@@ -85,6 +86,25 @@ namespace Decay::Wad
                     try\
                     {\
                         result.emplace_back(funcName(item));\
+                    }\
+                    catch(std::exception& ex)\
+                    {\
+                        std::cerr << "Problem in batch-loading from WAD during " << item.Name << ": " << ex.what() << std::endl;\
+                    }\
+                }\
+            }\
+            return result;\
+        }\
+        [[nodiscard]] inline std::map<std::string, type> funcNameAll_map() const\
+        {\
+            std::map<std::string, type> result = {};\
+            for(const Item& item : m_Items)\
+            {\
+                if(item.Type == ItemType::type)\
+                {\
+                    try\
+                    {\
+                        result.emplace(item.Name, funcName(item));\
                     }\
                     catch(std::exception& ex)\
                     {\
@@ -133,7 +153,7 @@ namespace Decay::Wad
             void WriteRgbaPng(const std::filesystem::path& filename) const;
         };
 
-        WADPARSER_READ_ITEM(Image, ReadImage, ReadAllImages)
+        WADPARSER_READ_ITEM(Image, ReadImage, ReadAllImages, ReadAllImages_Map)
 
     // Font
     public:
@@ -152,7 +172,7 @@ namespace Decay::Wad
             FontChar Characters[CharacterCount];
         };
 
-        WADPARSER_READ_ITEM(Font, ReadFont, ReadAllFonts)
+        WADPARSER_READ_ITEM(Font, ReadFont, ReadAllFonts, ReadAllFonts_Map)
 
     // Texture
     public:
@@ -203,13 +223,13 @@ namespace Decay::Wad
                     else
                         pixels[i] = glm::u8vec4(Palette[paletteIndex], 0xFF); // Solid
                 }
-                return pixels;
+                return std::move(pixels);
             }
             void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
             void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
         };
 
-        WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures)
+        WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures, ReadAllTextures_Map)
 
         void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
     };
