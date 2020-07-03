@@ -19,6 +19,8 @@ extern "C"
     } wad_rgba;
 #endif
 
+    // Texture
+
     typedef struct {
         /// Name of the texture.
         char name[16];
@@ -35,6 +37,9 @@ extern "C"
     wad_texture* wad_load_textures(const char* path, int* length);
     /// Release textures loaded from WAD file.
     void wad_free_textures(wad_texture* textures);
+
+
+    // Image
 
     typedef struct {
         /// Name of the image.
@@ -53,8 +58,8 @@ extern "C"
     /// Release images loaded from WAD file.
     void wad_free_image(wad_image* images);
 
+
     //TODO Font
-    //TODO Image
 
 #ifdef __cplusplus
 };
