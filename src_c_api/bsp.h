@@ -1,12 +1,6 @@
 #pragma once
 
 #ifdef __cplusplus
-#define NULL nullptr
-#else
-#define NULL ((void*)0)
-#endif
-
-#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -34,7 +28,13 @@ extern "C"
     {
         bsp_file* bspFile = bsp_file_load(path);
         if(!bspFile)
-            return NULL;
+        {
+#ifdef __cplusplus
+            return nullptr;
+#else
+            return ((void*)0);
+#endif
+        }
 
         bsp_tree* bspTree = bsp_tree_create(bspFile);
 
