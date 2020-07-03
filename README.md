@@ -5,7 +5,7 @@ Library for parsing BSP and WAD files from GoldSource (and maybe more later).
 Also contains C API which can be used from other programming languages.
 [C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) is being worked on (for future use in Unity3D).
 
-~~Can also used as Command-line program.~~
+Can also be used as Command-line program.
 
 ## Libraries
 
@@ -24,9 +24,9 @@ All libraries are used as `static library` to maximize optimization and limit pr
       - Textures
         - RGB/RGBA or raw data with palette
         - ~~Generate WAD~~
-      - ~~Entity configuration~~
-      - ~~Map into .obj~~
-        - ~~Mtl with correct UV~~
+      - Entity configuration
+      - Map into .obj
+        - Mtl with correct UV
         - ~~Separate collision map~~
       - ~~Lightmap blob as texture~~
       - Nodes with map
@@ -54,6 +54,10 @@ It is recommended to keep it where it is and use [Symbolic link](https://en.wiki
 ### Command-line utility
 
 Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to disable.
+
+- `help` = display information how to use the command-line utility.
+- `bsp2obj <map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]` = converts BSP to OBJ + MTD, exports textures into own directory.
+  - Used textures without data are exported only as placeholders (with correct dimensions).
 
 ## Linux tools
 

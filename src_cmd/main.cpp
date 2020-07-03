@@ -10,7 +10,7 @@ std::map<std::string, Command> Commands = {
                 }
         },
         {
-            "bsp2obj",
+                "bsp2obj",
                 Command{
                         Exec_bsp2obj,
                         "<map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]",
