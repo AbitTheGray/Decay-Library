@@ -31,10 +31,27 @@ extern "C"
     } wad_texture;
 
     /// Load all textures inside WAD2 / WAD3 file
-    /// Returns `nullptr` if there were no textures, file was not found or there was problem with loading
+    /// Returns `nullptr` if there were no textures, file was not found or there was problem with loading.
     wad_texture* wad_load_textures(const char* path, int* length);
-    /// Release textures loaded from WAD file
+    /// Release textures loaded from WAD file.
     void wad_free_textures(wad_texture* textures);
+
+    typedef struct {
+        /// Name of the image.
+        char name[16];
+        /// Dimensions.
+        unsigned int width, height;
+        /// This is pointer to raw data.
+        /// First pixel starts here, more follow.
+        /// `NULL` if there are no data (only from BSP).
+        wad_rgba* data;
+    } wad_image;
+
+    /// Load all images inside WAD2 / WAD3 file
+    /// Returns `nullptr` if there were no images, file was not found or there was problem with loading.
+    wad_image* wad_load_image(const char* path, int* length);
+    /// Release images loaded from WAD file.
+    void wad_free_image(wad_image* images);
 
     //TODO Font
     //TODO Image

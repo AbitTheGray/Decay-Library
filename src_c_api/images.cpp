@@ -1,4 +1,3 @@
-#include "bsp.h"
 #include "wad.h"
 
 #include <Decay/Wad/WadFile.hpp>
@@ -7,33 +6,34 @@
 
 using namespace Decay::Wad;
 
-static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, int* length)
+static wad_image* LoadImages(const std::map<std::string, WadFile::Image>& images, int* length)
 {
-    assert(textures.size() < std::numeric_limits<int>::max());
-    *length = textures.size();
+    assert(images.size() < std::numeric_limits<int>::max());
+    *length = images.size();
     if(*length == 0)
         return nullptr;
 
     /// Size of allocated memory for `wadTextures` array
     std::size_t memorySize = *length * sizeof(wad_texture); // Instances of `wad_texture`
-    for(auto & tex : textures)
-        memorySize += sizeof(wad_rgba) * tex.MipMapData[0].size();
+    for(auto & it : images)
+        memorySize += sizeof(wad_rgba) * it.second.Data.size();
 
-    wad_texture* wadTextures = static_cast<wad_texture*>(malloc(memorySize));
-    uint8_t* memoryEnd = reinterpret_cast<uint8_t*>(wadTextures) + memorySize;
+    wad_image* wadImages = static_cast<wad_image*>(malloc(memorySize));
+    uint8_t* memoryEnd = reinterpret_cast<uint8_t*>(wadImages) + memorySize;
 
     /// Points to start of next data
     /// No need to clear it as it will always be used.
-    wad_rgba* nextData = reinterpret_cast<wad_rgba*>(reinterpret_cast<uint8_t*>(wadTextures + *length));
+    wad_rgba* nextData = reinterpret_cast<wad_rgba*>(reinterpret_cast<uint8_t*>(wadImages + *length));
 
-    for(std::size_t i = 0; i < textures.size(); i++)
+    std::size_t i = 0;
+    for(auto& it : images)
     {
-        auto& tex = textures[i];
-        auto& wt = wadTextures[i];
+        auto& tex = it.second;
+        auto& wt = wadImages[i];
 
         // Copy name
-        assert(tex.Name.size() < 16);
-        CopyString(tex.Name, wt.name, 16);
+        assert(it.first.size() < 16);
+        CopyString(it.first, wt.name, 16);
 
         // Copy size
         wt.width = tex.Width;
@@ -48,7 +48,7 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
         }
 
         // Texture does not contain RGBA data (only in BSP)
-        if(tex.MipMapData[0].empty())
+        if(tex.Data.empty())
         {
             wt.data = nullptr;
             continue;
@@ -77,7 +77,7 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
             wt.data = nullptr;
         }
 
-        nextData += tex.MipMapData[0].size();
+        nextData += tex.Data.size();
     }
 
     // Check for bleeding memory
@@ -90,10 +90,10 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
         std::fill(reinterpret_cast<uint8_t*>(nextData), memoryEnd, 0);
     }
 
-    return wadTextures;
+    return wadImages;
 }
 
-wad_texture* wad_load_textures(const char* path, int* length)
+wad_image* wad_load_images(const char* path, int* length)
 {
     *length = 0;
 
@@ -116,19 +116,13 @@ wad_texture* wad_load_textures(const char* path, int* length)
         return nullptr; // Failed to load WAD file
     }
 
-    return LoadTextures(wad->ReadAllTextures(), length);
+    return LoadImages(wad->ReadAllImages_Map(), length);
 }
 
-wad_texture* bsp_tree_textures(bsp_tree* bspTree, int* length)
-{
-    *length = bspTree->Textures.size();
 
-    return LoadTextures(bspTree->Textures, length);
-}
-
-void wad_free_textures(wad_texture* textures)
+void wad_free_images(wad_image* images)
 {
     // Allocated as single big blob
     // Requires just this call
-    free(textures);
+    free(images);
 }
