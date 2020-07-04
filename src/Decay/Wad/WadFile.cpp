@@ -1,3 +1,4 @@
+#define GLM_FORCE_SWIZZLE
 #include "WadFile.hpp"
 
 // Use to test images if you are getting weird results.
@@ -220,23 +221,45 @@ namespace Decay::Wad
         image.Data.resize(width * height);
         image.Palette.resize(256);
 
+        bool transparent = false;
         for(std::size_t i = 0; i < width * height; i++)
         {
-            auto paletteIterator = std::find(image.Palette.begin(), image.Palette.end(), data[i]);
+            glm::u8vec3 rgb = data[i].rgb();
+            if(data[i].a == 0xFFu)
+            {
+                transparent = true;
+                image.Data[i] = 255;
+                continue;
+            }
+
+            auto paletteIterator = std::find(image.Palette.begin(), image.Palette.end(), rgb);
             if(paletteIterator == image.Palette.end())
             { // Not found
-                if(image.Palette.size() == 256)
+                if(image.Palette.size() == (transparent ? 255 : 256))
                     throw std::runtime_error("Exceeded palette size");
 
                 image.Data[i] = image.Palette.size();
-                image.Palette.emplace_back(data[i]);
+
+                image.Palette.emplace_back(rgb);
             }
             else
                 image.Data[i] = paletteIterator->length();
         }
 
+        if(transparent)
+        {
+            for(int pi = image.Palette.size(); pi < 255; pi++)
+                image.Palette[pi] = {0x00u, 0x00u, 0x00u};
+            image.Palette[255] = {0x00u, 0x00u, 0xFFu};
+        }
+        else
+            image.Palette.shrink_to_fit();
+
 #ifdef DEBUG
-        std::cout << "Loaded image from " << filename << std::endl;
+        std::cout << "Loaded image from '" << filename << "' with palette size " << image.Palette.size();
+        if(transparent)
+            std::cout << " including transparency";
+        std::cout << std::endl;
 #endif
 
         stbi_image_free(data);
