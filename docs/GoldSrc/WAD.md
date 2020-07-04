@@ -1,0 +1,114 @@
+# WAD2 + WAD3
+
+WAD is file format used for maps in GoldSrc (and its original engine, Quake).
+WAD means Where's All Data and is equivalent to ZIP files.
+
+## File Format
+
+### Header
+
+File starts with 32-bit number (4 characters) identifying its version.
+
+```C++
+char Version_wad2[4] = {'W', 'A', 'D', '2'};
+char Version_wad3[4] = {'W', 'A', 'D', '3'};
+```
+There is no difference between WAD2 and WAD3.
+In [Half Life 1](https://github.com/ValveSoftware/halflife), there is switch to toggle between WAD2 and WAD3 versions in header but does nothing else.
+
+WAD2 was used by Quake 1 while GoldSrc uses WAD3.
+Those formats are compatible.
+
+
+Version is followed by offset to entry information.
+```C++
+struct EntryHeader
+{
+    int32_t EntryCount;
+    int32_t EntryOffset; // Offset from start of file to start of entry table
+};
+```
+
+Entry itself holds all data required to find and process its content.
+```C++
+struct Entry
+{
+    int32_t DataOffset; // Offset to data (from start of the file)
+    int32_t DataSize_Compressed;
+    int32_t DataSize_Uncompressed;
+    
+    int8_t Type;
+    uint8_t Compression = 0; // Not implemented
+    
+    int16_t Padding; // Referred to as `pad1` and `pad2`
+    char Name[16]; // Entry name
+};
+```
+Compression is not supported by official implementation.
+It seems they intended to use LZSS ([Lempel–Ziv–Storer–Szymanski](https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Storer%E2%80%93Szymanski)) as compression algoright.
+
+GoldSrc supports only 3 types: [Texture](#texture) (`0x43`), [Font](#font) (`0x46`) and [Image](#image) (`0x42`)
+
+
+### Texture
+Type: `0x43` / `67`
+
+```C++
+struct Texture
+{
+    char Name[16]; // Name of the texture, includes `'\0'` character 
+    uint32_t Width, Height; // Texture dimensions
+    Offsets[4]; // Offsets to all mip-map levels
+};
+```
+This structure is same as [Textures in BSP](BSP.md#textures).
+Will always contain texture data.
+
+Be warned that `Name` matches `Name` in `Entry` not its case.
+
+
+### Font
+Type: `0x46` / `70`
+
+```C++
+struct FontChar
+{
+    uint16_t Offset;
+    uint16_t Width;
+};
+
+struct Font
+{
+    uint32_t Width = 256, Height;
+    uint32_t RowCount, RowHeight;
+    
+    FontChar Characters[256];
+    
+    uint8_t Data[Width * Height];
+    
+    uint16_t PaletteSize;
+    glm::u8vec3 PaletteRGB[PaletteSize];
+};
+```
+*This is not valid C++ structure but best description of the content.*
+
+`Width` is defined to be `256` but it failed to work.
+
+
+### Image
+Type: `0x42` / `66`
+
+```C++
+struct Image
+{
+    uint32_t Width, Height;
+    uint8_t Data[Width * Height];
+    
+    uint16_t PaletteSize;
+    glm::u8vec3 PaletteRGB[PaletteSize];
+};
+```
+*This is not valid C++ structure but best description of the content.*
+
+All extracted images seemed weird.
+It is expected to be to reduce memory size because those images are used as either placeholder or during loading.
