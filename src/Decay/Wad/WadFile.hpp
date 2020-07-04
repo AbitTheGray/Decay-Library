@@ -194,8 +194,7 @@ namespace Decay::Wad
             glm::u32vec2 MipMapDimensions[MipMapLevels];
             std::vector<uint8_t> MipMapData[MipMapLevels];
 
-            static const std::size_t PaletteSize = 256;
-            std::array<glm::u8vec3, PaletteSize> Palette;
+            std::vector<glm::u8vec3> Palette;
 
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const

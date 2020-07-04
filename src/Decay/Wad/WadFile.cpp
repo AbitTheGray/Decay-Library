@@ -146,14 +146,16 @@ namespace Decay::Wad
         in.read(reinterpret_cast<char*>(image.Data.data()), dataLength);
 
         // Read palette length
-        uint16_t paletteLength;
-        in.read(reinterpret_cast<char*>(&paletteLength), sizeof(paletteLength));
-        assert(paletteLength > 0);
-        assert(paletteLength <= 256);
+        uint16_t paletteSize;
+        in.read(reinterpret_cast<char*>(&paletteSize), sizeof(paletteSize));
+        if(paletteSize == 0)
+            throw std::runtime_error("Empty Palette");
+        if(paletteSize > 256)
+            throw std::runtime_error("Palette size too big");
 
         // Read palette
-        image.Palette.resize(paletteLength);
-        in.read(reinterpret_cast<char*>(image.Palette.data()), paletteLength);
+        image.Palette.resize(paletteSize);
+        in.read(reinterpret_cast<char*>(image.Palette.data()), paletteSize);
 
 #ifdef WAD_PALETTE_DUMMY
         for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteLength; i += 360 / paletteLength, pi++)
@@ -231,14 +233,16 @@ namespace Decay::Wad
         in.read(reinterpret_cast<char*>(font.Data.data()), dataLength);
 
         // Read palette length
-        uint16_t paletteLength;
-        in.read(reinterpret_cast<char*>(&paletteLength), sizeof(paletteLength));
-        assert(paletteLength > 0);
-        assert(paletteLength <= 256);
+        uint16_t paletteSize;
+        in.read(reinterpret_cast<char*>(&paletteSize), sizeof(paletteSize));
+        if(paletteSize == 0)
+            throw std::runtime_error("Empty Palette");
+        if(paletteSize > 256)
+            throw std::runtime_error("Palette size too big");
 
         // Read palette
-        font.Palette.resize(paletteLength);
-        in.read(reinterpret_cast<char*>(font.Palette.data()), paletteLength);
+        font.Palette.resize(paletteSize);
+        in.read(reinterpret_cast<char*>(font.Palette.data()), paletteSize);
 
 #ifdef WAD_PALETTE_DUMMY
         for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteLength; i += 360 / paletteLength, pi++)
@@ -308,17 +312,17 @@ namespace Decay::Wad
         assert(texture.Width == texture.MipMapDimensions[0].x);
         assert(texture.Height == texture.MipMapDimensions[0].y);
 
-        // 2 Dummy bytes
-        // after last MipMap level
-        uint8_t dummy[2];
-        in.read(reinterpret_cast<char*>(dummy), sizeof(uint8_t) * 2);
-        if(dummy[0] != 0x00u)
-            std::cerr << "Texture dummy[0] byte not equal to 0x00 but " << static_cast<uint32_t>(dummy[0]) << " was read." << std::endl;
-        if(dummy[1] != 0x01u)
-            std::cerr << "Texture dummy[1] byte not equal to 0x01 but " << static_cast<uint32_t>(dummy[1]) << " was read." << std::endl;
+        // Palette size after last MipMap level
+        uint16_t paletteSize;
+        in.read(reinterpret_cast<char*>(&paletteSize), sizeof(paletteSize));
+        if(paletteSize == 0)
+            throw std::runtime_error("Empty Palette");
+        if(paletteSize > 256)
+            throw std::runtime_error("Palette size too big");
 
         // Palette
-        in.read(reinterpret_cast<char*>(texture.Palette.data()), sizeof(glm::u8vec3) * Texture::PaletteSize);
+        texture.Palette.resize(paletteSize);
+        in.read(reinterpret_cast<char*>(texture.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
 
 #ifdef WAD_PALETTE_DUMMY
         for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)

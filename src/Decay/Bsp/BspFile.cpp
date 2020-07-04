@@ -253,17 +253,17 @@ namespace Decay::Bsp
                 assert(texture.Width == wadTexture.MipMapDimensions[0].x);
                 assert(texture.Height == wadTexture.MipMapDimensions[0].y);
 
-                // 2 Dummy bytes
-                // after last MipMap level
-                uint8_t dummy[2];
-                in.read(reinterpret_cast<char*>(dummy), sizeof(uint8_t) * 2);
-                if(dummy[0] != 0x00u)
-                    std::cerr << "Texture dummy[0] byte not equal to 0x00 but " << static_cast<uint32_t>(dummy[0]) << " was read." << std::endl;
-                if(dummy[1] != 0x01u)
-                    std::cerr << "Texture dummy[1] byte not equal to 0x01 but " << static_cast<uint32_t>(dummy[1]) << " was read." << std::endl;
+                // Palette size after last MipMap level
+                uint16_t paletteSize;
+                in.read(reinterpret_cast<char*>(&paletteSize), sizeof(paletteSize));
+                if(paletteSize == 0)
+                    throw std::runtime_error("Empty Palette");
+                if(paletteSize > 256)
+                    throw std::runtime_error("Palette size too big");
 
                 // Palette
-                in.read(reinterpret_cast<char*>(wadTexture.Palette.data()), sizeof(glm::u8vec3) * Wad::WadFile::Texture::PaletteSize);
+                wadTexture.Palette.resize(paletteSize);
+                in.read(reinterpret_cast<char*>(wadTexture.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
 
 #ifdef BSP_PALETTE_DUMMY
                 for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)
