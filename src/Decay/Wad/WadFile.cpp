@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include <stb_image_write.h>
+#include <stb_image.h>
 
 #include "../Bsp/BspTree.hpp"
 
@@ -198,6 +199,49 @@ namespace Decay::Wad
         assert(pixels.size() == Width * Height);
         assert(Width <= std::numeric_limits<int32_t>::max() / 4);
         stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
+    }
+
+    WadFile::Image WadFile::Image::FromFile(const std::filesystem::path& filename)
+    {
+        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
+            throw std::runtime_error("File not found");
+
+        int width, height, originalChannels;
+        glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(filename.string().c_str(), &width, &height, &originalChannels, 4));
+
+        if(data == nullptr)
+            throw std::runtime_error("Failed to load image file");
+        if(width == 0 || height == 0)
+            throw std::runtime_error("Loaded empty image");
+
+        Image image = Image();
+        image.Width = width;
+        image.Height = height;
+        image.Data.resize(width * height);
+        image.Palette.resize(256);
+
+        for(std::size_t i = 0; i < width * height; i++)
+        {
+            auto paletteIterator = std::find(image.Palette.begin(), image.Palette.end(), data[i]);
+            if(paletteIterator == image.Palette.end())
+            { // Not found
+                if(image.Palette.size() == 256)
+                    throw std::runtime_error("Exceeded palette size");
+
+                image.Data[i] = image.Palette.size();
+                image.Palette.emplace_back(data[i]);
+            }
+            else
+                image.Data[i] = paletteIterator->length();
+        }
+
+#ifdef DEBUG
+        std::cout << "Loaded image from " << filename << std::endl;
+#endif
+
+        stbi_image_free(data);
+
+        return image;
     }
 
     WadFile::Font WadFile::ReadFont(const WadFile::Item& item)

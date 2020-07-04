@@ -151,6 +151,8 @@ namespace Decay::Wad
             }
             void WriteRgbPng(const std::filesystem::path& filename) const;
             void WriteRgbaPng(const std::filesystem::path& filename) const;
+
+            static Image FromFile(const std::filesystem::path& filename);
         };
 
         WADPARSER_READ_ITEM(Image, ReadImage, ReadAllImages, ReadAllImages_Map)
