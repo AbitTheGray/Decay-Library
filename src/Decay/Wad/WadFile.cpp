@@ -353,6 +353,138 @@ namespace Decay::Wad
         return image;
     }
 
+    static std::vector<uint8_t> GenerateMipMap(const glm::u32vec2& dimension, const std::vector<uint8_t>& image)
+    {
+        if(dimension.x == 1 && dimension.y == 1)
+            throw std::runtime_error("Cannot generate mip-map for 1x1 image");
+        if(dimension.x == 0 || dimension.y == 0)
+            throw std::runtime_error("Cannot generate mip-map for image with invalid size");
+
+        std::vector<uint8_t> low(image.size() / 4);
+
+        int li = 0;
+        int ii = 0;
+        for(int y = 0; y < dimension.y; y++)
+        {
+            if(y % 2 == 1)
+            {
+                ii += dimension.x;
+                continue;
+            }
+
+            for(int x = 0; x < dimension.x; x += 2, ii += 2)
+                low[li++] = image[ii];
+        }
+
+        return low;
+    }
+
+    WadFile::Texture WadFile::Texture::FromFile(const std::filesystem::path& filename)
+    {
+        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
+            throw std::runtime_error("File not found");
+
+        int width, height, originalChannels;
+        glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(filename.string().c_str(), &width, &height, &originalChannels, 4));
+
+        if(data == nullptr)
+            throw std::runtime_error("Failed to load image file");
+        if(width == 0 || height == 0)
+            throw std::runtime_error("Loaded empty image");
+
+        Texture texture = Texture();
+        texture.Width = width;
+        texture.Height = height;
+        texture.MipMapData[0].resize(width * height);
+        texture.Palette.resize(256);
+
+        bool transparent = false;
+        for(std::size_t i = 0; i < width * height; i++)
+        {
+            glm::u8vec3 rgb = data[i].rgb();
+            if(data[i].a == 0xFFu)
+            {
+                transparent = true;
+                texture.MipMapData[0][i] = 255;
+                continue;
+            }
+
+            auto paletteIterator = std::find(texture.Palette.begin(), texture.Palette.end(), rgb);
+            if(paletteIterator == texture.Palette.end())
+            { // Not found
+                if(texture.Palette.size() == (transparent ? 255 : 256))
+                    throw std::runtime_error("Exceeded palette size");
+
+                texture.MipMapData[0][i] = texture.Palette.size();
+
+                texture.Palette.emplace_back(rgb);
+            }
+            else
+                texture.MipMapData[0][i] = paletteIterator->length();
+        }
+
+        // Generate Mip-Maps
+        {
+            texture.MipMapDimensions[0] = glm::u32vec2(texture.Width, texture.Height);
+            texture.MipMapDimensions[1] = glm::u32vec2(texture.Width / 2u, texture.Height / 2u);
+            texture.MipMapDimensions[2] = glm::u32vec2(texture.Width / 4u, texture.Height / 4u);
+            texture.MipMapDimensions[3] = glm::u32vec2(texture.Width / 8u, texture.Height / 8u);
+
+            texture.MipMapData[1] = GenerateMipMap(texture.MipMapDimensions[0], texture.MipMapData[0]);
+            texture.MipMapData[2] = GenerateMipMap(texture.MipMapDimensions[1], texture.MipMapData[1]);
+            texture.MipMapData[3] = GenerateMipMap(texture.MipMapDimensions[2], texture.MipMapData[2]);
+        }
+
+        if(transparent)
+        {
+            for(int pi = texture.Palette.size(); pi < 255; pi++)
+                texture.Palette[pi] = {0x00u, 0x00u, 0x00u};
+            texture.Palette[255] = {0x00u, 0x00u, 0xFFu};
+        }
+        else
+            texture.Palette.shrink_to_fit();
+
+#ifdef DEBUG
+        std::cout << "Loaded texture from '" << filename << "' with palette size " << texture.Palette.size();
+        if(transparent)
+            std::cout << " including transparency";
+        std::cout << std::endl;
+#endif
+
+        stbi_image_free(data);
+
+        return texture;
+    }
+
+    WadFile::Item WadFile::Image::AsItem(std::string name) const
+    {
+        Item item = {};
+        item.Name = std::move(name);
+        item.Type = ItemType::Image;
+
+        item.Size = sizeof(Width) + sizeof(Height) +
+                    sizeof(uint8_t) * Data.size() +
+                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
+        item.Data = malloc(item.Size);
+
+        MemoryBuffer itemDataBuffer(
+                reinterpret_cast<char*>(item.Data),
+                item.Size
+        );
+        std::ostream out(&itemDataBuffer);
+
+        out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
+        out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+
+        out.write(reinterpret_cast<const char*>(Data.data()), Data.size());
+
+        short paletteSize = Palette.size();
+        out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
+        out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
+
+        return item;
+    }
+
     WadFile::Font WadFile::ReadFont(const WadFile::Item& item)
     {
         MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
@@ -554,5 +686,69 @@ namespace Decay::Wad
                 pixels.data(),
                 static_cast<int32_t>(dimension.x) * 4
         );
+    }
+
+    WadFile::Item WadFile::Texture::AsItem() const
+    {
+        Item item = {};
+        item.Name = Name;
+        item.Type = ItemType::Texture;
+
+        item.Size = sizeof(Width) + sizeof(Height) +
+                    sizeof(uint8_t) * (MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size()) +
+                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
+        item.Data = malloc(item.Size);
+
+        MemoryBuffer itemDataBuffer(
+                reinterpret_cast<char*>(item.Data),
+                item.Size
+        );
+        std::ostream out(&itemDataBuffer);
+
+        out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
+        out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+
+        out.write(reinterpret_cast<const char*>(MipMapData[0].data()), sizeof(uint8_t) * MipMapData[0].size());
+        out.write(reinterpret_cast<const char*>(MipMapData[1].data()), sizeof(uint8_t) * MipMapData[1].size());
+        out.write(reinterpret_cast<const char*>(MipMapData[2].data()), sizeof(uint8_t) * MipMapData[2].size());
+        out.write(reinterpret_cast<const char*>(MipMapData[3].data()), sizeof(uint8_t) * MipMapData[3].size());
+
+        short paletteSize = Palette.size();
+        out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
+        out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
+
+        return item;
+    }
+
+    WadFile::Item WadFile::Font::AsItem(std::string name) const
+    {
+        Item item = {};
+        item.Name = std::move(name);
+        item.Type = ItemType::Font;
+
+        item.Size = sizeof(Width) + sizeof(Height) +
+                    sizeof(FontChar) * CharacterCount +
+                    sizeof(uint8_t) * Data.size() +
+                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
+        item.Data = malloc(item.Size);
+
+        MemoryBuffer itemDataBuffer(
+                reinterpret_cast<char*>(item.Data),
+                item.Size
+        );
+        std::ostream out(&itemDataBuffer);
+
+        out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
+        out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+
+        out.write(reinterpret_cast<const char*>(Characters), sizeof(FontChar) * CharacterCount);
+
+        out.write(reinterpret_cast<const char*>(Data.data()), Data.size());
+
+        short paletteSize = Palette.size();
+        out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
+        out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
+
+        return item;
     }
 }

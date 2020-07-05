@@ -176,6 +176,10 @@ namespace Decay::Wad
             void WriteRgbaPng(const std::filesystem::path& filename) const;
 
             static Image FromFile(const std::filesystem::path& filename);
+
+            /// Converts Image to raw WAD-ready Item
+            /// Caller has to deallocate Item.Data
+            [[nodiscard]] virtual Item AsItem(std::string name) const;
         };
 
         WADPARSER_READ_ITEM(Image, ReadImage, ReadAllImages, ReadAllImages_Map)
@@ -195,6 +199,9 @@ namespace Decay::Wad
             uint32_t RowHeight;
             static const std::size_t CharacterCount = 256;
             FontChar Characters[CharacterCount];
+
+        public:
+            [[nodiscard]] Item AsItem(std::string name) const override;
         };
 
         WADPARSER_READ_ITEM(Font, ReadFont, ReadAllFonts, ReadAllFonts_Map)
@@ -251,12 +258,40 @@ namespace Decay::Wad
             }
             void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
             void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+
+        public:
+            static Texture FromFile(const std::filesystem::path& filename);
+
+            [[nodiscard]] Item AsItem() const;
         };
 
         WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures, ReadAllTextures_Map)
 
         void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
 
-        void AddToFile( const std::filesystem::path& filename, const std::vector<Item>& items);
+        void AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
+        void AddToFile(
+                const std::filesystem::path& filename,
+                const std::vector<Texture>& textures,
+                const std::map<std::string, Font>& fonts,
+                const std::map<std::string, Image>& images
+        )
+        {
+            std::vector<Item> items(textures.size() + fonts.size() + images.size());
+
+            for(auto& texture : textures)
+                items.emplace_back(texture.AsItem());
+
+            for(auto& it : fonts)
+                items.emplace_back(it.second.AsItem(it.first));
+
+            for(auto& it : images)
+                items.emplace_back(it.second.AsItem(it.first));
+
+            AddToFile(filename, items);
+
+            for(auto& item : items)
+                free(item.Data);
+        }
     };
 }
