@@ -22,17 +22,12 @@
 
 namespace Decay::Wad
 {
-    WadFile::WadFile(const std::filesystem::path& filename)
+    std::vector<WadFile::WadEntry> WadFile::ReadWadEntries(std::istream& stream)
     {
-        if(!std::filesystem::exists(filename))
-            throw std::runtime_error("File not found");
-
-        std::fstream file(filename, std::ios_base::binary | std::ios_base::in);
-
         // Magic Number
         {
             char magicNumber[4];
-            file.read(reinterpret_cast<char*>(&magicNumber), sizeof(char) * 4);
+            stream.read(reinterpret_cast<char*>(&magicNumber), sizeof(char) * 4);
 
             if(
                     magicNumber[0] == 'W' &&
@@ -52,45 +47,38 @@ namespace Decay::Wad
         }
 
         uint32_t entriesCount;
-        file.read(reinterpret_cast<char*>(&entriesCount), sizeof(entriesCount));
+        stream.read(reinterpret_cast<char*>(&entriesCount), sizeof(entriesCount));
 
         if(entriesCount == 0) // No entries in the file
-        {
-            file.close(); // Just to make sure
-            return;
-        }
+            return {};
 
-        /// Offset in file to Entry structure
+        /// Offset in file to WadEntry structure
         uint32_t entriesOffset;
-        file.read(reinterpret_cast<char*>(&entriesOffset), sizeof(entriesOffset));
+        stream.read(reinterpret_cast<char*>(&entriesOffset), sizeof(entriesOffset));
         assert(entriesOffset >= ((sizeof(uint32_t) * 2) + (sizeof(char) * 4)));
 
-        file.seekg(entriesOffset);
+        stream.seekg(entriesOffset);
 
-        static const std::size_t EntryNameLength = 16;
-        struct Entry
-        {
-            int32_t Offset;
-            int32_t DiskSize;
-            /// Uncompressed size
-            int32_t Size;
-            int8_t Type;
-            /// Not implemented in official code
-            bool Compression;
-            /// Not used
-            /// Referred to in official code as `pad1` and `pad2`
-            int16_t Dummy;
+        std::vector<WadEntry> entries(entriesCount);
+        stream.read(reinterpret_cast<char*>(entries.data()), sizeof(WadEntry) * entriesCount);
 
-            /// Must be null-terminated.
-            char Name[EntryNameLength];
+        return entries;
+    }
 
-            [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, EntryNameLength); }
-        };
+    WadFile::WadFile(const std::filesystem::path& filename)
+    {
+        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
+            throw std::runtime_error("File not found");
 
-        std::vector<Entry> entries(entriesCount);
-        file.read(reinterpret_cast<char*>(entries.data()), sizeof(Entry) * entriesCount);
+        std::fstream file(filename, std::ios_base::binary | std::ios_base::in);
 
-        for(const Entry& entry : entries)
+        std::vector<WadEntry> entries = ReadWadEntries(file);
+        if(entries.empty())
+            return;
+
+        m_Items.resize(entries.size());
+
+        for(const WadEntry& entry : entries)
         {
             file.seekg(entry.Offset);
 
@@ -117,6 +105,104 @@ namespace Decay::Wad
 
             m_Items.emplace_back(Item{entry.GetName(), static_cast<ItemType>(entry.Type), dataLength, data});
         }
+    }
+
+    void WadFile::AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items)
+    {
+        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
+            throw std::runtime_error("File not found");
+
+        char magic[4];
+        std::vector<WadEntry> entries;
+        std::vector<void*> entryData;
+        {
+            std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
+
+            // Store magic number
+            in.read(magic, sizeof(magic));
+            in.seekg(0);
+
+            entries = ReadWadEntries(in);
+            if(entries.empty())
+                return;
+
+            entryData.resize(entries.size());
+
+            for(const WadEntry& entry : entries)
+            {
+                in.seekg(entry.Offset);
+
+                std::size_t dataLength = entry.DiskSize;
+                void* data = std::malloc(dataLength);
+                in.read(static_cast<char*>(data), dataLength);
+
+                entryData.emplace_back(data);
+            }
+
+            in.close();
+        }
+        int originalEntryCount = entries.size();
+
+        // Add items to entries
+        {
+            for(const Item& item : items)
+            {
+                WadEntry entry = {};
+                entry.Compression = false;
+                entry.Type = static_cast<int8_t>(item.Type);
+
+                entry.DiskSize = item.Size;
+                entry.Size = item.Size;
+
+                // Copy name
+                if(item.Name.length() > 15)
+                    throw std::runtime_error("Entry name too long");
+                std::copy(item.Name.c_str(), item.Name.c_str() + item.Name.size(), entry.Name);
+                std::fill(entry.Name + item.Name.size(), entry.Name + 16, '\0');
+
+                entries.emplace_back(entry);
+                entryData.emplace_back(item.Data);
+            }
+        }
+
+        std::ofstream out(filename, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+
+        // Write original magic number
+        out.write(magic, sizeof(magic));
+
+        // Write item count
+        {
+            uint32_t itemCount = entries.size();
+            out.write(reinterpret_cast<const char*>(&itemCount), sizeof(itemCount));
+        }
+
+        // Write entry offset
+        uint32_t entriesOffset = sizeof(char[4]) + sizeof(uint32_t) + sizeof(uint32_t); // magic + itemCount + entriesOffset
+        out.write(reinterpret_cast<const char*>(&entriesOffset), sizeof(entriesOffset));
+
+        // Write entries
+        out.write(reinterpret_cast<const char*>(entries.data()), sizeof(WadEntry) * entries.size());
+
+        // Write entry data
+        std::vector<uint32_t> offsets(entries.size());
+        for(int i = 0; i < entries.size(); i++)
+        {
+            offsets.emplace_back(out.tellp());
+
+            out.write(static_cast<const char*>(entryData[i]), entries[i].Size);
+        }
+
+        // Override Offset in Entries
+        for(int i = 0; i < entries.size(); i++)
+        {
+            out.seekp(entriesOffset + sizeof(WadEntry) * i + offsetof(WadEntry, Offset));
+
+            out.write(reinterpret_cast<const char*>(offsets.data() + i), sizeof(uint32_t));
+        }
+
+        // Free allocated memory from existing data
+        for(int i = 0; i < originalEntryCount; i++)
+            free(entryData[i]);
     }
 
     WadFile::~WadFile()

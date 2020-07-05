@@ -37,6 +37,29 @@ namespace Decay::Wad
         };
 
     private:
+        static const std::size_t EntryNameLength = 16;
+        struct WadEntry
+        {
+            int32_t Offset;
+            int32_t DiskSize;
+            /// Uncompressed size
+            int32_t Size;
+            int8_t Type;
+            /// Not implemented in official code
+            bool Compression;
+            /// Not used
+            /// Referred to in official code as `pad1` and `pad2`
+            int16_t Dummy;
+
+            /// Must be null-terminated.
+            char Name[EntryNameLength];
+
+            [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, EntryNameLength); }
+        };
+
+        static std::vector<WadEntry> ReadWadEntries(std::istream& stream);
+
+    private:
         std::vector<Item> m_Items = {};
     public:
         [[nodiscard]] inline const std::vector<Item>& GetItems() const noexcept { return m_Items; }
@@ -233,5 +256,7 @@ namespace Decay::Wad
         WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures, ReadAllTextures_Map)
 
         void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
+
+        void AddToFile( const std::filesystem::path& filename, const std::vector<Item>& items);
     };
 }
