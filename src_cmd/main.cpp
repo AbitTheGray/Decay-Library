@@ -16,6 +16,14 @@ std::map<std::string, Command> Commands = {
                         "<map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]",
                         "Extract OBJ (model) from BSP (map), including packed textures"
                 }
+        },
+        {
+                "wad_add",
+                Command{
+                    Exec_wad_add,
+                    "<file.wad> <texture...",
+                    "Add textures to WAD"
+                }
         }
 };
 
@@ -213,5 +221,82 @@ int Exec_bsp2obj(int argc, const char** argv)
     }
     std::cout << "Textures saved" << std::endl;
 
+    return 0;
+}
+
+int Exec_wad_add(int argc, const char** argv)
+{
+    if(argc == 0)
+    {
+        std::cerr << "No path to WAD provided" << std::endl;
+        return 1;
+    }
+    if(argc == 1)
+    {
+        std::cerr << "No textures provided" << std::endl;
+        return 1;
+    }
+
+    std::filesystem::path wadFilename(argv[0]);
+    {
+        if(wadFilename.empty())
+        {
+            std::cerr << "WAD file path is empty" << std::endl;
+            return 1;
+        }
+        if(!std::filesystem::exists(wadFilename))
+        {
+            std::cerr << "WAD file not found" << std::endl;
+            return 1;
+        }
+        if(!std::filesystem::is_regular_file(wadFilename))
+        {
+            std::cerr << "WAD file path does not refer to valid file" << std::endl;
+            return 1;
+        }
+    }
+
+    using namespace Decay::Wad;
+
+    std::vector<WadFile::Texture> textures(argc-1);
+    for(int i = 1; i < argc; i++)
+    {
+        std::filesystem::path tPath = argv[i];
+        if(tPath.empty())
+            continue;
+        if(!std::filesystem::exists(tPath))
+        {
+            std::cerr << "Texture file '" << tPath << "' not found" << std::endl;
+            return 1;
+        }
+        if(!std::filesystem::is_regular_file(tPath))
+        {
+            std::cerr << "Texture file '" << tPath << "' does not refer to valid file" << std::endl;
+            return 1;
+        }
+
+        try
+        {
+            auto texture = WadFile::Texture::FromFile(tPath);
+            textures.emplace_back(texture);
+        }
+        catch(std::runtime_error& ex)
+        {
+            std::cerr << "Failed to load texture from " << tPath << std::endl;
+            continue;
+        }
+    }
+
+    try
+    {
+        WadFile::AddToFile(wadFilename, textures, {}, {});
+    }
+    catch(std::runtime_error& ex)
+    {
+        std::cerr << "Failed to add textures to WAD file" << std::endl;
+        return 1;
+    }
+
+    std::cout << "Textures successfully added to WAD file" << std::endl;
     return 0;
 }

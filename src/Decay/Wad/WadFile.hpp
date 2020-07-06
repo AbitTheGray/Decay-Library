@@ -269,8 +269,8 @@ namespace Decay::Wad
 
         void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
 
-        void AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
-        void AddToFile(
+        static void AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
+        static void AddToFile(
                 const std::filesystem::path& filename,
                 const std::vector<Texture>& textures,
                 const std::map<std::string, Font>& fonts,
