@@ -143,7 +143,7 @@ struct Texture
 {
     char Name[16]; // Name of the texture, includes `'\0'` character 
     uint32_t Width, Height; // Texture dimensions
-    Offsets[4]; // Offsets to all mip-map levels
+    uint32_t Offsets[4]; // Offsets to all mip-map levels
 };
 ```
 
