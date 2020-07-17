@@ -122,10 +122,11 @@ namespace Decay::Bsp
 
         // Lightmap calculation
         glm::vec2 uvStart, uvEnd;
+        auto& plane = Bsp->GetRawPlanes()[face.Plane];
+        float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
+        float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
+        glm::ivec2 lightmapSize;
         {
-            auto& plane = Bsp->GetRawPlanes()[face.Plane];
-            float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
-            float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
 
             switch(plane.Type)
             {
@@ -178,7 +179,7 @@ namespace Decay::Bsp
                     break;
             }
 
-            glm::ivec2 lightmapSize = {
+            lightmapSize = {
                     ceilf((ceilf(maxX) - floorf(minX)) / 16.0f),
                     ceilf((ceilf(maxY) - floorf(minY)) / 16.0f)
             };
@@ -191,10 +192,40 @@ namespace Decay::Bsp
 
 
         // Triangulate the face
-        //TODO Add lightmap UV
         {
+#ifdef DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV
+            lightmapSize = {1, 1};
+#endif
+
             // Main index
             auto mainVertex = Bsp->GetRawVertices()[faceIndices[0]];
+            glm::vec2 mainLightUV;
+            switch(plane.Type)
+            {
+                case BspFile::PlaneType::X:
+                case BspFile::PlaneType::AnyX:
+                    mainLightUV = {
+                            (mainVertex.y - minX) / 16.0f / lightmapSize.x,
+                            (mainVertex.z - minY) / 16.0f / lightmapSize.y
+                    };
+                    break;
+
+                case BspFile::PlaneType::Y:
+                case BspFile::PlaneType::AnyY:
+                    mainLightUV = {
+                            (mainVertex.x - minX) / 16.0f / lightmapSize.x,
+                            (mainVertex.z - minY) / 16.0f / lightmapSize.y
+                    };
+                    break;
+
+                case BspFile::PlaneType::Z:
+                case BspFile::PlaneType::AnyZ:
+                    mainLightUV = {
+                            (mainVertex.x - minX) / 16.0f / lightmapSize.x,
+                            (mainVertex.y - minY) / 16.0f / lightmapSize.y
+                    };
+                    break;
+            }
             uint16_t mainIndex = AddVertex(
                     Vertex {
                             mainVertex,
@@ -202,18 +233,46 @@ namespace Decay::Bsp
                             glm::vec2 {
                                     textureMapping.GetTexelS(mainVertex),
                                     textureMapping.GetTexelT(mainVertex)
-                            }
+                            },
 #else
                             glm::vec2 {
                                     textureMapping.GetTexelU(mainVertex, texture.Size),
                                     textureMapping.GetTexelV(mainVertex, texture.Size)
-                            }
+                            },
 #endif
+                            mainLightUV
                     }
             );
 
             // Second index
             auto secondVertex = Bsp->GetRawVertices()[faceIndices[1]];
+            glm::vec2 secondLightUV;
+            switch(plane.Type)
+            {
+                case BspFile::PlaneType::X:
+                case BspFile::PlaneType::AnyX:
+                    secondLightUV = {
+                            (secondVertex.y - minX) / 16.0f / lightmapSize.x,
+                            (secondVertex.z - minY) / 16.0f / lightmapSize.y
+                    };
+                    break;
+
+                case BspFile::PlaneType::Y:
+                case BspFile::PlaneType::AnyY:
+                    secondLightUV = {
+                            (secondVertex.x - minX) / 16.0f / lightmapSize.x,
+                            (secondVertex.z - minY) / 16.0f / lightmapSize.y
+                    };
+                    break;
+
+                case BspFile::PlaneType::Z:
+                case BspFile::PlaneType::AnyZ:
+                    secondLightUV = {
+                            (secondVertex.x - minX) / 16.0f / lightmapSize.x,
+                            (secondVertex.y - minY) / 16.0f / lightmapSize.y
+                    };
+                    break;
+            }
             uint16_t secondIndex = AddVertex(
                     Vertex {
                             secondVertex,
@@ -221,13 +280,14 @@ namespace Decay::Bsp
                             glm::vec2 {
                                     textureMapping.GetTexelS(secondVertex),
                                     textureMapping.GetTexelT(secondVertex)
-                            }
+                            },
 #else
                             glm::vec2 {
                                     textureMapping.GetTexelU(secondVertex, texture.Size),
                                     textureMapping.GetTexelV(secondVertex, texture.Size)
-                            }
+                            },
 #endif
+                            secondLightUV
                     }
             );
 
@@ -236,20 +296,48 @@ namespace Decay::Bsp
             for(std::size_t ii = 2; ii < face.SurfaceEdgeCount; ii++)
             {
                 auto thirdVertex = Bsp->GetRawVertices()[faceIndices[ii]];
+                glm::vec2 thirdLightUV;
+                switch(plane.Type)
+                {
+                    case BspFile::PlaneType::X:
+                    case BspFile::PlaneType::AnyX:
+                        thirdLightUV = {
+                                (thirdVertex.y - minX) / 16.0f / lightmapSize.x,
+                                (thirdVertex.z - minY) / 16.0f / lightmapSize.y
+                        };
+                        break;
+
+                    case BspFile::PlaneType::Y:
+                    case BspFile::PlaneType::AnyY:
+                        thirdLightUV = {
+                                (thirdVertex.x - minX) / 16.0f / lightmapSize.x,
+                                (thirdVertex.z - minY) / 16.0f / lightmapSize.y
+                        };
+                        break;
+
+                    case BspFile::PlaneType::Z:
+                    case BspFile::PlaneType::AnyZ:
+                        thirdLightUV = {
+                                (thirdVertex.x - minX) / 16.0f / lightmapSize.x,
+                                (thirdVertex.y - minY) / 16.0f / lightmapSize.y
+                        };
+                        break;
+                }
                 uint16_t thirdIndex = AddVertex(
                         Vertex {
                                 thirdVertex,
 #ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-                                    glm::vec2 {
+                                glm::vec2 {
                                         textureMapping.GetTexelS(thirdVertex),
                                         textureMapping.GetTexelT(thirdVertex)
-                                }
+                                },
 #else
                                 glm::vec2 {
                                         textureMapping.GetTexelU(thirdVertex, texture.Size),
                                         textureMapping.GetTexelV(thirdVertex, texture.Size)
-                                }
+                                },
 #endif
+                                thirdLightUV
                         }
                 );
 

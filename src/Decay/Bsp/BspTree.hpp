@@ -31,6 +31,7 @@ namespace Decay::Bsp
 #else
             glm::vec2 UV;
 #endif
+            glm::vec2 LightUV;
 
         public:
             inline bool operator==(const Vertex& other) const

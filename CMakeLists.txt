@@ -40,6 +40,12 @@ if(DECAY_BSP_ST_INSTEAD_OF_UV)
     add_compile_definitions("DECAY_BSP_ST_INSTEAD_OF_UV")
 endif()
 
+# Use ST (texture coordinates) instead of UV (normalized coordinates) for LIGHTMAP texture mapping on faces
+option(DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV "Use ST (0 to size) lightmap texture coordinates instead of UV (0 to 1)." OFF)
+if(DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV)
+    add_compile_definitions("DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV")
+endif()
+
 #--------------------------------
 # Compiler configuration
 #--------------------------------

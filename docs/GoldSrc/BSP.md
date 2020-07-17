@@ -118,7 +118,10 @@ struct Plane
 ```
 Plane definitions use [Hesse normal form](https://en.wikipedia.org/wiki/Hesse_normal_form): `Normal * Point - Distance = 0`
 
-Those data are used to speed-up rendering.
+Used to calculate size (length) of lightmap cutout.
+Discards specified axis (`PlaneAxis::X` uses `YZ`, `PlaneAxis::Y` uses `XZ` and `PlaneAxis::Z` uses `XY`) and divides remaining 2D bounding-box by 16.
+
+Probably also used to speed-up rendering.
 
 Limits:
 - `65535` = maximum planes
