@@ -198,14 +198,17 @@ namespace Decay::Bsp
             uint16_t mainIndex = AddVertex(
                     Vertex {
                             mainVertex,
-                            glm::vec2 {
-                                    textureMapping.GetTexelU(mainVertex, texture.Size),
-                                    textureMapping.GetTexelV(mainVertex, texture.Size)
-                            },
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
                             glm::vec2 {
                                     textureMapping.GetTexelS(mainVertex),
                                     textureMapping.GetTexelT(mainVertex)
                             }
+#else
+                            glm::vec2 {
+                                    textureMapping.GetTexelU(mainVertex, texture.Size),
+                                    textureMapping.GetTexelV(mainVertex, texture.Size)
+                            }
+#endif
                     }
             );
 
@@ -214,14 +217,17 @@ namespace Decay::Bsp
             uint16_t secondIndex = AddVertex(
                     Vertex {
                             secondVertex,
-                            glm::vec2 {
-                                    textureMapping.GetTexelU(secondVertex, texture.Size),
-                                    textureMapping.GetTexelV(secondVertex, texture.Size)
-                            },
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
                             glm::vec2 {
                                     textureMapping.GetTexelS(secondVertex),
                                     textureMapping.GetTexelT(secondVertex)
                             }
+#else
+                            glm::vec2 {
+                                    textureMapping.GetTexelU(secondVertex, texture.Size),
+                                    textureMapping.GetTexelV(secondVertex, texture.Size)
+                            }
+#endif
                     }
             );
 
@@ -233,14 +239,17 @@ namespace Decay::Bsp
                 uint16_t thirdIndex = AddVertex(
                         Vertex {
                                 thirdVertex,
-                                glm::vec2 {
-                                        textureMapping.GetTexelU(thirdVertex, texture.Size),
-                                        textureMapping.GetTexelV(thirdVertex, texture.Size)
-                                },
-                                glm::vec2 {
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+                                    glm::vec2 {
                                         textureMapping.GetTexelS(thirdVertex),
                                         textureMapping.GetTexelT(thirdVertex)
                                 }
+#else
+                                glm::vec2 {
+                                        textureMapping.GetTexelU(thirdVertex, texture.Size),
+                                        textureMapping.GetTexelV(thirdVertex, texture.Size)
+                                }
+#endif
                         }
                 );
 
@@ -282,7 +291,12 @@ namespace Decay::Bsp
         for(const auto& vec : Vertices)
         {
             out << "v " << -vec.Position.x << ' ' << vec.Position.z << ' ' << vec.Position.y << std::endl;
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+            #warning Exporting OBJ will use ST texture coordinates instead of UV
+            out << "vt " << vec.ST.x << ' ' << 1-vec.ST.y << std::endl;
+#else
             out << "vt " << vec.UV.x << ' ' << 1-vec.UV.y << std::endl;
+#endif
         }
 
         out.flush();

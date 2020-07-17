@@ -26,17 +26,28 @@ namespace Decay::Bsp
         struct Vertex
         {
             glm::vec3 Position;
-            glm::vec2 UV;
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
             glm::vec2 ST;
+#else
+            glm::vec2 UV;
+#endif
 
         public:
             inline bool operator==(const Vertex& other) const
             {
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+                return Position == other.Position && ST == other.ST;
+#else
                 return Position == other.Position && UV == other.UV;
+#endif
             }
             inline bool operator!=(const Vertex& other) const
             {
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+                return Position != other.Position || ST != other.ST;
+#else
                 return Position != other.Position || UV != other.UV;
+#endif
             }
         };
         std::vector<Vertex> Vertices;

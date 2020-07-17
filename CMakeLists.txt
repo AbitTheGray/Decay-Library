@@ -33,6 +33,13 @@ if(DECAY_OBJ_POLYGONS)
     add_compile_definitions("BSP_OBJ_POLYGONS")
 endif()
 
+# Use ST (texture coordinates) instead of UV (normalized coordinates) for texture mapping on faces
+# WARNING: Exporting OBJ will use ST texture coordinates instead of UV
+option(DECAY_BSP_ST_INSTEAD_OF_UV "Use ST (0 to size) texture coordinates instead of UV (0 to 1)." OFF)
+if(DECAY_BSP_ST_INSTEAD_OF_UV)
+    add_compile_definitions("DECAY_BSP_ST_INSTEAD_OF_UV")
+endif()
+
 #--------------------------------
 # Compiler configuration
 #--------------------------------
