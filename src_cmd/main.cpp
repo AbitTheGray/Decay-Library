@@ -383,117 +383,25 @@ int Exec_lightmap_extract(int argc, const char** argv)
         return 1;
     }
 
-    for(std::size_t i = 0; i < bsp->GetFaceCount(); i++)
+    std::shared_ptr<BspTree> tree;
+
+    try
     {
-        auto& face = bsp->GetRawFaces()[i];
+        tree = std::make_shared<BspTree>(bsp);
+    }
+    catch(std::runtime_error& ex)
+    {
+        std::cerr << "Failed to parse structure from BSP file" << std::endl;
+        std::cerr << ex.what() << std::endl;
+        return 1;
+    }
 
-        if(face.LightmapOffset == -1)
-            continue;
-        assert(face.LightmapOffset >= 0);
-        auto* lightmap = bsp->GetRawLighting() + face.LightmapOffset;
-
-        if(face.SurfaceEdgeCount < 3)
-            continue;
-
-        std::vector<glm::vec3> vertices(face.SurfaceEdgeCount);
-        for(
-                std::size_t sei = face.FirstSurfaceEdge, seii = 0;
-                seii < face.SurfaceEdgeCount;
-                sei++, seii++
-        )
-        {
-            assert(sei < bsp->GetSurfaceEdgeCount());
-            const BspFile::SurfaceEdges& surfaceEdge = bsp->GetRawSurfaceEdges()[sei];
-
-            if(surfaceEdge >= 0)
-            {
-                assert(surfaceEdge < bsp->GetEdgeCount());
-                vertices[seii] = bsp->GetRawVertices()[bsp->GetRawEdges()[surfaceEdge].First];
-            }
-            else
-            {
-                assert(-surfaceEdge < bsp->GetEdgeCount());
-                vertices[seii] = bsp->GetRawVertices()[bsp->GetRawEdges()[-surfaceEdge].Second]; // Quake used ~ (swap bits) instead of - (swap sign)
-            }
-        }
-
-        auto& plane = bsp->GetRawPlanes()[face.Plane];
-        float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
-        float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
-        switch(plane.Type)
-        {
-            case BspFile::PlaneType::X:
-            case BspFile::PlaneType::AnyX:
-                for(auto& v : vertices)
-                {
-                    if(v.y < minX)
-                        minX = v.y;
-                    if(v.y > maxX)
-                        maxX = v.y;
-
-                    if(v.z < minY)
-                        minY = v.z;
-                    if(v.z > maxY)
-                        maxY = v.z;
-                }
-                break;
-
-            case BspFile::PlaneType::Y:
-            case BspFile::PlaneType::AnyY:
-                for(auto& v : vertices)
-                {
-                    if(v.x < minX)
-                        minX = v.x;
-                    if(v.x > maxX)
-                        maxX = v.x;
-
-                    if(v.z < minY)
-                        minY = v.z;
-                    if(v.z > maxY)
-                        maxY = v.z;
-                }
-                break;
-
-            case BspFile::PlaneType::Z:
-            case BspFile::PlaneType::AnyZ:
-                for(auto& v : vertices)
-                {
-                    if(v.x < minX)
-                        minX = v.x;
-                    if(v.x > maxX)
-                        maxX = v.x;
-
-                    if(v.y < minY)
-                        minY = v.y;
-                    if(v.y > maxY)
-                        maxY = v.y;
-                }
-                break;
-        }
-
-        glm::ivec2 lightmapSize = {
-                ceilf((ceilf(maxX) - floorf(minX)) / 16.0f),
-                ceilf((ceilf(maxY) - floorf(minY)) / 16.0f)
-        };
-        assert(lightmapSize.x > 0);
-        assert(lightmapSize.y > 0);
-
-#ifdef DEBUG
-        std::cout << i << ": " << face.LightmapOffset;
-        std::cout << " (" << lightmapSize.x << " x " << lightmapSize.y << ")";
-        std::cout << " from " << minX << " - " << maxX << "(" << (maxX-minX) << ")" << " x " << minY << " - " << maxY << "(" << (maxY-minY) << ")" << std::endl;
-#endif
-
-        int lightmapLength = lightmapSize.x * lightmapSize.y;
-        if(face.LightmapOffset > bsp->GetLightingCount())
-            continue;
-        if(face.LightmapOffset + lightmapLength > bsp->GetLightingCount())
-            continue;
-
+    for(auto& lightmap : tree->Lightmaps)
+    {
         std::stringstream ss;
-        ss << "light_" << i << ".png";
+        ss << "light_" << lightmap->Index << ".png";
         std::filesystem::path dstFile(exportDir / ss.str());
-        stbi_write_png(dstFile.c_str(), lightmapSize.x, lightmapSize.y, 3, lightmap, lightmapSize.x * 3);
+        stbi_write_png(dstFile.c_str(), lightmap->Width, lightmap->Height, 3, lightmap->Data.data(), lightmap->Width * 3);
     }
 
     return 0;

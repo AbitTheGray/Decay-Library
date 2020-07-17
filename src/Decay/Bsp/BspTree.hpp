@@ -84,7 +84,7 @@ namespace Decay::Bsp
                Used(width * height), UsedRanges()
             {
             }
-            inline explicit Lightmap(std::size_t index) : Lightmap(index, 2048, 2048)
+            inline explicit Lightmap(std::size_t index) : Lightmap(index, 256, 256)
             {
             }
 
@@ -139,7 +139,7 @@ namespace Decay::Bsp
                     std::size_t insert_yi = y * size.x;
 
                     // Mark pixels as "Used"
-                    std::fill(Used.begin() + yi, Used.begin() + (yi + size.x), true);
+                    std::fill(Used.begin() + yi, Used.begin() + (yi + size.y), true);
 
                     // Copy pixel data
                     std::copy(data + insert_yi, data + (insert_yi + size.x), Data.data() + yi);
