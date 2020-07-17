@@ -181,7 +181,7 @@ namespace Decay::Bsp
 
             uint8_t LightingStyles[4];
             /// Offsets into the raw LightMap data
-            uint32_t LightmapOffset;
+            int32_t LightmapOffset;
         };
 
         struct ClipNode
@@ -276,7 +276,7 @@ namespace Decay::Bsp
         LUMP_ENTRY(GetNodes, GetNodeCount, GetRawNodes, Node, Nodes);
         LUMP_ENTRY(GetTextureMapping, GetTextureMappingCount, GetRawTextureMapping, TextureMapping, TextureMapping);
         LUMP_ENTRY(GetFaces, GetFaceCount, GetRawFaces, Face, Faces);
-        //TODO Lighting
+        LUMP_ENTRY(GetLighting, GetLightingCount, GetRawLighting, glm::u8vec3, Lighting);
         LUMP_ENTRY(GetClipNodes, GetClipNodeCount, GetRawClipNodes, ClipNode, ClipNodes);
         LUMP_ENTRY(GetLeaves, GetLeafCount, GetRawLeaves, Leaf, Leaves);
         LUMP_ENTRY(GetMarkSurfaces, GetMarkSurfaceCount, GetRawMarkSurfaces, MarkSurface, MarkSurface);

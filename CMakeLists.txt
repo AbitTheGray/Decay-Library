@@ -96,6 +96,8 @@ if(DECAY_LIBRARY_CMD)
     target_link_libraries(DecayLib_Command DecayLib)
     target_link_libraries(DecayLib_Command -static-libgcc -static-libstdc++ stdc++fs)
     target_link_libraries(DecayLib_Command glm)
+
+    target_include_directories(DecayLib_Command PRIVATE lib/stb/)
 endif()
 
 #--------------------------------

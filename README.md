@@ -32,6 +32,7 @@ All libraries are used as `static library` to maximize optimization and limit pr
       - Nodes with map
         - Map components
         - ~~Visibility~~
+          - Simple per-face textures
       - ~~Command entities as scripts~~
   - WAD (WAD2 + WAD3)
     - Textures
