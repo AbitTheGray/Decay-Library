@@ -77,12 +77,11 @@ namespace Decay::Bsp
 
         Face smartFace = Face();
 
+        // This should be optimized by compiler
         smartFace.LightingStyles[0] = face.LightingStyles[0];
         smartFace.LightingStyles[1] = face.LightingStyles[1];
         smartFace.LightingStyles[2] = face.LightingStyles[2];
         smartFace.LightingStyles[3] = face.LightingStyles[3];
-
-        smartFace.LightmapOffset = face.LightmapOffset;
 
         smartFace.TextureId = textureIndex;
 
@@ -97,6 +96,7 @@ namespace Decay::Bsp
         // Get vertex indices from: Face -> Surface Edge -> Edge (-> Vertex)
         assert(face.SurfaceEdgeCount >= 3); // To at least for a triangle
         std::vector<uint16_t> faceIndices(face.SurfaceEdgeCount);
+        std::vector<glm::vec3> vertices(face.SurfaceEdgeCount);
         for(
             std::size_t sei = face.FirstSurfaceEdge, seii = 0;
             seii < face.SurfaceEdgeCount;
@@ -116,10 +116,82 @@ namespace Decay::Bsp
                 assert(-surfaceEdge < Bsp->GetEdgeCount());
                 faceIndices[seii] = Bsp->GetRawEdges()[-surfaceEdge].Second; // Quake used ~ (swap bits) instead of - (swap sign)
             }
+
+            vertices[seii] = Bsp->GetRawVertices()[faceIndices[seii]]; // Get vertex from current index
+        }
+
+        // Lightmap calculation
+        glm::vec2 uvStart, uvEnd;
+        {
+            auto& plane = Bsp->GetRawPlanes()[face.Plane];
+            float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
+            float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
+
+            switch(plane.Type)
+            {
+                case BspFile::PlaneType::X:
+                case BspFile::PlaneType::AnyX:
+                    for(auto& v : vertices)
+                    {
+                        if(v.y < minX)
+                            minX = v.y;
+                        if(v.y > maxX)
+                            maxX = v.y;
+
+                        if(v.z < minY)
+                            minY = v.z;
+                        if(v.z > maxY)
+                            maxY = v.z;
+                    }
+                    break;
+
+                case BspFile::PlaneType::Y:
+                case BspFile::PlaneType::AnyY:
+                    for(auto& v : vertices)
+                    {
+                        if(v.x < minX)
+                            minX = v.x;
+                        if(v.x > maxX)
+                            maxX = v.x;
+
+                        if(v.z < minY)
+                            minY = v.z;
+                        if(v.z > maxY)
+                            maxY = v.z;
+                    }
+                    break;
+
+                case BspFile::PlaneType::Z:
+                case BspFile::PlaneType::AnyZ:
+                    for(auto& v : vertices)
+                    {
+                        if(v.x < minX)
+                            minX = v.x;
+                        if(v.x > maxX)
+                            maxX = v.x;
+
+                        if(v.y < minY)
+                            minY = v.y;
+                        if(v.y > maxY)
+                            maxY = v.y;
+                    }
+                    break;
+            }
+
+            glm::ivec2 lightmapSize = {
+                    ceilf((ceilf(maxX) - floorf(minX)) / 16.0f),
+                    ceilf((ceilf(maxY) - floorf(minY)) / 16.0f)
+            };
+            assert(lightmapSize.x > 0);
+            assert(lightmapSize.y > 0);
+            int lightmapLength = lightmapSize.x * lightmapSize.y;
+
+            smartFace.LightmapRef = AddLightmap(lightmapSize, Bsp->GetRawLighting() + lightmapLength, uvStart, uvEnd);
         }
 
 
         // Triangulate the face
+        //TODO Add lightmap UV
         {
             // Main index
             auto mainVertex = Bsp->GetRawVertices()[faceIndices[0]];
@@ -562,5 +634,52 @@ namespace Decay::Bsp
             std::cerr << "Non-empty entity after entity processing" << std::endl;
 
         return entities;
+    }
+
+    std::shared_ptr<BspTree::Lightmap> BspTree::AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
+    {
+        // Existing lightmaps
+        for(const auto& lightmap : Lightmaps)
+            if(lightmap->AddLightmap(size, data, out_start, out_end))
+                return lightmap;
+
+        // New lightmap
+        auto lightmap = Lightmaps.emplace_back(
+                std::make_shared<Lightmap>(Lightmaps.size())
+        );
+        if(lightmap->AddLightmap(size, data, out_start, out_end))
+            return lightmap;
+
+        // Total fail
+        throw std::runtime_error("Failed to add lightmap");
+    }
+
+    bool BspTree::Lightmap::AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
+    {
+        //TODO Optimize
+        for(uint32_t y = 0; y < Height - size.y; y++)
+        {
+            for(uint32_t x = 0; x < Width - size.x; x++)
+            {
+                if(CanInsert(x, y, size))
+                {
+                    Insert(x, y, size, data);
+
+                    float w = Width;
+                    float h = Height;
+                    out_start = {
+                            x / w,
+                            y / h
+                    };
+                    out_end = {
+                            static_cast<float>(x + size.x) / w,
+                            static_cast<float>(y + size.y) / h
+                    };
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

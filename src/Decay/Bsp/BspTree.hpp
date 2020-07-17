@@ -62,6 +62,82 @@ namespace Decay::Bsp
         std::vector<std::shared_ptr<Model>> Models;
 
     public:
+        class Lightmap
+        {
+        public:
+            Lightmap(std::size_t index, uint32_t width, uint32_t height)
+             : Index(index),
+               Width(width), Height(height),
+               Data(width * height),
+               Used(width * height), UsedRanges()
+            {
+            }
+            inline explicit Lightmap(std::size_t index) : Lightmap(index, 2048, 2048)
+            {
+            }
+
+        public:
+            const std::size_t Index;
+
+        public:
+            const uint32_t Width, Height;
+            std::vector<glm::u8vec3> Data;
+
+        public:
+            std::vector<bool> Used;
+            std::vector<glm::u32vec4> UsedRanges;
+
+        public:
+            bool AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end);
+        private:
+            bool CanInsert(uint32_t insert_x, uint32_t insert_y, glm::uvec2 size)
+            {
+                if(size.x + insert_x >= Width) [[unlikely]]
+                    return false;
+                if(size.y + insert_y >= Height) [[unlikely]]
+                    return false;
+
+                for(uint32_t y = 0; y < size.y; y++)
+                {
+                    std::size_t yi = (y + insert_y) * Width;
+                    for(uint32_t x = 0; x < size.x; x++)
+                    {
+                        if(Used[yi + x + insert_x])
+                            return false;
+                    }
+                }
+
+                return true;
+            }
+            void Insert(uint32_t insert_x, uint32_t insert_y, glm::uvec2 size, const glm::u8vec3* data)
+            {
+                // Already checked by `CanInsert`, no need to check here (in Release)
+                assert(size.x + insert_x < Width);
+                assert(size.y + insert_y < Height);
+
+                // Mark range as used
+                UsedRanges.emplace_back(
+                        insert_x, insert_y,
+                        size.x, size.y
+                );
+
+                for(uint32_t y = 0; y < size.y; y++)
+                {
+                    std::size_t yi = (y + insert_y) * Width;
+                    std::size_t insert_yi = y * size.x;
+
+                    // Mark pixels as "Used"
+                    std::fill(Used.begin() + yi, Used.begin() + (yi + size.x), true);
+
+                    // Copy pixel data
+                    std::copy(data + insert_yi, data + (insert_yi + size.x), Data.data() + yi);
+                }
+            }
+        };
+        std::vector<std::shared_ptr<Lightmap>> Lightmaps = {};
+        std::shared_ptr<Lightmap> AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end);
+
+    public:
         class Face
         {
         public:
@@ -72,9 +148,8 @@ namespace Decay::Bsp
             /// [1] = Base Light (0xFF = dark, 0x00 = light)
             /// [2],[3] = Additional light models
             uint8_t LightingStyles[4];
-            /// Offsets into the raw LightMap data.
-            /// Or -1 if none present.
-            uint32_t LightmapOffset;
+
+            std::shared_ptr<Lightmap> LightmapRef = nullptr;
         };
 
     private:
