@@ -25,13 +25,26 @@ namespace Decay::Bsp
     public:
         struct Vertex
         {
+            /// World position
             glm::vec3 Position;
+
+            /// Texture coordinates
 #ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+            /// 0.0 to texture size
             glm::vec2 ST;
 #else
+            /// 0.0 to 1.0
             glm::vec2 UV;
 #endif
+
+            /// Lightmap coordinates
+#ifdef DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV
+            /// 0.0 to texture size
+            glm::vec2 LightST;
+#else
+            /// 0.0 to 1.0
             glm::vec2 LightUV;
+#endif
 
         public:
             inline bool operator==(const Vertex& other) const
