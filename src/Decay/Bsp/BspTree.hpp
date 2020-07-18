@@ -284,66 +284,66 @@ namespace Decay::Bsp
                 return 1;
             return static_cast<float>(c - 'a') / static_cast<float>('z' - 'a' + 1);
         }
-        static float GetLightStyle(const std::string& sequence, uint64_t time)
+        static float GetLightStyle(const std::string& sequence, uint64_t time_ms)
         {
             if(sequence.length() == 0)
                 throw std::runtime_error("Empty light sequence");
             if(sequence.length() == 1)
                 return GetLightStyle_Char(sequence[0]);
 
-            return GetLightStyle_Char(sequence[time % sequence.length()]);
+            return GetLightStyle_Char(sequence[(time_ms / 10) % sequence.length()]);
         }
-        static float GetLightStyle(uint8_t style, uint64_t time)
+        static float GetLightStyle(uint8_t style, uint64_t time_ms)
         {
             switch(style)
             {
                 // Normal
                 default:
                 case 0:
-                    return GetLightStyle("m", time);
+                    return GetLightStyle("m", time_ms);
 
                 // Fluorescent flicker
                 case 10:
-                    return GetLightStyle("mmamammmmammamamaaamammma", time);
+                    return GetLightStyle("mmamammmmammamamaaamammma", time_ms);
 
                 // Slow, strong pulse
                 case 2:
-                    return GetLightStyle("abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba", time);
+                    return GetLightStyle("abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba", time_ms);
 
                 // Slow pulse, noblack
                 case 11:
-                    return GetLightStyle("abcdefghijklmnopqrrqponmlkjihgfedcba", time);
+                    return GetLightStyle("abcdefghijklmnopqrrqponmlkjihgfedcba", time_ms);
 
                 // Gentle pulse
                 case 5:
-                    return GetLightStyle("jklmnopqrstuvwxyzyxwvutsrqponmlkj", time);
+                    return GetLightStyle("jklmnopqrstuvwxyzyxwvutsrqponmlkj", time_ms);
 
                 // Flicker A
                 case 1:
-                    return GetLightStyle("mmnmmommommnonmmonqnmmo", time);
+                    return GetLightStyle("mmnmmommommnonmmonqnmmo", time_ms);
                 // Flicker B
                 case 6:
-                    return GetLightStyle("nmonqnmomnmomomno", time);
+                    return GetLightStyle("nmonqnmomnmomomno", time_ms);
 
                 // Candle A
                 case 3:
-                    return GetLightStyle("mmmmmaaaaammmmmaaaaaabcdefgabcdefg", time);
+                    return GetLightStyle("mmmmmaaaaammmmmaaaaaabcdefgabcdefg", time_ms);
                 // Candle B
                 case 7:
-                    return GetLightStyle("mmmaaaabcdefgmmmmaaaammmaamm", time);
+                    return GetLightStyle("mmmaaaabcdefgmmmmaaaammmaamm", time_ms);
                 // Candle C
                 case 8:
-                    return GetLightStyle("mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa", time);
+                    return GetLightStyle("mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa", time_ms);
 
                 // Fast strobe
                 case 4:
-                    return GetLightStyle("mamamamamama", time);
+                    return GetLightStyle("mamamamamama", time_ms);
                 // Slow strobe
                 case 9:
-                    return GetLightStyle("aaaaaaaazzzzzzzz", time);
+                    return GetLightStyle("aaaaaaaazzzzzzzz", time_ms);
                 // Underwater light mutation
                 case 12:
-                    return GetLightStyle("mmnnmmnnnmmnn", time);
+                    return GetLightStyle("mmnnmmnnnmmnn", time_ms);
             }
         }
     };
