@@ -263,7 +263,8 @@ Limits:
 
 ### Lightmap
 
-//TODO
+Array of RGB data (3 bytes per pixel).
+
 
 
 ### Clip Nodes

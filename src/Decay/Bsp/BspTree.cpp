@@ -127,7 +127,6 @@ namespace Decay::Bsp
         float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
         glm::ivec2 lightmapSize;
         {
-
             switch(plane.Type)
             {
                 case BspFile::PlaneType::X:
@@ -179,10 +178,10 @@ namespace Decay::Bsp
                     break;
             }
 
-            lightmapSize = {
-                    ceilf((ceilf(maxX) - floorf(minX)) / 16.0f),
-                    ceilf((ceilf(maxY) - floorf(minY)) / 16.0f)
-            };
+            lightmapSize = glm::ivec2(
+                    ceilf(maxX / 16.0f) - floorf(minX / 16.0f) + 1,
+                    ceilf(maxY / 16.0f) - floorf(minY / 16.0f) + 1
+            );
             assert(lightmapSize.x > 0);
             assert(lightmapSize.y > 0);
             int lightmapLength = lightmapSize.x * lightmapSize.y;
