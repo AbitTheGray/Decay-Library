@@ -301,10 +301,13 @@ namespace Decay::Bsp
         // Vertices
         for(const auto& vec : Vertices)
         {
+            // Position
             out << "v " << -vec.Position.x << ' ' << vec.Position.z << ' ' << vec.Position.y << std::endl;
+
+            // Texture coordinates
 #ifdef DECAY_BSP_ST_INSTEAD_OF_UV
             #warning Exporting OBJ will use ST texture coordinates instead of UV
-            out << "vt " << vec.ST.x << ' ' << 1-vec.ST.y << std::endl;
+            out << "vt " << vec.ST.s << ' ' << 1-vec.ST.t << std::endl;
 #else
             out << "vt " << vec.UV.x << ' ' << 1-vec.UV.y << std::endl;
 #endif
