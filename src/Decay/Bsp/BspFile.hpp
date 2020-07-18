@@ -156,11 +156,11 @@ namespace Decay::Bsp
             }
             [[nodiscard]] inline float GetTexelU(const glm::vec3& position, const glm::u32vec2& textureSize) const noexcept
             {
-                return GetTexelS(position) / textureSize.x;
+                return GetTexelS(position) / textureSize.s;
             }
             [[nodiscard]] inline float GetTexelV(const glm::vec3& position, const glm::u32vec2& textureSize) const noexcept
             {
-                return GetTexelT(position) / textureSize.y;
+                return GetTexelT(position) / textureSize.t;
             }
         };
 

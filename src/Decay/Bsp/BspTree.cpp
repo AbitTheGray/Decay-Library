@@ -118,10 +118,10 @@ namespace Decay::Bsp
         }
 
         // Lightmap calculation
-        glm::vec2 uvStart, uvEnd;
+        glm::vec2 uvStart = {0, 0}, uvEnd = {0, 0}, uvSize = {0, 0};
         auto& plane = Bsp->GetRawPlanes()[face.Plane];
-        float minS, maxS;
-        float minT, maxT;
+        float minS = 0, maxS = 0;
+        float minT = 0, maxT = 0;
         glm::ivec2 lightmapSize;
 
         assert(face.LightmapOffset >= -1);
@@ -176,6 +176,7 @@ namespace Decay::Bsp
                     uvStart,
                     uvEnd
             );
+            uvSize = uvEnd - uvStart;
         }
 
 
@@ -188,17 +189,20 @@ namespace Decay::Bsp
             // Main index
             auto mainVertex = Bsp->GetRawVertices()[faceIndices[0]];
 #ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-            glm::vec2 mainUV = glm::vec2 {
+            glm::vec2 mainUV = glm::vec2(
                     textureMapping.GetTexelS(mainVertex),
                     textureMapping.GetTexelT(mainVertex)
-            };
+            );
 #else
-            glm::vec2 mainUV = glm::vec2 {
+            glm::vec2 mainUV = glm::vec2(
                     textureMapping.GetTexelU(mainVertex, texture.Size),
                     textureMapping.GetTexelV(mainVertex, texture.Size)
-            };
+            );
 #endif
-            glm::vec2 mainLightUV;
+            glm::vec2 mainLightUV = uvStart + glm::vec2(
+                    (textureMapping.GetTexelS(mainVertex) - minS) / lightmapSize.s * uvSize.s,
+                    (textureMapping.GetTexelT(mainVertex) - minT) / lightmapSize.t * uvSize.t
+            );
             uint16_t mainIndex = AddVertex(
                     Vertex {
                             mainVertex,
@@ -210,17 +214,20 @@ namespace Decay::Bsp
             // Second index
             auto secondVertex = Bsp->GetRawVertices()[faceIndices[1]];
 #ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-            glm::vec2 secondUV = glm::vec2 {
+            glm::vec2 secondUV = glm::vec2(
                     textureMapping.GetTexelS(secondVertex),
                     textureMapping.GetTexelT(secondVertex)
-            };
+            );
 #else
-            glm::vec2 secondUV = glm::vec2 {
+            glm::vec2 secondUV = glm::vec2(
                     textureMapping.GetTexelU(secondVertex, texture.Size),
                     textureMapping.GetTexelV(secondVertex, texture.Size)
-            };
+            );
 #endif
-            glm::vec2 secondLightUV;
+            glm::vec2 secondLightUV = glm::vec2(
+                    (textureMapping.GetTexelS(secondVertex) - minS) / lightmapSize.s * uvSize.s,
+                    (textureMapping.GetTexelT(secondVertex) - minT) / lightmapSize.t * uvSize.t
+            );
             uint16_t secondIndex = AddVertex(
                     Vertex {
                             secondVertex,
@@ -235,17 +242,20 @@ namespace Decay::Bsp
             {
                 auto thirdVertex = Bsp->GetRawVertices()[faceIndices[ii]];
 #ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-                glm::vec2 thirdUV = glm::vec2 {
+                glm::vec2 thirdUV = glm::vec2(
                         textureMapping.GetTexelS(thirdVertex),
                         textureMapping.GetTexelT(thirdVertex)
-                };
+                );
 #else
-                glm::vec2 thirdUV = glm::vec2 {
+                glm::vec2 thirdUV = glm::vec2(
                         textureMapping.GetTexelU(thirdVertex, texture.Size),
                         textureMapping.GetTexelV(thirdVertex, texture.Size)
-                };
+                );
 #endif
-                glm::vec2 thirdLightUV = {0, 0};
+                glm::vec2 thirdLightUV = glm::vec2(
+                        (textureMapping.GetTexelS(thirdVertex) - minS) / lightmapSize.s * uvSize.s,
+                        (textureMapping.GetTexelT(thirdVertex) - minT) / lightmapSize.t * uvSize.t
+                );
                 uint16_t thirdIndex = AddVertex(
                         Vertex {
                                 thirdVertex,
