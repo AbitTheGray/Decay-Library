@@ -30,7 +30,7 @@ std::map<std::string, Command> Commands = {
         {
                 "lightmap",
                 Command{
-                        Exec_lightmap_extract,
+                        Exec_lightmap,
                         "<map.bsp> <lightmap.png>",
                         "Extracts lightmap texture"
                 }
@@ -82,11 +82,6 @@ int Exec_bsp2obj(int argc, const char** argv)
         std::cerr << "No path to BSP provided" << std::endl;
         return 1;
     }
-    if(argc == 1)
-    {
-        std::cerr << "No output path (OBJ model file) provided" << std::endl;
-        return 1;
-    }
 
     std::filesystem::path bspFilename(argv[0]);
     {
@@ -95,6 +90,8 @@ int Exec_bsp2obj(int argc, const char** argv)
             std::cerr << "BSP file path is empty" << std::endl;
             return 1;
         }
+        if(bspFilename.extension() != ".bsp")
+            std::cerr << "BSP file path does not have .bsp extension" << std::endl;
         if(!std::filesystem::exists(bspFilename))
         {
             std::cerr << "BSP file not found" << std::endl;
@@ -107,15 +104,21 @@ int Exec_bsp2obj(int argc, const char** argv)
         }
     }
 
-    std::filesystem::path objFilename(argv[1]);
+    std::filesystem::path objFilename;
     {
-        if(objFilename.empty())
+        if(argc == 1)
+            objFilename = std::filesystem::path(bspFilename).replace_extension(".obj");
+        else
         {
-            std::cerr << "OBJ file path is empty" << std::endl;
-            return 1;
+            objFilename = argv[1];
+            if(objFilename.empty())
+            {
+                std::cerr << "OBJ file path is empty" << std::endl;
+                return 1;
+            }
+            if(objFilename.extension() != ".obj")
+                std::cerr << "OBJ file path does not have .obj extension" << std::endl;
         }
-        if(objFilename.extension() != ".obj")
-            std::cerr << "OBJ file path does not have .obj extension" << std::endl;
     }
 
     std::filesystem::path mtlFilename;
@@ -254,6 +257,8 @@ int Exec_wad_add(int argc, const char** argv)
             std::cerr << "WAD file path is empty" << std::endl;
             return 1;
         }
+        if(wadFilename.extension() != ".wad")
+            std::cerr << "WAD file path does not have .wad extension" << std::endl;
         if(!std::filesystem::exists(wadFilename))
         {
             std::cerr << "WAD file not found" << std::endl;
@@ -311,16 +316,11 @@ int Exec_wad_add(int argc, const char** argv)
     return 0;
 }
 
-int Exec_lightmap_extract(int argc, const char** argv)
+int Exec_lightmap(int argc, const char** argv)
 {
     if(argc == 0)
     {
         std::cerr << "No path to BSP provided" << std::endl;
-        return 1;
-    }
-    if(argc == 1)
-    {
-        std::cerr << "No textures export directory provided" << std::endl;
         return 1;
     }
 
@@ -331,6 +331,8 @@ int Exec_lightmap_extract(int argc, const char** argv)
             std::cerr << "BSP file path is empty" << std::endl;
             return 1;
         }
+        if(bspFilename.extension() != ".bsp")
+            std::cerr << "BSP file path does not have .bsp extension" << std::endl;
         if(!std::filesystem::exists(bspFilename))
         {
             std::cerr << "BSP file not found" << std::endl;
@@ -343,12 +345,20 @@ int Exec_lightmap_extract(int argc, const char** argv)
         }
     }
 
-    std::filesystem::path exportLight(argv[1]);
+    std::filesystem::path exportLight;
     {
-        if(exportLight.empty())
+        if(argc == 1)
         {
-            std::cerr << "Export lightmap path is empty" << std::endl;
-            return 1;
+            exportLight = "lightmap.png";
+        }
+        else
+        {
+            exportLight = argv[1];
+            if(exportLight.empty())
+            {
+                std::cerr << "Export lightmap path is empty" << std::endl;
+                return 1;
+            }
         }
 
         if(std::filesystem::exists(exportLight))

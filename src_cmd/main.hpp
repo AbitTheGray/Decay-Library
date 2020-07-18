@@ -20,4 +20,4 @@ int Exec_bsp2obj(int argc, const char** argv);
 
 int Exec_wad_add(int argc, const char** argv);
 
-int Exec_lightmap_extract(int argc, const char** argv);
+int Exec_lightmap(int argc, const char** argv);

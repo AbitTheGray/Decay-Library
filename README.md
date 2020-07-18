@@ -57,12 +57,16 @@ It is recommended to keep it where it is and use [Symbolic link](https://en.wiki
 Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to disable.
 
 - `help` = display information how to use the command-line utility.
-- `bsp2obj <map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]` = converts BSP to OBJ + MTD, exports textures into own directory.
+- `bsp2obj <map.bsp> [file.obj] [file.mtl] [textures_dir=`file.mtl`/../textures]` = converts BSP to OBJ + MTD, exports textures into own directory.
   - Used textures without data are exported only as placeholders (with correct dimensions).
 - `wad_add <file.wad> <texture...` = add texture(s) into WAD
   - Does not parse textures, only WAD header
-- `lightmap <map.bsp> <lightmap.png>` = extracts per-face lightmap and packs them into few big lightmaps
+- `lightmap <map.bsp> [lightmap.png]` = extracts per-face lightmap and packs them into few big lightmaps
   - Big lightmap(s) have "holes" (unused pixels)
+- ~~`bsp2wad <map.bsp> [map.wad] [new_map.bsp]`~~ - Extracts textures from BSP to WAD
+  - ~~If `new_map.bsp` is supplied, new BSP is created without those textures (only referenced, not packed)~~
+- ~~`bsp_optimize` - Decreases size of BSP file~~
+- ~~`wad_optimize` - Decreases size of WAD file~~
 
 ## Linux tools
 
