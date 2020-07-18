@@ -633,7 +633,7 @@ namespace Decay::Wad
         assert(extension.size() > 1);
         assert(extension[0] == '.');
 
-        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = Bsp::BspTree::GetImageWriteFunction(extension);
+        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> writeFunc = ImageWriteFunction_RGBA(extension);
 
         for(auto& texture : ReadAllTextures())
         {

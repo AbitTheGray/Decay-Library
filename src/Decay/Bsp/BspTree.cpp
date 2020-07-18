@@ -1,10 +1,7 @@
 #include "BspTree.hpp"
 
-#include <fstream>
 #include <map>
 #include <vector>
-
-#include <stb_image_write.h>
 
 namespace Decay::Bsp
 {
@@ -170,7 +167,7 @@ namespace Decay::Bsp
             if(face.LightmapOffset + lightmapLength * 3 > Bsp->GetLightingCount() * 3)
                 throw std::runtime_error("Indexing outside of Lightmap");
 
-            smartFace.LightmapRef = AddLightmap(
+            AddLight(
                     lightmapSize,
                     reinterpret_cast<const glm::u8vec3*>(reinterpret_cast<const uint8_t*>(Bsp->GetRawLighting()) + face.LightmapOffset),
                     uvStart,
@@ -425,81 +422,6 @@ namespace Decay::Bsp
         }
     }
 
-    std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> BspTree::GetImageWriteFunction(const std::string& extension)
-    {
-        if(extension == ".png" || extension == ".PNG")
-        {
-            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
-            {
-                // Write to file
-                stbi_write_png(
-                        path,
-                        width,
-                        height,
-                        4,
-                        data,
-                        static_cast<int32_t>(width) * 4
-                );
-            };
-        }
-        else if(extension == ".bmp" || extension == ".BMP")
-        {
-            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
-            {
-                stbi_write_bmp(
-                        path,
-                        width,
-                        height,
-                        4,
-                        data
-                );
-            };
-        }
-        else if(extension == ".tga" || extension == ".TGA")
-        {
-            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
-            {
-                stbi_write_tga(
-                        path,
-                        width,
-                        height,
-                        4,
-                        data
-                );
-            };
-        }
-        else if(extension == ".jpg" || extension == ".JPG" || extension == ".jpeg" || extension == ".JPEG")
-        {
-            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
-            {
-                stbi_write_jpg(
-                        path,
-                        width,
-                        height,
-                        4,
-                        data,
-                        100 // 0 = minimum, 100 = maximum
-                );
-            };
-        }
-        else if(extension == ".raw" || extension == ".RAW")
-        {
-            return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data) -> void
-            {
-                std::fstream out(path, std::ios_base::out | std::ios_base::trunc);
-
-                out.write(reinterpret_cast<const char*>(&width), sizeof(width));
-                out.write(reinterpret_cast<const char*>(&height), sizeof(height));
-
-                out.write(reinterpret_cast<const char*>(data), static_cast<std::size_t>(width) * height);
-
-                out.flush();
-            };
-        }
-        else
-            throw std::runtime_error("Unsupported texture extension for export");
-    }
-
     void BspTree::ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension, bool dummyForMissing) const
     {
         if(std::filesystem::exists(directory))
@@ -513,7 +435,7 @@ namespace Decay::Bsp
         assert(textureExtension.size() > 1);
         assert(textureExtension[0] == '.');
 
-        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = GetImageWriteFunction(textureExtension);
+        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = ImageWriteFunction_RGBA(textureExtension);
 
         for(auto& texture : Textures)
         {
@@ -664,32 +586,108 @@ namespace Decay::Bsp
         return entities;
     }
 
-    bool BspTree::Lightmap::AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
+    void BspTree::AddLight(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
     {
-        //TODO Optimize
-        for(uint32_t y = 0; y < Height - size.y; y++)
+        // Insert into texture
+        float w1 = 1.0f / Light.Width;
+        float h1 = 1.0f / Light.Height;
         {
-            for(uint32_t x = 0; x < Width - size.x; x++)
+            //TODO Optimize
+            // Check few pixels (left, right, middle) before checking whole row?
+            for(uint32_t y = 0; y < Light.Height - size.y; y++)
             {
-                if(CanInsert(x, y, size))
+                for(uint32_t x = 0; x < Light.Width - size.x; x++)
                 {
-                    Insert(x, y, size, data);
+                    if(Light.CanInsert(x, y, size))
+                    {
+                        Light.Insert(x, y, size, data);
 
-                    float w = Width;
-                    float h = Height;
-                    out_start = {
-                            x / w,
-                            y / h
-                    };
-                    out_end = {
-                            static_cast<float>(x + size.x) / w,
-                            static_cast<float>(y + size.y) / h
-                    };
-                    return true;
+                        out_start = {
+                                x * w1,
+                                y * h1
+                        };
+                        out_end = {
+                                static_cast<float>(x + size.x) * w1,
+                                static_cast<float>(y + size.y) * h1
+                        };
+                        return; // Successfully added
+                    }
                 }
+            }
+            // No space to insert into!
+        }
+
+        // Resize texture
+        {
+            const uint32_t w = Light.Width;
+            const uint32_t h = Light.Height;
+
+            if(w >= BspTree::Lightmap::MaxSize || h >= BspTree::Lightmap::MaxSize)
+                throw std::runtime_error("Lightmap is too big");
+
+            Light.Width *= 2;
+            Light.Height *= 2;
+
+            const std::size_t dataSize = w * h * 4;
+            Light.Data.resize(dataSize);
+            Light.Used.resize(dataSize);
+
+            auto data_ptr = Light.Data.begin();
+            auto used_ptr = Light.Used.begin();
+
+            // Move content of Light.Data & Light.
+            // Use to top-left corner instead of top quarter.
+            for(int64_t oldRow = h, newRow = Light.Height; oldRow >= 0; oldRow--, newRow -= 2)
+            {
+                std::copy(
+                        data_ptr + (w * oldRow),
+                        data_ptr + ((w+1) * oldRow),
+                        data_ptr + (w * newRow)
+                );
+                std::copy(
+                        used_ptr + (w * oldRow),
+                        used_ptr + ((w+1) * oldRow),
+                        used_ptr + (w * newRow)
+                );
             }
         }
 
-        return false;
+#ifndef DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV
+        // Recalculate UV
+        for(auto& vertex : Vertices)
+            vertex.LightUV *= 0.5f;
+#endif
+
+        // Insert into texture
+        // Same as above but skips previous pixels
+        {
+            //TODO Optimize
+            // Check few pixels (left, right, middle) before checking whole row?
+            assert(Light.Height / 2 - 16 >= 0);
+            assert(Light.Width / 2 - 16 >= 0);
+            for(uint32_t y = Light.Height / 2 - 16; y < Light.Height - size.y; y++)
+            {
+                for(uint32_t x = Light.Width / 2 - 16; x < Light.Width - size.x; x++)
+                {
+                    if(Light.CanInsert(x, y, size))
+                    {
+                        Light.Insert(x, y, size, data);
+
+                        out_start = {
+                                x * w1,
+                                y * h1
+                        };
+                        out_end = {
+                                static_cast<float>(x + size.x) * w1,
+                                static_cast<float>(y + size.y) * h1
+                        };
+                        return; // Successfully added
+                    }
+                }
+            }
+            // No space to insert into!
+        }
+
+        throw std::runtime_error("Could not insert into resized lightmap");
     }
 }

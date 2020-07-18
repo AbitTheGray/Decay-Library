@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-#include "../src/stb/stb_image_write.cpp"
+#include <Decay/Common.hpp>
 
 std::map<std::string, Command> Commands = {
         {
@@ -28,11 +28,11 @@ std::map<std::string, Command> Commands = {
                 }
         },
         {
-                "lightmap_extract",
+                "lightmap",
                 Command{
                         Exec_lightmap_extract,
-                        "<map.bsp> <directory>",
-                        "Extracts lightmap textures"
+                        "<map.bsp> <lightmap.png>",
+                        "Extracts lightmap texture"
                 }
         }
 };
@@ -343,32 +343,25 @@ int Exec_lightmap_extract(int argc, const char** argv)
         }
     }
 
-    std::filesystem::path exportDir(argv[1]);
+    std::filesystem::path exportLight(argv[1]);
     {
-        if(exportDir.empty())
+        if(exportLight.empty())
         {
-            std::cerr << "Export directory path is empty" << std::endl;
+            std::cerr << "Export lightmap path is empty" << std::endl;
             return 1;
         }
 
-        if(std::filesystem::exists(exportDir))
+        if(std::filesystem::exists(exportLight))
         {
-            if(!std::filesystem::is_directory(exportDir))
+            if(!std::filesystem::is_regular_file(exportLight))
             {
-                std::cerr << "Export directory path exists but is not a directory" << std::endl;
-                return 1;
-            }
-        }
-        else // ! exists(exportDir)
-        {
-            if(!std::filesystem::create_directory(exportDir))
-            {
-                std::cerr << "Export directory could not be created" << std::endl;
+                std::cerr << "Export lightmap path exists but is not a file" << std::endl;
                 return 1;
             }
         }
     }
 
+    using namespace Decay;
     using namespace Decay::Bsp;
 
     std::shared_ptr<BspFile> bsp;
@@ -396,13 +389,13 @@ int Exec_lightmap_extract(int argc, const char** argv)
         return 1;
     }
 
-    for(auto& lightmap : tree->Lightmaps)
-    {
-        std::stringstream ss;
-        ss << "light_" << lightmap->Index << ".png";
-        std::filesystem::path dstFile(exportDir / ss.str());
-        stbi_write_png(dstFile.c_str(), lightmap->Width, lightmap->Height, 3, lightmap->Data.data(), lightmap->Width * 3);
-    }
+    std::string extension = exportLight.extension();
+    assert(extension.size() > 1);
+    assert(extension[0] == '.');
+
+    std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* data)> writeFunc = ImageWriteFunction_RGB(extension);
+
+    writeFunc(exportLight.c_str(), tree->Light.Width, tree->Light.Height, tree->Light.Data.data());
 
     return 0;
 }

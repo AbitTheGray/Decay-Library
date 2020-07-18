@@ -90,26 +90,27 @@ namespace Decay::Bsp
         class Lightmap
         {
         public:
-            Lightmap(std::size_t index, uint32_t width, uint32_t height)
-             : Index(index),
-               Width(width), Height(height),
+            static const uint32_t InitSize = 512; // Used to be 256 but most official map had 3 or 4 of them
+            static const uint32_t MaxSize = 1u << 12u; // 4096
+
 #ifdef DEBUG
-               Data(width * height, glm::u8vec3(0xFF, 0x00, 0x7F)), // Fill unused space by pink color
+            static constexpr glm::u8vec3 InitColor = glm::u8vec3(0xFF, 0x00, 0x7F); // Pink
 #else
-               Data(width * height),
+            static constexpr glm::u8vec3 InitColor = glm::u8vec3(0x00, 0x00, 0x00); // Black
 #endif
+
+        public:
+            explicit Lightmap(uint32_t width = InitSize, uint32_t height = InitSize)
+             : Width(width), Height(height),
+               Data(width * height, InitColor),
                Used(width * height), UsedRanges()
             {
-            }
-            inline explicit Lightmap(std::size_t index) : Lightmap(index, 256, 256)
-            {
+                assert(Height / 2 - 16 >= 0);
+                assert(Width / 2 - 16 >= 0);
             }
 
         public:
-            const std::size_t Index;
-
-        public:
-            const uint32_t Width, Height;
+            uint32_t Width, Height;
             std::vector<glm::u8vec3> Data;
 
         public:
@@ -117,8 +118,6 @@ namespace Decay::Bsp
             std::vector<glm::u32vec4> UsedRanges;
 
         public:
-            bool AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end);
-        private:
             bool CanInsert(uint32_t insert_x, uint32_t insert_y, glm::uvec2 size)
             {
                 if(size.x + insert_x >= Width) [[unlikely]]
@@ -171,24 +170,9 @@ namespace Decay::Bsp
                 }
             }
         };
-        std::vector<std::shared_ptr<Lightmap>> Lightmaps = {};
-        std::shared_ptr<Lightmap> AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
-        {
-            // Existing lightmaps
-            for(const auto& lightmap : Lightmaps)
-                if(lightmap->AddLightmap(size, data, out_start, out_end))
-                    return lightmap;
-
-            // New lightmap
-            auto& lightmap = Lightmaps.emplace_back(
-                    std::make_shared<Lightmap>(Lightmaps.size())
-            );
-            if(lightmap->AddLightmap(size, data, out_start, out_end))
-                return lightmap;
-
-            // Total fail
-            throw std::runtime_error("Failed to add lightmap");
-        }
+        Lightmap Light = Lightmap();
+    public:
+        void AddLight(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end);
 
     public:
         class Face
@@ -201,8 +185,6 @@ namespace Decay::Bsp
             /// [1] = Base Light (0xFF = dark, 0x00 = light)
             /// [2],[3] = Additional light models
             uint8_t LightingStyles[4];
-
-            std::shared_ptr<Lightmap> LightmapRef = nullptr;
         };
 
     private:
@@ -273,16 +255,6 @@ namespace Decay::Bsp
         /// Materials for OBJ.
         void ExportMtl(const std::filesystem::path& filename, const std::filesystem::path& texturePath = ".", const std::string& textureExtension = ".png") const;
         void ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension = ".png", bool dummyForMissing = false) const;
-
-    public:
-        /// Extension always starts with period.
-        /// Supported extensions:
-        /// - .png
-        /// - .bmp
-        /// - .tga
-        /// - .jpg / .jpeg (maximum quality
-        /// - .raw (uint32_t width, uint32_t width, uint32_t... rgba_data)
-        static std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> GetImageWriteFunction(const std::string& extension);
 
     public:
         /// Parse raw entities string into vector of entities.

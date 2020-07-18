@@ -61,7 +61,7 @@ Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to dis
   - Used textures without data are exported only as placeholders (with correct dimensions).
 - `wad_add <file.wad> <texture...` = add texture(s) into WAD
   - Does not parse textures, only WAD header
-- `lightmap_extract <map.bsp> <directory>` = extracts per-face lightmap and packs them into few big lightmaps
+- `lightmap <map.bsp> <lightmap.png>` = extracts per-face lightmap and packs them into few big lightmaps
   - Big lightmap(s) have "holes" (unused pixels)
 
 ## Linux tools
