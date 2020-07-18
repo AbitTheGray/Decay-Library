@@ -253,7 +253,7 @@ struct Face
     uint16_t TextureMappingIndex; // Index of the Texture Info structure
 
     uint8_t LightingStyles[4];
-    uint32_t LightmapOffset; // Offsets into the raw LightMap data
+    uint32_t LightmapOffset; // Offset (in bytes) into the Lightmap data
 };
 ```
 

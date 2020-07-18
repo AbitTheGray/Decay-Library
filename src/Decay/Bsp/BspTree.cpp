@@ -10,14 +10,14 @@ namespace Decay::Bsp
 {
 
     BspTree::BspTree(std::shared_ptr<BspFile> bsp)
-     : Bsp(std::move(bsp)),
-     Textures(Bsp->GetTextures()),
-     Vertices(),
-     Models(Bsp->GetModelCount()),
-     Entities(ParseEntities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount())),
-     Entities_Model(),
-     Entities_Name(),
-     Entities_Type()
+            : Bsp(std::move(bsp)),
+              Textures(Bsp->GetTextures()),
+              Vertices(),
+              Models(Bsp->GetModelCount()),
+              Entities(ParseEntities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount())),
+              Entities_Model(),
+              Entities_Name(),
+              Entities_Type()
     {
         // Parse models
         for(std::size_t mi = 0; mi < Models.size(); mi++)
@@ -96,12 +96,11 @@ namespace Decay::Bsp
         // Get vertex indices from: Face -> Surface Edge -> Edge (-> Vertex)
         assert(face.SurfaceEdgeCount >= 3); // To at least for a triangle
         std::vector<uint16_t> faceIndices(face.SurfaceEdgeCount);
-        std::vector<glm::vec3> vertices(face.SurfaceEdgeCount);
         for(
-            std::size_t sei = face.FirstSurfaceEdge, seii = 0;
-            seii < face.SurfaceEdgeCount;
-            sei++, seii++
-        )
+                std::size_t sei = face.FirstSurfaceEdge, seii = 0;
+                seii < face.SurfaceEdgeCount;
+                sei++, seii++
+                )
         {
             assert(sei < Bsp->GetSurfaceEdgeCount());
             const BspFile::SurfaceEdges& surfaceEdge = Bsp->GetRawSurfaceEdges()[sei];
@@ -116,77 +115,67 @@ namespace Decay::Bsp
                 assert(-surfaceEdge < Bsp->GetEdgeCount());
                 faceIndices[seii] = Bsp->GetRawEdges()[-surfaceEdge].Second; // Quake used ~ (swap bits) instead of - (swap sign)
             }
-
-            vertices[seii] = Bsp->GetRawVertices()[faceIndices[seii]]; // Get vertex from current index
         }
 
         // Lightmap calculation
         glm::vec2 uvStart, uvEnd;
         auto& plane = Bsp->GetRawPlanes()[face.Plane];
-        float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
-        float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
+        float minS, maxS;
+        float minT, maxT;
         glm::ivec2 lightmapSize;
+
+        assert(face.LightmapOffset >= -1);
+        if(face.LightmapOffset != -1)
         {
-            switch(plane.Type)
+            // Get UV bounds
             {
-                case BspFile::PlaneType::X:
-                case BspFile::PlaneType::AnyX:
-                    for(auto& v : vertices)
-                    {
-                        if(v.y < minX)
-                            minX = v.y;
-                        if(v.y > maxX)
-                            maxX = v.y;
+                auto& vertex = Bsp->GetRawVertices()[faceIndices[0]];
 
-                        if(v.z < minY)
-                            minY = v.z;
-                        if(v.z > maxY)
-                            maxY = v.z;
-                    }
-                    break;
+                float s = textureMapping.GetTexelS(vertex);
+                minS = s;
+                maxS = s;
 
-                case BspFile::PlaneType::Y:
-                case BspFile::PlaneType::AnyY:
-                    for(auto& v : vertices)
-                    {
-                        if(v.x < minX)
-                            minX = v.x;
-                        if(v.x > maxX)
-                            maxX = v.x;
+                float t = textureMapping.GetTexelT(vertex);
+                minT = t;
+                maxT = t;
+            }
+            for(std::size_t ii = 1; ii < face.SurfaceEdgeCount; ii++)
+            {
+                auto& vertex = Bsp->GetRawVertices()[faceIndices[ii]];
 
-                        if(v.z < minY)
-                            minY = v.z;
-                        if(v.z > maxY)
-                            maxY = v.z;
-                    }
-                    break;
+                float s = textureMapping.GetTexelS(vertex);
+                if(s < minS)
+                    minS = s;
+                if(s > maxS)
+                    maxS = s;
 
-                case BspFile::PlaneType::Z:
-                case BspFile::PlaneType::AnyZ:
-                    for(auto& v : vertices)
-                    {
-                        if(v.x < minX)
-                            minX = v.x;
-                        if(v.x > maxX)
-                            maxX = v.x;
-
-                        if(v.y < minY)
-                            minY = v.y;
-                        if(v.y > maxY)
-                            maxY = v.y;
-                    }
-                    break;
+                float t = textureMapping.GetTexelT(vertex);
+                if(t < minT)
+                    minT = t;
+                if(t > maxT)
+                    maxT = t;
             }
 
             lightmapSize = glm::ivec2(
-                    ceilf(maxX / 16.0f) - floorf(minX / 16.0f) + 1,
-                    ceilf(maxY / 16.0f) - floorf(minY / 16.0f) + 1
+                    ceilf(maxS / 16.0f) - floorf(minS / 16.0f) + 1,
+                    ceilf(maxT / 16.0f) - floorf(minT / 16.0f) + 1
             );
             assert(lightmapSize.x > 0);
             assert(lightmapSize.y > 0);
+            /*
+            assert(lightmapSize.x <= 16);
+            assert(lightmapSize.y <= 16);
+             */
             int lightmapLength = lightmapSize.x * lightmapSize.y;
+            if(face.LightmapOffset + lightmapLength * 3 > Bsp->GetLightingCount() * 3)
+                throw std::runtime_error("Indexing outside of Lightmap");
 
-            smartFace.LightmapRef = AddLightmap(lightmapSize, Bsp->GetRawLighting() + lightmapLength, uvStart, uvEnd);
+            smartFace.LightmapRef = AddLightmap(
+                    lightmapSize,
+                    reinterpret_cast<const glm::u8vec3*>(reinterpret_cast<const uint8_t*>(Bsp->GetRawLighting()) + face.LightmapOffset),
+                    uvStart,
+                    uvEnd
+            );
         }
 
 
@@ -198,94 +187,44 @@ namespace Decay::Bsp
 
             // Main index
             auto mainVertex = Bsp->GetRawVertices()[faceIndices[0]];
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+            glm::vec2 mainUV = glm::vec2 {
+                    textureMapping.GetTexelS(mainVertex),
+                    textureMapping.GetTexelT(mainVertex)
+            };
+#else
+            glm::vec2 mainUV = glm::vec2 {
+                    textureMapping.GetTexelU(mainVertex, texture.Size),
+                    textureMapping.GetTexelV(mainVertex, texture.Size)
+            };
+#endif
             glm::vec2 mainLightUV;
-            switch(plane.Type)
-            {
-                case BspFile::PlaneType::X:
-                case BspFile::PlaneType::AnyX:
-                    mainLightUV = {
-                            (mainVertex.y - minX) / 16.0f / lightmapSize.x,
-                            (mainVertex.z - minY) / 16.0f / lightmapSize.y
-                    };
-                    break;
-
-                case BspFile::PlaneType::Y:
-                case BspFile::PlaneType::AnyY:
-                    mainLightUV = {
-                            (mainVertex.x - minX) / 16.0f / lightmapSize.x,
-                            (mainVertex.z - minY) / 16.0f / lightmapSize.y
-                    };
-                    break;
-
-                case BspFile::PlaneType::Z:
-                case BspFile::PlaneType::AnyZ:
-                    mainLightUV = {
-                            (mainVertex.x - minX) / 16.0f / lightmapSize.x,
-                            (mainVertex.y - minY) / 16.0f / lightmapSize.y
-                    };
-                    break;
-            }
             uint16_t mainIndex = AddVertex(
                     Vertex {
                             mainVertex,
-#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-                            glm::vec2 {
-                                    textureMapping.GetTexelS(mainVertex),
-                                    textureMapping.GetTexelT(mainVertex)
-                            },
-#else
-                            glm::vec2 {
-                                    textureMapping.GetTexelU(mainVertex, texture.Size),
-                                    textureMapping.GetTexelV(mainVertex, texture.Size)
-                            },
-#endif
+                            mainUV,
                             mainLightUV
                     }
             );
 
             // Second index
             auto secondVertex = Bsp->GetRawVertices()[faceIndices[1]];
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+            glm::vec2 secondUV = glm::vec2 {
+                    textureMapping.GetTexelS(secondVertex),
+                    textureMapping.GetTexelT(secondVertex)
+            };
+#else
+            glm::vec2 secondUV = glm::vec2 {
+                    textureMapping.GetTexelU(secondVertex, texture.Size),
+                    textureMapping.GetTexelV(secondVertex, texture.Size)
+            };
+#endif
             glm::vec2 secondLightUV;
-            switch(plane.Type)
-            {
-                case BspFile::PlaneType::X:
-                case BspFile::PlaneType::AnyX:
-                    secondLightUV = {
-                            (secondVertex.y - minX) / 16.0f / lightmapSize.x,
-                            (secondVertex.z - minY) / 16.0f / lightmapSize.y
-                    };
-                    break;
-
-                case BspFile::PlaneType::Y:
-                case BspFile::PlaneType::AnyY:
-                    secondLightUV = {
-                            (secondVertex.x - minX) / 16.0f / lightmapSize.x,
-                            (secondVertex.z - minY) / 16.0f / lightmapSize.y
-                    };
-                    break;
-
-                case BspFile::PlaneType::Z:
-                case BspFile::PlaneType::AnyZ:
-                    secondLightUV = {
-                            (secondVertex.x - minX) / 16.0f / lightmapSize.x,
-                            (secondVertex.y - minY) / 16.0f / lightmapSize.y
-                    };
-                    break;
-            }
             uint16_t secondIndex = AddVertex(
                     Vertex {
                             secondVertex,
-#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-                            glm::vec2 {
-                                    textureMapping.GetTexelS(secondVertex),
-                                    textureMapping.GetTexelT(secondVertex)
-                            },
-#else
-                            glm::vec2 {
-                                    textureMapping.GetTexelU(secondVertex, texture.Size),
-                                    textureMapping.GetTexelV(secondVertex, texture.Size)
-                            },
-#endif
+                            secondUV,
                             secondLightUV
                     }
             );
@@ -295,47 +234,22 @@ namespace Decay::Bsp
             for(std::size_t ii = 2; ii < face.SurfaceEdgeCount; ii++)
             {
                 auto thirdVertex = Bsp->GetRawVertices()[faceIndices[ii]];
-                glm::vec2 thirdLightUV;
-                switch(plane.Type)
-                {
-                    case BspFile::PlaneType::X:
-                    case BspFile::PlaneType::AnyX:
-                        thirdLightUV = {
-                                (thirdVertex.y - minX) / 16.0f / lightmapSize.x,
-                                (thirdVertex.z - minY) / 16.0f / lightmapSize.y
-                        };
-                        break;
-
-                    case BspFile::PlaneType::Y:
-                    case BspFile::PlaneType::AnyY:
-                        thirdLightUV = {
-                                (thirdVertex.x - minX) / 16.0f / lightmapSize.x,
-                                (thirdVertex.z - minY) / 16.0f / lightmapSize.y
-                        };
-                        break;
-
-                    case BspFile::PlaneType::Z:
-                    case BspFile::PlaneType::AnyZ:
-                        thirdLightUV = {
-                                (thirdVertex.x - minX) / 16.0f / lightmapSize.x,
-                                (thirdVertex.y - minY) / 16.0f / lightmapSize.y
-                        };
-                        break;
-                }
+#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
+                glm::vec2 thirdUV = glm::vec2 {
+                        textureMapping.GetTexelS(thirdVertex),
+                        textureMapping.GetTexelT(thirdVertex)
+                };
+#else
+                glm::vec2 thirdUV = glm::vec2 {
+                        textureMapping.GetTexelU(thirdVertex, texture.Size),
+                        textureMapping.GetTexelV(thirdVertex, texture.Size)
+                };
+#endif
+                glm::vec2 thirdLightUV = {0, 0};
                 uint16_t thirdIndex = AddVertex(
                         Vertex {
                                 thirdVertex,
-#ifdef DECAY_BSP_ST_INSTEAD_OF_UV
-                                glm::vec2 {
-                                        textureMapping.GetTexelS(thirdVertex),
-                                        textureMapping.GetTexelT(thirdVertex)
-                                },
-#else
-                                glm::vec2 {
-                                        textureMapping.GetTexelU(thirdVertex, texture.Size),
-                                        textureMapping.GetTexelV(thirdVertex, texture.Size)
-                                },
-#endif
+                                thirdUV,
                                 thirdLightUV
                         }
                 );
@@ -481,8 +395,8 @@ namespace Decay::Bsp
         for(auto& texture : Textures)
         {
             auto imgPath = texturePath == "." ?
-                    std::filesystem::path(texture.Name + textureExtension) :
-                    texturePath / (texture.Name + textureExtension);
+                           std::filesystem::path(texture.Name + textureExtension) :
+                           texturePath / (texture.Name + textureExtension);
 
             out << "newmtl texture_" << texture.Name << std::endl;
             out << "Ka 1.0 1.0 1.0" << std::endl;
@@ -632,12 +546,12 @@ namespace Decay::Bsp
             switch(c)
             {
                 case '\0':
-                [[unlikely]]
+                    [[unlikely]]
                 {
                     break;
                 }
 
-                // Start of entity
+                    // Start of entity
                 case '{':
                 {
                     if(!entity.empty())
@@ -648,7 +562,7 @@ namespace Decay::Bsp
                     break;
                 }
 
-                // End of entity
+                    // End of entity
                 case '}':
                 {
                     if(entity.empty())
@@ -662,7 +576,7 @@ namespace Decay::Bsp
                     break;
                 }
 
-                // Key/Value encasement characters
+                    // Key/Value encasement characters
                 case '"':
                 {
                     if(keyStart == nullptr)
@@ -674,8 +588,8 @@ namespace Decay::Bsp
                     else // valueEnd
                     {
                         entity.emplace(
-                            std::string(keyStart, keyEnd),
-                            std::string(valueStart, raw + i)
+                                std::string(keyStart, keyEnd),
+                                std::string(valueStart, raw + i)
                         );
 
                         keyStart = nullptr;
@@ -684,11 +598,11 @@ namespace Decay::Bsp
                     }
                 }
 
-                // White character, valid anywhere
+                    // White character, valid anywhere
                 case ' ':
                     break;
 
-                // New line
+                    // New line
                 case '\n':
                 {
                     if(keyStart != nullptr)
@@ -699,27 +613,27 @@ namespace Decay::Bsp
                     break;
                 }
 
-                // Special characters
+                    // Special characters
                 case '\t':
                 case '\b':
-                [[unlikely]]
+                    [[unlikely]]
                 {
                     std::cerr << "Unsupported " << (int)c << " character" << std::endl;
                     break;
                 }
 
-                // Content of entity
+                    // Content of entity
                 default:
-                [[likely]]
+                    [[likely]]
                 {
                     if(keyStart == nullptr)
-                    [[unlikely]]
+                            [[unlikely]]
                     {
                         std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in key" << std::endl;
                         break;
                     }
                     if(keyEnd != nullptr && valueStart == nullptr)
-                    [[unlikely]]
+                            [[unlikely]]
                     {
                         std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in value" << std::endl;
                         break;
