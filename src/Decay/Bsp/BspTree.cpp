@@ -651,24 +651,6 @@ namespace Decay::Bsp
         return entities;
     }
 
-    std::shared_ptr<BspTree::Lightmap> BspTree::AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
-    {
-        // Existing lightmaps
-        for(const auto& lightmap : Lightmaps)
-            if(lightmap->AddLightmap(size, data, out_start, out_end))
-                return lightmap;
-
-        // New lightmap
-        auto lightmap = Lightmaps.emplace_back(
-                std::make_shared<Lightmap>(Lightmaps.size())
-        );
-        if(lightmap->AddLightmap(size, data, out_start, out_end))
-            return lightmap;
-
-        // Total fail
-        throw std::runtime_error("Failed to add lightmap");
-    }
-
     bool BspTree::Lightmap::AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
     {
         //TODO Optimize

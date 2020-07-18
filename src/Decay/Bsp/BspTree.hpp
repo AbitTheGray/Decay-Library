@@ -80,7 +80,11 @@ namespace Decay::Bsp
             Lightmap(std::size_t index, uint32_t width, uint32_t height)
              : Index(index),
                Width(width), Height(height),
+#ifdef DEBUG
+               Data(width * height, glm::u8vec3(0xFF, 0x00, 0x7F)), // Fill unused space by pink color
+#else
                Data(width * height),
+#endif
                Used(width * height), UsedRanges()
             {
             }
@@ -139,15 +143,39 @@ namespace Decay::Bsp
                     std::size_t insert_yi = y * size.x;
 
                     // Mark pixels as "Used"
-                    std::fill(Used.begin() + yi, Used.begin() + (yi + size.y), true);
+                    std::fill(
+                            Used.begin() + (yi + insert_x),
+                            Used.begin() + ((yi + insert_x) + size.x),
+                            true
+                    );
 
                     // Copy pixel data
-                    std::copy(data + insert_yi, data + (insert_yi + size.x), Data.data() + yi);
+                    std::copy(
+                            data + insert_yi,
+                            data + (insert_yi + size.x),
+                            Data.data() + (yi + insert_x)
+                    );
                 }
             }
         };
         std::vector<std::shared_ptr<Lightmap>> Lightmaps = {};
-        std::shared_ptr<Lightmap> AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end);
+        std::shared_ptr<Lightmap> AddLightmap(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
+        {
+            // Existing lightmaps
+            for(const auto& lightmap : Lightmaps)
+                if(lightmap->AddLightmap(size, data, out_start, out_end))
+                    return lightmap;
+
+            // New lightmap
+            auto& lightmap = Lightmaps.emplace_back(
+                    std::make_shared<Lightmap>(Lightmaps.size())
+            );
+            if(lightmap->AddLightmap(size, data, out_start, out_end))
+                return lightmap;
+
+            // Total fail
+            throw std::runtime_error("Failed to add lightmap");
+        }
 
     public:
         class Face
