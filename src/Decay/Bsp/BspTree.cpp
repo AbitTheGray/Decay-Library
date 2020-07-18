@@ -16,6 +16,17 @@ namespace Decay::Bsp
               Entities_Name(),
               Entities_Type()
     {
+#ifndef DEBUG
+        // First texture
+        // Use it as filler
+        if(Light.UsedRanges.empty())
+            std::fill(
+                    Light.Data.begin(),
+                    Light.Data.end(),
+                    Bsp->GetRawLighting()[Bsp->GetLightingCount() / 2]
+            );
+#endif
+
         // Parse models
         for(std::size_t mi = 0; mi < Models.size(); mi++)
         {
@@ -628,28 +639,60 @@ namespace Decay::Bsp
             Light.Width *= 2;
             Light.Height *= 2;
 
-            const std::size_t dataSize = w * h * 4;
+            const std::size_t dataSize_old = w * h;
+            const std::size_t dataSize = dataSize_old * 4;
             Light.Data.resize(dataSize);
             Light.Used.resize(dataSize);
 
             auto data_ptr = Light.Data.begin();
             auto used_ptr = Light.Used.begin();
 
+#ifdef DEBUG
+            auto rgb = glm::u8vec3(0xFF, 0x00, 0x7F);
+#else
+            auto& rgb = Bsp->GetRawLighting()[Bsp->GetLightingCount() / 2];
+#endif
+
             // Move content of Light.Data & Light.
             // Use to top-left corner instead of top quarter.
-            for(int64_t oldRow = h, newRow = Light.Height; oldRow >= 0; oldRow--, newRow -= 2)
+            for(int64_t oldIndex = dataSize_old, newIndex = dataSize / 2 - w; oldIndex > 0; oldIndex -= w, newIndex -= Light.Width)
             {
-                std::copy(
-                        data_ptr + (w * oldRow),
-                        data_ptr + ((w+1) * oldRow),
-                        data_ptr + (w * newRow)
+                assert(newIndex >= 0);
+
+                int64_t oldIndex_new = oldIndex + w;
+                assert(oldIndex_new <= dataSize);
+
+                // Data
+                std::move(
+                        data_ptr + oldIndex,
+                        data_ptr + oldIndex_new,
+                        data_ptr + newIndex
                 );
-                std::copy(
-                        used_ptr + (w * oldRow),
-                        used_ptr + ((w+1) * oldRow),
-                        used_ptr + (w * newRow)
+                std::fill(
+                        data_ptr + oldIndex,
+                        data_ptr + oldIndex_new,
+                        rgb
+                );
+
+                // Used
+                std::move(
+                        used_ptr + oldIndex,
+                        used_ptr + oldIndex_new,
+                        used_ptr + newIndex
+                );
+                std::fill(
+                        used_ptr + oldIndex,
+                        used_ptr + oldIndex_new,
+                        false
                 );
             }
+
+            // Fill new area (lower half)
+            std::fill(
+                    Light.Data.begin() + (dataSize / 2),
+                    Light.Data.end(),
+                    rgb
+            );
         }
 
 #ifndef DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV
