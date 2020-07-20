@@ -22,7 +22,7 @@ typedef struct
 {
     float x, y, z;
     float u, v;
-    float s, t;
+    float light_u, light_v;
 } bsp_vertex;
 typedef struct {char dummy;} bsp_model;
 
