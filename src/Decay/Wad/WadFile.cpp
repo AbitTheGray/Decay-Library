@@ -109,13 +109,14 @@ namespace Decay::Wad
 
     void WadFile::AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items)
     {
-        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
-            throw std::runtime_error("File not found");
-
         char magic[4];
-        std::vector<WadEntry> entries;
-        std::vector<void*> entryData;
+        std::vector<WadEntry> entries = {};
+        std::vector<void*> entryData = {};
+        if(std::filesystem::exists(filename))
         {
+            if(!std::filesystem::is_regular_file(filename))
+                throw std::runtime_error("File exists but is not valid");
+
             std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
 
             // Store magic number
