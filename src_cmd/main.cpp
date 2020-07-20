@@ -36,9 +36,9 @@ std::map<std::string, Command> Commands = {
                 }
         },
         {
-                "lightmap",
+                "bsp_lightmap",
                 Command{
-                        Exec_lightmap,
+                        Exec_bsp_lightmap,
                         "<map.bsp> <lightmap.png>",
                         "Extracts lightmap texture"
                 }
@@ -431,7 +431,7 @@ int Exec_wad_add(int argc, const char** argv)
     return 0;
 }
 
-int Exec_lightmap(int argc, const char** argv)
+int Exec_bsp_lightmap(int argc, const char** argv)
 {
     if(argc == 0)
     {
