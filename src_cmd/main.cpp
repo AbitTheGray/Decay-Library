@@ -300,10 +300,6 @@ int Exec_bsp2wad(int argc, const char** argv)
         }
     }
 
-    //TODO BSP without textures
-    if(argc >= 3)
-        std::cerr << "Creating texture-less BSP is not yet supported" << std::endl;
-
     using namespace Decay::Bsp;
     using namespace Decay::Wad;
 
@@ -319,7 +315,43 @@ int Exec_bsp2wad(int argc, const char** argv)
         return 1;
     }
 
-    WadFile::AddToFile(wadFilename, bsp->GetTextures(), {}, {});
+    auto textures = bsp->GetTextures();
+
+    auto count = WadFile::AddToFile(wadFilename, textures, {}, {});
+    if(count == 0)
+        std::cerr << "No textures to add" << std::endl;
+    else
+        std::cout << "Added " << count << " textures to " << wadFilename << std::endl;
+
+
+    // BSP without packed textures
+    if(argc >= 3)
+    {
+        std::filesystem::path outBspFilename(argv[2]);
+        {
+            if(outBspFilename.empty())
+            {
+                std::cerr << "Output BSP file path is empty" << std::endl;
+                return 1;
+            }
+            if(outBspFilename.extension() != ".bsp")
+                std::cerr << "Output BSP file path does not have .bsp extension" << std::endl;
+            if(std::filesystem::exists(outBspFilename) && !std::filesystem::is_regular_file(outBspFilename))
+            {
+                std::cerr << "Output BSP file exists but does not refer to valid file" << std::endl;
+                return 1;
+            }
+        }
+
+        for(std::size_t i = 0; i < textures.size(); i++)
+            textures[i] = textures[i].CopyWithoutData();
+
+        bsp->SetTextures(textures);
+
+        bsp->Save(outBspFilename);
+
+        std::cout << "Saved BSP without packed textures to " << outBspFilename << std::endl;
+    }
 
     return 0;
 }

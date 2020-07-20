@@ -19,7 +19,17 @@ namespace Decay
             this->setg(m_Begin, m_Begin, m_End);
             this->setp(m_Begin, m_End);
         }
-        MemoryBuffer(char* begin, std::size_t size) : MemoryBuffer(begin, begin + size)
+        MemoryBuffer(void* begin, char* end)
+         : MemoryBuffer(reinterpret_cast<char*>(begin), reinterpret_cast<char*>(end))
+        {
+        }
+
+        MemoryBuffer(char* begin, std::size_t size)
+         : MemoryBuffer(begin, begin + size)
+        {
+        }
+        MemoryBuffer(void* begin, std::size_t size)
+         : MemoryBuffer(reinterpret_cast<char*>(begin), size)
         {
         }
 

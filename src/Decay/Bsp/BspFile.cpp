@@ -61,9 +61,9 @@ namespace Decay::Bsp
 
             switch(magicNumber)
             {
-                case 0x0000001Eu:
+                case Magic:
                     break; // OK
-                case 0x1E000000u:
+                case Magic_WrongEndian:
                     throw std::runtime_error("Invalid endianness");
                 default:
                     throw std::runtime_error("Unsupported magic number");
@@ -283,6 +283,136 @@ namespace Decay::Bsp
         }
 
         return textures;
+    }
+
+    void BspFile::SetTextures(const std::vector<Wad::WadFile::Texture>& textures)
+    {
+        // Free old
+        std::free(m_Data[static_cast<uint8_t>(LumpType::Textures)]);
+
+        // No textures
+        if(textures.empty())
+        {
+            uint32_t* data = reinterpret_cast<uint32_t*>(std::malloc(sizeof(uint32_t)));
+            *data = 0; // textures.size()
+            m_Data[static_cast<uint8_t>(LumpType::Textures)] = data;
+
+            m_DataLength[static_cast<uint8_t>(LumpType::Textures)] = sizeof(uint32_t);
+            return;
+        }
+
+        std::size_t dataLength = sizeof(Texture) * textures.size();
+        for(const auto& texture : textures)
+        {
+            if(texture.HasData())
+            {
+                for(std::size_t i = 0; i < MipTextureLevels; i++)
+                    dataLength += texture.MipMapDimensions[i].x * texture.MipMapDimensions[i].y;
+                dataLength += sizeof(short);
+                dataLength += texture.Palette.size() * 3;
+            }
+        }
+
+        // Allocate memory
+        void* data = std::malloc(dataLength);
+        m_Data[static_cast<uint8_t>(LumpType::Textures)] = data;
+
+        m_DataLength[static_cast<uint8_t>(LumpType::Textures)] = dataLength;
+
+        MemoryBuffer dataBuffer = MemoryBuffer(
+                data,
+                dataLength
+        );
+        std::ostream out(&dataBuffer);
+
+
+        // Texture Insert Loop
+        for(const auto& texture : textures)
+        {
+            Texture t = {};
+
+            // Name
+            {
+                assert(texture.Name.length() < MaxTextureName);
+                std::fill(t.Name, t.Name + MaxTextureName, '\0');
+                texture.Name.copy(t.Name, texture.Name.length());
+            }
+
+            t.Width = texture.Width;
+            t.Height = texture.Height;
+
+            if(texture.HasData())
+            {
+                t.MipMaps[0] = MaxTextureName + sizeof(t.Width) + sizeof(t.Height);
+
+                for(std::size_t i = 0; i < MipTextureLevels - 1; i++)
+                    t.MipMaps[i + 1] = t.MipMaps[i] + (t.Width >> i) * (t.Height >> i);
+
+                out.write(reinterpret_cast<const char*>(&t), sizeof(t));
+
+                // Data
+                for(std::size_t i = 0; i < MipTextureLevels; i++)
+                    out.write(reinterpret_cast<const char*>(texture.MipMapData[i].data()), texture.MipMapData[i].size());
+
+                // Palette
+                assert(texture.Palette.size() <= 256);
+                short paletteSize = texture.Palette.size();
+                out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
+
+                out.write(reinterpret_cast<const char*>(texture.Palette.data()), sizeof(glm::u8vec3) * texture.Palette.size());
+            }
+            else
+            {
+                for(std::size_t i = 0; i < MipTextureLevels; i++)
+                    t.MipMaps[i] = 0;
+            }
+
+            // Save from `std::ostream`
+            out.flush();
+        }
+
+        // `m_Data` and `m_DataLength` are already stored.
+        // `out.flush()` was called at end of Texture Insert Loop
+        // `out.close()` should not be needed + destructor will call it after end of this function
+    }
+
+    void BspFile::Save(const std::filesystem::path& filename) const
+    {
+        std::size_t dataSize = 0;
+        for(std::size_t i = 0; i < LumpType_Size; i++)
+            dataSize += m_DataLength[i];
+
+        struct LumpEntry
+        {
+            uint32_t Offset;
+            uint32_t Length;
+        };
+
+        LumpEntry lumps[LumpType_Size];
+        std::size_t prevOffset = sizeof(Magic) + sizeof(lumps);
+
+        for(std::size_t i = 0; i < LumpType_Size; i++)
+        {
+            lumps[i].Length = m_DataLength[i];
+            lumps[i].Offset = prevOffset;
+            prevOffset += m_DataLength[i];
+        }
+
+
+        std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+
+        // Magic number
+        typeof(Magic) magic = Magic;
+        out.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+
+        // Lump headers
+        out.write(reinterpret_cast<const char*>(lumps), sizeof(lumps));
+
+        // Lump data
+        for(std::size_t i = 0; i < LumpType_Size; i++)
+            out.write(reinterpret_cast<const char*>(m_Data[i]), m_DataLength[i]);
+
+        out.close();
     }
 
     void BspFile::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const

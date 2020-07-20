@@ -13,6 +13,10 @@ namespace Decay::Bsp
     class BspFile
     {
     public:
+        static const uint32_t Magic = 0x0000001Eu;
+        static const uint32_t Magic_WrongEndian = 0x1E000000u;
+
+    public:
         explicit BspFile(const std::filesystem::path& filename);
 
         ~BspFile();
@@ -353,6 +357,10 @@ namespace Decay::Bsp
         [[nodiscard]] uint32_t GetTextureCount() const;
 
         [[nodiscard]] std::vector<Wad::WadFile::Texture> GetTextures() const;
+
+        void SetTextures(const std::vector<Wad::WadFile::Texture>& textures);
+
+        void Save(const std::filesystem::path& filename) const;
 
     };
 }

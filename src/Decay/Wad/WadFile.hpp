@@ -266,6 +266,15 @@ namespace Decay::Wad
 
             [[nodiscard]] bool HasData() const noexcept { return MipMapData[0].size() != 0; }
 
+            [[nodiscard]] Texture CopyWithoutData() const
+            {
+                Texture texture = {};
+                texture.Name = Name;
+                texture.Size = Size;
+
+                return texture;
+            }
+
         };
 
         WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures, ReadAllTextures_Map)
