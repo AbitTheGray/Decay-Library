@@ -380,6 +380,7 @@ int Exec_wad_add(int argc, const char** argv)
         catch(std::runtime_error& ex)
         {
             std::cerr << "Failed to load texture from " << tPath << std::endl;
+            std::cerr << ex.what() << std::endl;
             continue;
         }
     }

@@ -120,30 +120,49 @@ namespace Decay::Wad
             if(!std::filesystem::is_regular_file(filename))
                 throw std::runtime_error("File exists but is not valid");
 
-            std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
-
-            // Store magic number
-            in.read(magic, sizeof(magic));
-            in.seekg(0);
-
-            entries = ReadWadEntries(in);
-            if(!entries.empty())
+            try
             {
-                entryData.resize(entries.size());
+                std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
 
-                for(const WadEntry& entry : entries)
+                // Store magic number
+                in.read(magic, sizeof(magic));
+                in.seekg(0);
+
+                entries = ReadWadEntries(in);
+                if(!entries.empty())
                 {
-                    in.seekg(entry.Offset);
+                    entryData.reserve(entries.size());
 
-                    std::size_t dataLength = entry.DiskSize;
-                    void* data = std::malloc(dataLength);
-                    in.read(static_cast<char*>(data), dataLength);
+                    for(const WadEntry& entry : entries)
+                    {
+                        in.seekg(entry.Offset);
 
-                    entryData.emplace_back(data);
+                        std::size_t dataLength = entry.DiskSize;
+                        void* data = std::malloc(dataLength);
+                        in.read(static_cast<char*>(data), dataLength);
+
+                        entryData.emplace_back(data);
+                    }
                 }
-            }
 
-            in.close();
+                in.close();
+            }
+            catch(const std::exception& ex)
+            {
+                std::cerr << ex.what() << std::endl;
+
+                magic[0] = 'W';
+                magic[1] = 'A';
+                magic[2] = 'D';
+                magic[3] = '3';
+            }
+        }
+        else
+        {
+            magic[0] = 'W';
+            magic[1] = 'A';
+            magic[2] = 'D';
+            magic[3] = '3';
         }
         int originalEntryCount = entries.size();
 
@@ -181,19 +200,22 @@ namespace Decay::Wad
         }
 
         // Write entry offset
-        uint32_t entriesOffset = sizeof(char[4]) + sizeof(uint32_t) + sizeof(uint32_t); // magic + itemCount + entriesOffset
+        uint32_t entriesOffset = sizeof(magic) + sizeof(uint32_t) + sizeof(uint32_t); // magic + itemCount + entriesOffset
         out.write(reinterpret_cast<const char*>(&entriesOffset), sizeof(entriesOffset));
 
         // Write entries
         out.write(reinterpret_cast<const char*>(entries.data()), sizeof(WadEntry) * entries.size());
+        out.flush();
 
         // Write entry data
-        std::vector<uint32_t> offsets(entries.size());
+        std::vector<typeof(WadEntry::Offset)> offsets(entries.size());
         for(int i = 0; i < entries.size(); i++)
         {
-            offsets.emplace_back(out.tellp());
+            offsets[i] = out.tellp();
 
+            assert(entryData[i] != nullptr);
             out.write(static_cast<const char*>(entryData[i]), entries[i].Size);
+            out.flush();
         }
 
         // Override Offset in Entries
@@ -201,7 +223,9 @@ namespace Decay::Wad
         {
             out.seekp(entriesOffset + sizeof(WadEntry) * i + offsetof(WadEntry, Offset));
 
-            out.write(reinterpret_cast<const char*>(offsets.data() + i), sizeof(uint32_t));
+            out.write(reinterpret_cast<const char*>(&offsets[i]), sizeof(WadEntry::Offset));
+
+            out.flush();
         }
 
         // Free allocated memory from existing data
@@ -311,7 +335,6 @@ namespace Decay::Wad
         image.Width = width;
         image.Height = height;
         image.Data.resize(width * height);
-        image.Palette.resize(256);
 
         bool transparent = false;
         for(std::size_t i = 0; i < width * height; i++)
@@ -335,7 +358,7 @@ namespace Decay::Wad
                 image.Palette.emplace_back(rgb);
             }
             else
-                image.Data[i] = paletteIterator->length();
+                image.Data[i] = paletteIterator - image.Palette.begin();
         }
 
         if(transparent)
@@ -399,21 +422,22 @@ namespace Decay::Wad
             throw std::runtime_error("Loaded empty image");
 
         Texture texture = Texture();
+        texture.Name = filename.filename();
         texture.Width = width;
         texture.Height = height;
         texture.MipMapData[0].resize(width * height);
-        texture.Palette.resize(256);
 
         bool transparent = false;
         for(std::size_t i = 0; i < width * height; i++)
         {
-            glm::u8vec3 rgb = data[i].rgb();
-            if(data[i].a == 0xFFu)
+            if(data[i].a == 0x00u)
             {
                 transparent = true;
                 texture.MipMapData[0][i] = 255;
                 continue;
             }
+
+            glm::u8vec3 rgb = data[i].rgb();
 
             auto paletteIterator = std::find(texture.Palette.begin(), texture.Palette.end(), rgb);
             if(paletteIterator == texture.Palette.end())
@@ -426,7 +450,7 @@ namespace Decay::Wad
                 texture.Palette.emplace_back(rgb);
             }
             else
-                texture.MipMapData[0][i] = paletteIterator->length();
+                texture.MipMapData[0][i] = paletteIterator - texture.Palette.begin();
         }
 
         // Generate Mip-Maps
@@ -712,19 +736,72 @@ namespace Decay::Wad
                 reinterpret_cast<char*>(item.Data),
                 item.Size
         );
-        std::ostream out(&itemDataBuffer);
+        {
+            std::ostream out(&itemDataBuffer);
 
-        out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
-        out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+            // Name
+            {
+                assert(item.Name.size() < MaxNameLength);
+                out.write(reinterpret_cast<const char*>(item.Name.c_str()), sizeof(char) * item.Name.size());
 
-        out.write(reinterpret_cast<const char*>(MipMapData[0].data()), sizeof(uint8_t) * MipMapData[0].size());
-        out.write(reinterpret_cast<const char*>(MipMapData[1].data()), sizeof(uint8_t) * MipMapData[1].size());
-        out.write(reinterpret_cast<const char*>(MipMapData[2].data()), sizeof(uint8_t) * MipMapData[2].size());
-        out.write(reinterpret_cast<const char*>(MipMapData[3].data()), sizeof(uint8_t) * MipMapData[3].size());
+                uint8_t nullByte = '\0';
+                for(int i = item.Name.size(); i < MaxNameLength; i++)
+                    out.write(reinterpret_cast<const char*>(&nullByte), sizeof(char));
+            }
 
-        short paletteSize = Palette.size();
-        out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
-        out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
+            // Size
+            assert(Width > 0);
+            out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
+            assert(Height > 0);
+            out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+
+            // Data offsets
+            {
+                uint32_t offset = sizeof(char) * 16 + sizeof(Width) + sizeof(Height);
+                for(auto& dim : MipMapDimensions)
+                {
+                    out.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
+                    offset += dim.x * dim.y;
+                }
+            }
+
+            // Data
+            {
+                out.write(reinterpret_cast<const char*>(MipMapData[0].data()), sizeof(uint8_t) * MipMapData[0].size());
+                out.write(reinterpret_cast<const char*>(MipMapData[1].data()), sizeof(uint8_t) * MipMapData[1].size());
+                out.write(reinterpret_cast<const char*>(MipMapData[2].data()), sizeof(uint8_t) * MipMapData[2].size());
+                out.write(reinterpret_cast<const char*>(MipMapData[3].data()), sizeof(uint8_t) * MipMapData[3].size());
+            }
+
+            // Palette
+            {
+                short paletteSize = Palette.size();
+                assert(paletteSize > 0);
+                out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
+                out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
+            }
+
+            out.flush();
+        }
+
+        // Name (1st char)
+        assert(((const char*)item.Data)[0] != '\0');
+
+        // Width
+        assert(
+                ((const char*)item.Data)[MaxNameLength + 0] != 0 ||
+                ((const char*)item.Data)[MaxNameLength + 1] != 0 ||
+                ((const char*)item.Data)[MaxNameLength + 2] != 0 ||
+                ((const char*)item.Data)[MaxNameLength + 3] != 0
+        );
+
+        // Height
+        assert(
+                ((const char*)item.Data)[MaxNameLength + 4] != 0 ||
+                ((const char*)item.Data)[MaxNameLength + 5] != 0 ||
+                ((const char*)item.Data)[MaxNameLength + 6] != 0 ||
+                ((const char*)item.Data)[MaxNameLength + 7] != 0
+        );
 
         return item;
     }

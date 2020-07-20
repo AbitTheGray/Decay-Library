@@ -17,6 +17,7 @@ namespace Decay
          : m_Begin(begin), m_End(end), m_Size(end - begin)
         {
             this->setg(m_Begin, m_Begin, m_End);
+            this->setp(m_Begin, m_End);
         }
         MemoryBuffer(char* begin, std::size_t size) : MemoryBuffer(begin, begin + size)
         {
@@ -25,8 +26,11 @@ namespace Decay
     private:
         char* m_Begin;
         char* m_End;
+
         std::size_t m_Size;
-        std::size_t m_Offset = 0;
+
+        std::size_t m_Offset_g = 0; // IN
+        std::size_t m_Offset_p = 0; // OUT
 
     protected:
         pos_type seekoff(off_type relative, std::ios_base::seekdir direction, std::ios_base::openmode mode) override
@@ -38,7 +42,10 @@ namespace Decay
                     offset = relative;
                     break;
                 case std::_S_cur:
-                    offset = m_Offset + relative;
+                    if(mode & std::ios_base::in)
+                        offset = m_Offset_g + relative;
+                    if(mode & std::ios_base::out)
+                        offset = m_Offset_p + relative;
                     break;
                 case std::_S_end:
                     offset = m_Size - relative;
@@ -53,19 +60,26 @@ namespace Decay
 
         pos_type seekpos(pos_type offset, std::ios_base::openmode mode) override
         {
+            if(offset < 0 || offset > m_Size)
+                throw std::runtime_error("Offset out of bounds");
+
             if(mode & std::ios_base::in)
             {
-                if(offset < 0 || offset > m_Size)
-                    throw std::runtime_error("Offset out of bounds");
+                m_Offset_g = offset;
+                setg(m_Begin + m_Offset_g, m_Begin + m_Offset_g, m_End);
 
-                m_Offset = offset;
-                setg(m_Begin + m_Offset, m_Begin + m_Offset, m_End);
+                return m_Offset_g;
             }
 
             if(mode & std::ios_base::out)
-                std::cerr << "Trying to seek in `out` direction" << std::endl;
+            {
+                m_Offset_p = offset;
+                setp(m_Begin + m_Offset_p, m_End);
 
-            return m_Offset;
+                return m_Offset_p;
+            }
+
+            return -1;
         }
     };
 

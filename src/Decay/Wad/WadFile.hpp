@@ -22,11 +22,11 @@ namespace Decay::Wad
         enum class ItemType : uint8_t
         {
             /// Simple image with any size.
-            Image = 0x42,
+            Image = 0x42, // 66
             /// Image with mipmap levels.
-            Texture = 0x43,
+            Texture = 0x43, // 67
             /// 256 ASCII characters.
-            Font = 0x46,
+            Font = 0x46, // 70
         };
         struct Item
         {
@@ -280,7 +280,7 @@ namespace Decay::Wad
                 const std::map<std::string, Image>& images
         )
         {
-            std::vector<Item> items(textures.size() + fonts.size() + images.size());
+            std::vector<Item> items = {};
 
             for(auto& texture : textures)
                 if(texture.HasData())
@@ -291,6 +291,8 @@ namespace Decay::Wad
 
             for(auto& it : images)
                 items.emplace_back(it.second.AsItem(it.first));
+
+            items.shrink_to_fit();
 
             std::size_t count = AddToFile(filename, items);
 
