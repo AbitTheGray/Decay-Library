@@ -346,14 +346,9 @@ int Exec_wad_add(int argc, const char** argv)
         }
         if(wadFilename.extension() != ".wad")
             std::cerr << "WAD file path does not have .wad extension" << std::endl;
-        if(!std::filesystem::exists(wadFilename))
+        if(std::filesystem::exists(wadFilename) && !std::filesystem::is_regular_file(wadFilename))
         {
-            std::cerr << "WAD file not found" << std::endl;
-            return 1;
-        }
-        if(!std::filesystem::is_regular_file(wadFilename))
-        {
-            std::cerr << "WAD file path does not refer to valid file" << std::endl;
+            std::cerr << "WAD file path exists but does not refer to valid file" << std::endl;
             return 1;
         }
     }
