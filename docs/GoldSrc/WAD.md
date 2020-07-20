@@ -67,6 +67,24 @@ Will always contain texture data.
 Be warned that `Name` matches `Name` in `Entry` not its case.
 
 
+```C++
+struct Texture
+{
+    char Name[16]; // Name of the texture, includes `'\0'` character 
+    uint32_t Width, Height; // Texture dimensions
+    uint32_t Offsets[4]; // Offsets to all mip-map levels
+};
+```
+
+If `Offsets[0] != 0` then all 4 offsets point to start of texture data (`Offsets[1]` have halved dimensions), relative to start of the `Texture` structure.
+All data are `uint8_t` indexes into palette.
+After last data, there are 2 bytes (`uint16_t PaletteLength`) followed by RGB palette.
+Transparency is supported only at palette index `255` (last item of palette) if its RGB value is `0 0 255`.
+
+Followed by 1 dummy byte.
+I found no reason but `Wally` will have wrong palette otherwise
+
+
 ### Font
 Type: `0x46` / `70`
 

@@ -363,12 +363,10 @@ namespace Decay::Wad
 
         if(transparent)
         {
-            for(int pi = image.Palette.size(); pi < 255; pi++)
-                image.Palette[pi] = {0x00u, 0x00u, 0x00u};
+            image.Palette.resize(256, {0x00u, 0x00u, 0x00u});
+
             image.Palette[255] = {0x00u, 0x00u, 0xFFu};
         }
-        else
-            image.Palette.shrink_to_fit();
 
 #ifdef DEBUG
         std::cout << "Loaded image from '" << filename << "' with palette size " << image.Palette.size();
@@ -467,12 +465,10 @@ namespace Decay::Wad
 
         if(transparent)
         {
-            for(int pi = texture.Palette.size(); pi < 255; pi++)
-                texture.Palette[pi] = {0x00u, 0x00u, 0x00u};
+            texture.Palette.resize(256, {0x00u, 0x00u, 0x00u});
+
             texture.Palette[255] = {0x00u, 0x00u, 0xFFu};
         }
-        else
-            texture.Palette.shrink_to_fit();
 
 #ifdef DEBUG
         std::cout << "Loaded texture from '" << filename << "' with palette size " << texture.Palette.size();
@@ -724,12 +720,17 @@ namespace Decay::Wad
             throw std::runtime_error("Texture without data cannot be converted into WadFile::Item");
 
         Item item = {};
+
+        assert(!Name.empty());
         item.Name = Name;
+
         item.Type = ItemType::Texture;
 
-        item.Size = sizeof(Width) + sizeof(Height) +
+        item.Size = sizeof(char) * MaxNameLength +
+                    sizeof(Width) + sizeof(Height) +
+                    sizeof(uint32_t) * Texture::MipMapLevels +
                     sizeof(uint8_t) * (MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size()) +
-                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
+                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size() + 1;
         item.Data = malloc(item.Size);
 
         MemoryBuffer itemDataBuffer(
@@ -741,6 +742,7 @@ namespace Decay::Wad
 
             // Name
             {
+                assert(!item.Name.empty());
                 assert(item.Name.size() < MaxNameLength);
                 out.write(reinterpret_cast<const char*>(item.Name.c_str()), sizeof(char) * item.Name.size());
 
@@ -757,9 +759,12 @@ namespace Decay::Wad
 
             // Data offsets
             {
-                uint32_t offset = sizeof(char) * 16 + sizeof(Width) + sizeof(Height);
-                for(auto& dim : MipMapDimensions)
+                uint32_t offset = sizeof(char) * MaxNameLength +
+                        sizeof(Width) + sizeof(Height) +
+                        sizeof(uint32_t) * Texture::MipMapLevels;
+                for(std::size_t i = 0; i < MipMapLevels; i++)
                 {
+                    auto& dim = MipMapDimensions[i];
                     out.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
                     offset += dim.x * dim.y;
                 }
@@ -767,10 +772,8 @@ namespace Decay::Wad
 
             // Data
             {
-                out.write(reinterpret_cast<const char*>(MipMapData[0].data()), sizeof(uint8_t) * MipMapData[0].size());
-                out.write(reinterpret_cast<const char*>(MipMapData[1].data()), sizeof(uint8_t) * MipMapData[1].size());
-                out.write(reinterpret_cast<const char*>(MipMapData[2].data()), sizeof(uint8_t) * MipMapData[2].size());
-                out.write(reinterpret_cast<const char*>(MipMapData[3].data()), sizeof(uint8_t) * MipMapData[3].size());
+                for(std::size_t i = 0; i < MipMapLevels; i++)
+                    out.write(reinterpret_cast<const char*>(MipMapData[i].data()), sizeof(uint8_t) * MipMapData[i].size());
             }
 
             // Palette
@@ -781,26 +784,64 @@ namespace Decay::Wad
                 out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
             }
 
+            // Dummy byte
+            {
+                uint8_t nullByte = '\0';
+                for(int i = item.Name.size(); i < MaxNameLength; i++)
+                    out.write(reinterpret_cast<const char*>(&nullByte), sizeof(char));
+            }
+
             out.flush();
         }
 
         // Name (1st char)
-        assert(((const char*)item.Data)[0] != '\0');
+        assert(((const uint8_t*)item.Data)[0] != '\0');
 
         // Width
         assert(
-                ((const char*)item.Data)[MaxNameLength + 0] != 0 ||
-                ((const char*)item.Data)[MaxNameLength + 1] != 0 ||
-                ((const char*)item.Data)[MaxNameLength + 2] != 0 ||
-                ((const char*)item.Data)[MaxNameLength + 3] != 0
+                ((const uint8_t*)item.Data)[MaxNameLength + 0] != 0 ||
+                ((const uint8_t*)item.Data)[MaxNameLength + 1] != 0 ||
+                ((const uint8_t*)item.Data)[MaxNameLength + 2] != 0 ||
+                ((const uint8_t*)item.Data)[MaxNameLength + 3] != 0
         );
 
         // Height
         assert(
-                ((const char*)item.Data)[MaxNameLength + 4] != 0 ||
-                ((const char*)item.Data)[MaxNameLength + 5] != 0 ||
-                ((const char*)item.Data)[MaxNameLength + 6] != 0 ||
-                ((const char*)item.Data)[MaxNameLength + 7] != 0
+                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 0] != 0 ||
+                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 1] != 0 ||
+                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 2] != 0 ||
+                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 3] != 0
+        );
+
+        // Offsets
+        assert(
+                ((const uint8_t*) item.Data)[
+                        MaxNameLength +
+                        sizeof(uint32_t) * 2
+                ] ==
+                MaxNameLength +
+                sizeof(uint32_t) * 2 +
+                sizeof(uint32_t) * MipMapLevels
+        );
+
+        // First data index into palette
+        assert(
+                ((const uint8_t*)item.Data)[
+                        MaxNameLength +
+                        sizeof(uint32_t) * 2 +
+                        sizeof(uint32_t) * MipMapLevels
+                ] == MipMapData[0][0]
+        );
+
+        // First pixel of palette
+        assert(
+                ((const uint8_t*)item.Data)[
+                        MaxNameLength +
+                        sizeof(uint32_t) * 2 +
+                        sizeof(uint32_t) * MipMapLevels +
+                        MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size() +
+                        sizeof(uint16_t)
+                ] == Palette[0].x
         );
 
         return item;
