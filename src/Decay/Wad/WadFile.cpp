@@ -107,8 +107,11 @@ namespace Decay::Wad
         }
     }
 
-    void WadFile::AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items)
+    std::size_t WadFile::AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items)
     {
+        if(items.empty())
+            return 0;
+
         char magic[4];
         std::vector<WadEntry> entries = {};
         std::vector<void*> entryData = {};
@@ -124,20 +127,20 @@ namespace Decay::Wad
             in.seekg(0);
 
             entries = ReadWadEntries(in);
-            if(entries.empty())
-                return;
-
-            entryData.resize(entries.size());
-
-            for(const WadEntry& entry : entries)
+            if(!entries.empty())
             {
-                in.seekg(entry.Offset);
+                entryData.resize(entries.size());
 
-                std::size_t dataLength = entry.DiskSize;
-                void* data = std::malloc(dataLength);
-                in.read(static_cast<char*>(data), dataLength);
+                for(const WadEntry& entry : entries)
+                {
+                    in.seekg(entry.Offset);
 
-                entryData.emplace_back(data);
+                    std::size_t dataLength = entry.DiskSize;
+                    void* data = std::malloc(dataLength);
+                    in.read(static_cast<char*>(data), dataLength);
+
+                    entryData.emplace_back(data);
+                }
             }
 
             in.close();
@@ -204,6 +207,8 @@ namespace Decay::Wad
         // Free allocated memory from existing data
         for(int i = 0; i < originalEntryCount; i++)
             free(entryData[i]);
+
+        return entries.size() - originalEntryCount;
     }
 
     WadFile::~WadFile()
@@ -691,6 +696,9 @@ namespace Decay::Wad
 
     WadFile::Item WadFile::Texture::AsItem() const
     {
+        if(!HasData())
+            throw std::runtime_error("Texture without data cannot be converted into WadFile::Item");
+
         Item item = {};
         item.Name = Name;
         item.Type = ItemType::Texture;

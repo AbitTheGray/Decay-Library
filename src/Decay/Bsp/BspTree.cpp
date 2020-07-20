@@ -451,7 +451,9 @@ namespace Decay::Bsp
         for(auto& texture : Textures)
         {
             std::vector<glm::u8vec4> rgba;
-            if(texture.MipMapData[0].empty()) // No data
+            if(texture.HasData())
+                rgba = texture.AsRgba();
+            else // No data
             {
                 if(!dummyForMissing)
                     continue;
@@ -464,8 +466,6 @@ namespace Decay::Bsp
                         glm::u8vec4(0xBFu, 0xBFu, 0xBFu, 0xFFu)
                 );
             }
-            else
-                rgba = texture.AsRgba();
 
             writeFunc(
                     (directory / (texture.Name + textureExtension)).string().c_str(),

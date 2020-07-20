@@ -20,6 +20,14 @@ std::map<std::string, Command> Commands = {
                 }
         },
         {
+                "bsp2wad",
+                Command{
+                        Exec_bsp2wad,
+                        "<map.bsp> [map.wad] [new_map.bsp]",
+                        "Extracts textures from BSP to WAD"
+                }
+        },
+        {
                 "wad_add",
                 Command{
                         Exec_wad_add,
@@ -233,6 +241,85 @@ int Exec_bsp2obj(int argc, const char** argv)
         return 1;
     }
     std::cout << "Textures saved" << std::endl;
+
+    return 0;
+}
+
+int Exec_bsp2wad(int argc, const char** argv)
+{
+    if(argc == 0)
+    {
+        std::cerr << "No path to BSP provided" << std::endl;
+        return 1;
+    }
+
+    // BSP
+    std::filesystem::path bspFilename(argv[0]);
+    {
+        if(bspFilename.empty())
+        {
+            std::cerr << "BSP file path is empty" << std::endl;
+            return 1;
+        }
+        if(bspFilename.extension() != ".bsp")
+            std::cerr << "BSP file path does not have .bsp extension" << std::endl;
+        if(!std::filesystem::exists(bspFilename))
+        {
+            std::cerr << "BSP file not found" << std::endl;
+            return 1;
+        }
+        if(!std::filesystem::is_regular_file(bspFilename))
+        {
+            std::cerr << "BSP file path does not refer to valid file" << std::endl;
+            return 1;
+        }
+    }
+
+    // WAD
+    std::filesystem::path wadFilename;
+    {
+        if(argc == 1)
+            wadFilename = std::filesystem::path(bspFilename).replace_extension(".wad");
+        else
+        {
+            wadFilename = argv[1];
+
+            if(wadFilename.empty())
+            {
+                std::cerr << "BSP file path is empty" << std::endl;
+                return 1;
+            }
+            if(wadFilename.extension() != ".wad")
+                std::cerr << "WAD file path does not have .wad extension" << std::endl;
+        }
+
+        if(std::filesystem::exists(wadFilename) && !std::filesystem::is_regular_file(wadFilename))
+        {
+            std::cerr << "WAD file exists but does not refer to valid file" << std::endl;
+            return 1;
+        }
+    }
+
+    //TODO BSP without textures
+    if(argc >= 3)
+        std::cerr << "Creating texture-less BSP is not yet supported" << std::endl;
+
+    using namespace Decay::Bsp;
+    using namespace Decay::Wad;
+
+    std::shared_ptr<BspFile> bsp;
+    try
+    {
+        bsp = std::make_shared<BspFile>(bspFilename);
+    }
+    catch(std::runtime_error& ex)
+    {
+        std::cerr << "BSP file could not be read" << std::endl;
+        std::cerr << ex.what() << std::endl;
+        return 1;
+    }
+
+    WadFile::AddToFile(wadFilename, bsp->GetTextures(), {}, {});
 
     return 0;
 }

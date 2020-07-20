@@ -48,7 +48,7 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
         }
 
         // Texture does not contain RGBA data (only in BSP)
-        if(tex.MipMapData[0].empty())
+        if(!tex.HasData())
         {
             wt.data = nullptr;
             continue;

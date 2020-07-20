@@ -260,17 +260,20 @@ namespace Decay::Wad
             void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
 
         public:
-            static Texture FromFile(const std::filesystem::path& filename);
+            [[nodiscard]] static Texture FromFile(const std::filesystem::path& filename);
 
             [[nodiscard]] Item AsItem() const;
+
+            [[nodiscard]] bool HasData() const noexcept { return MipMapData[0].size() != 0; }
+
         };
 
         WADPARSER_READ_ITEM(Texture, ReadTexture, ReadAllTextures, ReadAllTextures_Map)
 
         void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
 
-        static void AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
-        static void AddToFile(
+        static std::size_t AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
+        static std::size_t AddToFile(
                 const std::filesystem::path& filename,
                 const std::vector<Texture>& textures,
                 const std::map<std::string, Font>& fonts,
@@ -280,7 +283,8 @@ namespace Decay::Wad
             std::vector<Item> items(textures.size() + fonts.size() + images.size());
 
             for(auto& texture : textures)
-                items.emplace_back(texture.AsItem());
+                if(texture.HasData())
+                    items.emplace_back(texture.AsItem());
 
             for(auto& it : fonts)
                 items.emplace_back(it.second.AsItem(it.first));
@@ -288,10 +292,12 @@ namespace Decay::Wad
             for(auto& it : images)
                 items.emplace_back(it.second.AsItem(it.first));
 
-            AddToFile(filename, items);
+            std::size_t count = AddToFile(filename, items);
 
             for(auto& item : items)
                 free(item.Data);
+
+            return count;
         }
     };
 }
