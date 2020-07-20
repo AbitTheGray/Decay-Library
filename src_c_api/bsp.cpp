@@ -15,16 +15,22 @@ inline static std::shared_ptr<BspFile> GetBspPointer(bsp_file* bspFile)
     return nullptr;
 }
 
-bsp_file* bsp_file_load(const char* path)
+bsp_file* bsp_file_load(const char* path, char* error)
 {
     if(path == nullptr)
         return nullptr;
 
     std::filesystem::path filename(path);
-    if(!std::filesystem::exists(filename))
-        return nullptr; // File not found
-    if(!std::filesystem::is_regular_file(filename))
-        return nullptr; // Path target is not a file
+    if(!std::filesystem::exists(filename)) // File not found
+    {
+        *error = DECAY_ERR_FILE_NOT_FOUND;
+        return nullptr;
+    }
+    if(!std::filesystem::is_regular_file(filename)) // Path target is not a file
+    {
+        *error = DECAY_ERR_FILE_INVALID;
+        return nullptr;
+    }
 
     try
     {
@@ -33,6 +39,8 @@ bsp_file* bsp_file_load(const char* path)
     catch(std::exception& ex)
     {
         std::cerr << "bsp_file_load(\"" << path << "\") resulted in: " << ex.what() << std::endl;
+
+        *error = DECAY_ERR_FILE_PARSE_FAILED;
         return nullptr;
     }
 }
@@ -54,11 +62,14 @@ void bsp_file_free(bsp_file* bspFile)
 
 std::vector<std::shared_ptr<BspTree>> BspTrees = {};
 
-bsp_tree* bsp_tree_create(bsp_file* bspFile)
+bsp_tree* bsp_tree_create(bsp_file* bspFile, char* error)
 {
     auto bsp = GetBspPointer(bspFile);
     if(bsp == nullptr)
+    {
+        *error = DECAY_ERR_ARG_NULL;
         return nullptr;
+    }
 
     try
     {
@@ -67,6 +78,8 @@ bsp_tree* bsp_tree_create(bsp_file* bspFile)
     catch(std::exception& ex)
     {
         std::cerr << "bsp_tree_create(bspFile) resulted in: " << ex.what() << std::endl;
+
+        *error = DECAY_ERR_BSP_TREE_CREATE_FAILED;
         return nullptr;
     }
 }

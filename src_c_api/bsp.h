@@ -43,17 +43,26 @@ extern "C"
 {
 #endif
 
+#define DECAY_ERR_ARG_NULL 0x01u
+#define DECAY_ERR_ARG_OUT_OF_RANGE 0x02u
+
+#define DECAY_ERR_FILE_NOT_FOUND 0x10u
+#define DECAY_ERR_FILE_INVALID 0x11u
+#define DECAY_ERR_FILE_PARSE_FAILED 0x12u
+
+#define DECAY_ERR_BSP_TREE_CREATE_FAILED 0x20u
+
     /// Load BSP from filesystem
     /// Returns `NULL` if file was not found or there was problem with loading
     /// Returned pointer must be freed using `bsp_file_free(bsp_tree*)` (not required if `NULL`).
-    bsp_file* bsp_file_load(const char* path);
+    bsp_file* bsp_file_load(const char* path, char* error);
     /// Free BSP pointer from `bsp_file_load`
     void bsp_file_free(bsp_file* bspFile);
 
     /// Constructs BSP Tree from BSP map
     /// Returns `NULL` when incorrect `bspFile` is supplied or there was problem with parsing it.
     /// Returned pointer must be freed using `bsp_tree_free(bsp_tree*)` (not required if `NULL`).
-    bsp_tree* bsp_tree_create(bsp_file* bspFile);
+    bsp_tree* bsp_tree_create(bsp_file* bspFile, char* error);
     /// Free BSP Tree pointer from `bsp_tree_create`
     void bsp_tree_free(bsp_tree* bspTree);
 
@@ -67,10 +76,18 @@ extern "C"
     /// Loads `bsp_tree*` directly from file.
     /// May return `NULL`.
     /// Returned pointer must be freed using `bsp_tree_free(bsp_tree*)` (not required if `NULL`).
-    static bsp_tree* bsp_tree_load(const char* path)
+    static bsp_tree* bsp_tree_load(const char* path, char* error)
     {
-        bsp_file* bspFile = bsp_file_load(path);
-        if(!bspFile)
+        bsp_file* bspFile = bsp_file_load(path, error);
+        if(*error)
+        {
+#ifdef __cplusplus
+            return nullptr;
+#else
+            return ((void*)0);
+#endif
+        }
+        if(bspFile == (void*)0)
         {
 #ifdef __cplusplus
             return nullptr;
@@ -79,9 +96,26 @@ extern "C"
 #endif
         }
 
-        bsp_tree* bspTree = bsp_tree_create(bspFile);
+        bsp_tree* bspTree = bsp_tree_create(bspFile, error);
 
         bsp_file_free(bspFile);
+
+        if(*error)
+        {
+#ifdef __cplusplus
+            return nullptr;
+#else
+            return ((void*)0);
+#endif
+        }
+        if(bspTree == (void*)0)
+        {
+#ifdef __cplusplus
+            return nullptr;
+#else
+            return ((void*)0);
+#endif
+        }
 
         return bspTree; // May be ` nullptr`
     }
