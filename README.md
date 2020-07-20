@@ -62,6 +62,7 @@ Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to dis
 - ~~`bsp2wad <map.bsp> [map.wad] [new_map.bsp]`~~ - Extracts textures from BSP to WAD
   - If `new_map.bsp` is supplied, new BSP is created without those textures (only referenced, not packed)
     - `new_map.bsp` **DOES NOT** reference the `map.wad` file!
+- ~~`bsp2png <map.bsp> <texture_dir=.>` - Extracts textures from BSP to PNG files~~
 - `wad_add <file.wad> <texture...` = add texture(s) into WAD
   - Does not parse textures, only WAD header
 - `lightmap <map.bsp> [lightmap.png]` = extracts per-face lightmap and packs them into few big lightmaps
@@ -69,6 +70,15 @@ Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to dis
 - ~~`bsp_optimize` - Decreases size of BSP file~~
   - At this time, `bsp2wad` can be used to minimize BSP file but generated WAD file (it may not create one if the BSP does not have packed textures)
 - ~~`wad_optimize` - Decreases size of WAD file~~
+- ~~`bsp_wadref <map.bsp> <wad...` - Search `<wad...` (files & dirs) for textures and unpack them from BSP where possible~~
+  - ~~This is reverse action to `-nowadtextures` or `-wadinclude` for [`hlcsg.exe`](http://zhlt.info/command-reference.html#hlcsg)~~
+  - ~~Also acts like `-wadautodetect` and removes reference to unused WAD files~~
+    - ~~Won't do anything if there are textures which could not be found in provided WAD files~~
+  - ~~Prints all used WADs into standard output, including list of used textures from the WAD~~
+- ~~`entity_extract <map.bsp> <entities.txt>` - Extracts entities to text document~~
+  - ~~Total number of entities is written into standard output~~
+- ~~`entity_apply <map.bsp> <entities.txt>` - Applies entities back into BSP (after `bsp_entity`)~~
+- ~~`entity_validate <map.bsp/entities.txt> <gamemode.fgd>` - Validates entities against FGD file~~
 
 ## Linux tools
 
