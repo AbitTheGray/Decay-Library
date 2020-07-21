@@ -52,12 +52,12 @@ namespace Decay::Bsp
         if(!std::filesystem::exists(filename))
             throw std::runtime_error("File not found");
 
-        std::fstream file(filename, std::ios_base::binary | std::ios_base::in);
+        std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
 
         // Magic Number
         {
             uint32_t magicNumber;
-            file.read(reinterpret_cast<char*>(&magicNumber), sizeof(magicNumber));
+            in.read(reinterpret_cast<char*>(&magicNumber), sizeof(magicNumber));
 
             switch(magicNumber)
             {
@@ -77,20 +77,20 @@ namespace Decay::Bsp
         };
 
         LumpEntry lumps[LumpType_Size];
-        file.read(reinterpret_cast<char*>(lumps), sizeof(lumps));
+        in.read(reinterpret_cast<char*>(lumps), sizeof(lumps));
 
         for(std::size_t i = 0; i < LumpType_Size; i++)
         {
-            file.seekg(lumps[i].Offset);
+            in.seekg(lumps[i].Offset);
 
             void* d = std::malloc(lumps[i].Length);
-            file.read(reinterpret_cast<char*>(d), lumps[i].Length);
+            in.read(reinterpret_cast<char*>(d), lumps[i].Length);
 
             m_Data[i] = d;
             m_DataLength[i] = lumps[i].Length;
         }
 
-        file.close();
+        in.close();
 
         // Tests
         {
@@ -399,7 +399,7 @@ namespace Decay::Bsp
         }
 
 
-        std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+        std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
         // Magic number
         typeof(Magic) magic = Magic;

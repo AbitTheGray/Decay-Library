@@ -70,9 +70,9 @@ namespace Decay::Wad
         if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
             throw std::runtime_error("File not found");
 
-        std::fstream file(filename, std::ios_base::binary | std::ios_base::in);
+        std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
 
-        std::vector<WadEntry> entries = ReadWadEntries(file);
+        std::vector<WadEntry> entries = ReadWadEntries(in);
         if(entries.empty())
             return;
 
@@ -80,11 +80,11 @@ namespace Decay::Wad
 
         for(const WadEntry& entry : entries)
         {
-            file.seekg(entry.Offset);
+            in.seekg(entry.Offset);
 
             std::size_t dataLength = entry.DiskSize;
             void* data = std::malloc(dataLength);
-            file.read(static_cast<char*>(data), dataLength);
+            in.read(static_cast<char*>(data), dataLength);
 
             if(entry.Compression)
             {
@@ -188,7 +188,7 @@ namespace Decay::Wad
             }
         }
 
-        std::ofstream out(filename, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+        std::ofstream out(filename, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
         // Write original magic number
         out.write(magic, sizeof(magic));

@@ -289,7 +289,7 @@ namespace Decay::Bsp
 
     void BspTree::ExportFlatObj(const std::filesystem::path& filename, const std::filesystem::path& mtlFilename) const
     {
-        std::fstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
+        std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
 
         // Header
         {
@@ -400,7 +400,7 @@ namespace Decay::Bsp
 
     void BspTree::ExportMtl(const std::filesystem::path& filename, const std::filesystem::path& texturePath, const std::string& textureExtension) const
     {
-        std::fstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
+        std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
 
         // Header
         {

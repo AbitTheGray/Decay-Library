@@ -197,7 +197,7 @@ namespace Decay
         {
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba) -> void
             {
-                std::fstream out(path, std::ios_base::out | std::ios_base::trunc);
+                std::ofstream out(path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
                 out.write(reinterpret_cast<const char*>(&width), sizeof(width));
                 out.write(reinterpret_cast<const char*>(&height), sizeof(height));
@@ -282,7 +282,7 @@ namespace Decay
         {
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb) -> void
             {
-                std::fstream out(path, std::ios_base::out | std::ios_base::trunc);
+                std::ofstream out(path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
                 out.write(reinterpret_cast<const char*>(&width), sizeof(width));
                 out.write(reinterpret_cast<const char*>(&height), sizeof(height));
