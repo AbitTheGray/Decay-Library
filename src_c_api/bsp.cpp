@@ -105,3 +105,13 @@ bsp_vertex* bsp_vertices(bsp_tree* bspTree, int* length)
 
     return bspTree->Vertices.data();
 }
+
+bsp_lightmap bsp_light(const bsp_tree* bspTree)
+{
+    auto& light = bspTree->Light;
+    return {
+        light.Width,
+        light.Height,
+        light.Data.data()
+    };
+}

@@ -14,6 +14,7 @@ typedef Decay::Bsp::BspTree::Model bsp_model;
 typedef Decay::Bsp::BspTree::Entity bsp_entity;
 
 typedef glm::vec3 bsp_vec3;
+typedef glm::u8vec3 bsp_u8vec3;
 #else
 typedef struct {char dummy;} bsp_file;
 typedef struct {char dummy;} bsp_tree;
@@ -32,11 +33,22 @@ typedef struct
 {
     float x, y, z;
 } bsp_vec3;
+typedef struct
+{
+    unsigned char x, y, z;
+} bsp_u8vec3;
 #endif
+
 typedef struct
 {
     bsp_vec3 min, max;
 } bsp_bounding_box;
+
+typedef struct
+{
+    const unsigned int width, height;
+    const bsp_u8vec3* data;
+} bsp_lightmap;
 
 #ifdef __cplusplus
 extern "C"
@@ -184,6 +196,11 @@ extern "C"
     /// Lifetime of text values (strings) is same as `bsp_entity*` (same as `bsp_tree*`).
     /// Returns `NULL` if the value was not found.
     const char* bsp_entity_value(const bsp_entity* entity, const char* key);
+
+
+    /// Get lightmap from BSP.
+    /// Contains shadows and light to all faces which are not fully lit.
+    bsp_lightmap bsp_light(const bsp_tree* bspTree);
 
 #ifdef __cplusplus
 };
