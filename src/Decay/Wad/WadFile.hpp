@@ -80,7 +80,52 @@ namespace Decay::Wad
         WADPARSER_GET_COUNT(GetFontCount, Font)
 
     public:
-#define WADPARSER_READ_ITEM(type, funcName, funcNameAll, funcNameAll_map) \
+#ifdef DEBUG
+#   define WADPARSER_READ_ITEM(type, funcName, funcNameAll, funcNameAll_map) \
+        [[nodiscard]] static type funcName(const Item& item);\
+        \
+        [[nodiscard]] inline type funcName(const std::string& name) const\
+        {\
+            for(const Item& item : m_Items)\
+                if(item.Type == ItemType::Image)\
+                    if(item.Name == name)\
+                        return WadFile::funcName(item);\
+            throw std::runtime_error("Item not found");\
+        }\
+        [[nodiscard]] inline type funcName(const char* name) const\
+        {\
+            for(const Item& item : m_Items)\
+                if(item.Type == ItemType::type)\
+                    if(item.Name == name)\
+                        return WadFile::funcName(item);\
+            throw std::runtime_error("Item not found");\
+        }\
+        [[nodiscard]] inline std::vector<type> funcNameAll() const\
+        {\
+            std::vector<type> result = {};\
+            for(const Item& item : m_Items)\
+            {\
+                if(item.Type == ItemType::type)\
+                {\
+                    result.emplace_back(funcName(item));\
+                }\
+            }\
+            return result;\
+        }\
+        [[nodiscard]] inline std::map<std::string, type> funcNameAll_map() const\
+        {\
+            std::map<std::string, type> result = {};\
+            for(const Item& item : m_Items)\
+            {\
+                if(item.Type == ItemType::type)\
+                {\
+                    result.emplace(item.Name, funcName(item));\
+                }\
+            }\
+            return result;\
+        }
+#else
+#   define WADPARSER_READ_ITEM(type, funcName, funcNameAll, funcNameAll_map) \
         [[nodiscard]] static type funcName(const Item& item);\
         \
         [[nodiscard]] inline type funcName(const std::string& name) const\
@@ -137,6 +182,7 @@ namespace Decay::Wad
             }\
             return result;\
         }
+#endif
 
     // Image
     public:
@@ -202,6 +248,8 @@ namespace Decay::Wad
 
         public:
             [[nodiscard]] Item AsItem(std::string name) const override;
+
+            void WriteCharacterPngs(const std::filesystem::path& dir) const;
         };
 
         WADPARSER_READ_ITEM(Font, ReadFont, ReadAllFonts, ReadAllFonts_Map)

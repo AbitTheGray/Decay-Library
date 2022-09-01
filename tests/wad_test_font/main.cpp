@@ -13,4 +13,6 @@ int main()
     // Save test
     font.WriteRgbPng("CONCHARS.png");
     font.WriteRgbaPng("CONCHARS_.png");
+
+    font.WriteCharacterPngs("chars");
 }

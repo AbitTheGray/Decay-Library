@@ -30,10 +30,10 @@ namespace Decay::Wad
             stream.read(reinterpret_cast<char*>(&magicNumber), sizeof(char) * 4);
 
             if(
-                    magicNumber[0] == 'W' &&
-                    magicNumber[1] == 'A' &&
-                    magicNumber[2] == 'D'
-                    )
+                magicNumber[0] == 'W' &&
+                magicNumber[1] == 'A' &&
+                magicNumber[2] == 'D'
+            )
             {
                 if(magicNumber[3] == '2' || magicNumber[3] == '3')
                 {
@@ -273,10 +273,10 @@ namespace Decay::Wad
 
         // Read palette
         image.Palette.resize(paletteSize);
-        in.read(reinterpret_cast<char*>(image.Palette.data()), paletteSize);
+        in.read(reinterpret_cast<char*>(image.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
 
 #ifdef WAD_PALETTE_DUMMY
-        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteLength; i += 360 / paletteLength, pi++)
+        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteSize; i += 360 / paletteSize, pi++)
         {
             double hue = i;
             double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
@@ -488,14 +488,15 @@ namespace Decay::Wad
         item.Name = std::move(name);
         item.Type = ItemType::Image;
 
-        item.Size = sizeof(Width) + sizeof(Height) +
-                    sizeof(uint8_t) * Data.size() +
-                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
+        item.Size =
+            sizeof(Width) + sizeof(Height) +
+            sizeof(uint8_t) * Data.size() +
+            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
         item.Data = malloc(item.Size);
 
         MemoryBuffer itemDataBuffer(
-                reinterpret_cast<char*>(item.Data),
-                item.Size
+            reinterpret_cast<char*>(item.Data),
+            item.Size
         );
         std::ostream out(&itemDataBuffer);
 
@@ -527,10 +528,10 @@ namespace Decay::Wad
             font.RowCount = dimensions.z;
             font.RowHeight = dimensions.w;
         }
-        assert(font.Width == 256); //FIXME It is defined that fonts have Width=256 ( https://developer.valvesoftware.com/wiki/WAD ) but 2 tested fonts did not have
+        font.Width = 256;// Fonts have Width=256 ( https://developer.valvesoftware.com/wiki/WAD ) but 2 tested fonts did not have
         assert(font.RowCount > 0);
         assert(font.RowHeight > 0);
-        assert(font.Height == font.RowCount * font.RowHeight);
+        assert(font.Height >= font.RowCount * font.RowHeight);
 
         // Character offsets
         in.read(reinterpret_cast<char*>(&font.Characters), sizeof(FontChar) * Font::CharacterCount);
@@ -549,14 +550,17 @@ namespace Decay::Wad
         if(paletteSize == 0)
             throw std::runtime_error("Empty Palette");
         if(paletteSize > 256)
-            throw std::runtime_error("Palette size too big");
+        {
+            std::cerr<< "Font palette size too big" << std::endl;
+            paletteSize = 256;
+        }
 
         // Read palette
         font.Palette.resize(paletteSize);
-        in.read(reinterpret_cast<char*>(font.Palette.data()), paletteSize);
+        in.read(reinterpret_cast<char*>(font.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
 
 #ifdef WAD_PALETTE_DUMMY
-        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteLength; i += 360 / paletteLength, pi++)
+        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteSize; i += 360 / paletteSize, pi++)
         {
             double hue = i;
             double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
@@ -611,8 +615,8 @@ namespace Decay::Wad
             in.seekg(mipMapOffsets[level]);
 
             texture.MipMapDimensions[level] = {
-                    texture.Width >> level,
-                    texture.Height >> level
+                texture.Width >> level,
+                texture.Height >> level
             };
             std::size_t dataLength = static_cast<std::size_t>(texture.MipMapDimensions[level].x) * texture.MipMapDimensions[level].y;
 
@@ -636,7 +640,7 @@ namespace Decay::Wad
         in.read(reinterpret_cast<char*>(texture.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
 
 #ifdef WAD_PALETTE_DUMMY
-        for(std::size_t i = 0, pi = 0; i < 360 && pi < Texture::PaletteSize; i += 360 / Texture::PaletteSize, pi++)
+        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteSize; i += 360 / paletteSize, pi++)
         {
             double hue = i;
             double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
@@ -666,10 +670,10 @@ namespace Decay::Wad
             std::vector<glm::u8vec4> rgba = texture.AsRgba();
 
             writeFunc(
-                    (directory / (texture.Name + extension)).string().c_str(),
-                    texture.Width,
-                    texture.Height,
-                    rgba.data()
+                (directory / (texture.Name + extension)).string().c_str(),
+                texture.Width,
+                texture.Height,
+                rgba.data()
             );
         }
     }
@@ -685,13 +689,13 @@ namespace Decay::Wad
         assert(dimension.x <= std::numeric_limits<int32_t>::max() / 3);
 
         stbi_write_png(
-                filename.string().c_str(),
-                dimension.x,
-                dimension.y,
-                3,
-                pixels.data(),
-                static_cast<int32_t>(dimension.x) * 3
-                );
+            filename.string().c_str(),
+            dimension.x,
+            dimension.y,
+            3,
+            pixels.data(),
+            static_cast<int32_t>(dimension.x) * 3
+        );
     }
 
     void WadFile::Texture::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
@@ -705,12 +709,12 @@ namespace Decay::Wad
         assert(dimension.x <= std::numeric_limits<int32_t>::max() / 4);
 
         stbi_write_png(
-                filename.string().c_str(),
-                dimension.x,
-                dimension.y,
-                4,
-                pixels.data(),
-                static_cast<int32_t>(dimension.x) * 4
+            filename.string().c_str(),
+            dimension.x,
+            dimension.y,
+            4,
+            pixels.data(),
+            static_cast<int32_t>(dimension.x) * 4
         );
     }
 
@@ -726,16 +730,17 @@ namespace Decay::Wad
 
         item.Type = ItemType::Texture;
 
-        item.Size = sizeof(char) * MaxNameLength +
-                    sizeof(Width) + sizeof(Height) +
-                    sizeof(uint32_t) * Texture::MipMapLevels +
-                    sizeof(uint8_t) * (MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size()) +
-                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size() + 1;
+        item.Size =
+            sizeof(char) * MaxNameLength +
+            sizeof(Width) + sizeof(Height) +
+            sizeof(uint32_t) * Texture::MipMapLevels +
+            sizeof(uint8_t) * (MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size()) +
+            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size() + 1;
         item.Data = malloc(item.Size);
 
         MemoryBuffer itemDataBuffer(
-                reinterpret_cast<char*>(item.Data),
-                item.Size
+            reinterpret_cast<char*>(item.Data),
+            item.Size
         );
         {
             std::ostream out(&itemDataBuffer);
@@ -799,49 +804,49 @@ namespace Decay::Wad
 
         // Width
         assert(
-                ((const uint8_t*)item.Data)[MaxNameLength + 0] != 0 ||
-                ((const uint8_t*)item.Data)[MaxNameLength + 1] != 0 ||
-                ((const uint8_t*)item.Data)[MaxNameLength + 2] != 0 ||
-                ((const uint8_t*)item.Data)[MaxNameLength + 3] != 0
+            ((const uint8_t*)item.Data)[MaxNameLength + 0] != 0 ||
+            ((const uint8_t*)item.Data)[MaxNameLength + 1] != 0 ||
+            ((const uint8_t*)item.Data)[MaxNameLength + 2] != 0 ||
+            ((const uint8_t*)item.Data)[MaxNameLength + 3] != 0
         );
 
         // Height
         assert(
-                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 0] != 0 ||
-                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 1] != 0 ||
-                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 2] != 0 ||
-                ((const uint8_t*)item.Data)[MaxNameLength + 4 + 3] != 0
+            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 0] != 0 ||
+            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 1] != 0 ||
+            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 2] != 0 ||
+            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 3] != 0
         );
 
         // Offsets
         assert(
-                ((const uint8_t*) item.Data)[
-                        MaxNameLength +
-                        sizeof(uint32_t) * 2
-                ] ==
+            ((const uint8_t*) item.Data)[
                 MaxNameLength +
-                sizeof(uint32_t) * 2 +
-                sizeof(uint32_t) * MipMapLevels
+                sizeof(uint32_t) * 2
+            ] ==
+            MaxNameLength +
+            sizeof(uint32_t) * 2 +
+            sizeof(uint32_t) * MipMapLevels
         );
 
         // First data index into palette
         assert(
-                ((const uint8_t*)item.Data)[
-                        MaxNameLength +
-                        sizeof(uint32_t) * 2 +
-                        sizeof(uint32_t) * MipMapLevels
-                ] == MipMapData[0][0]
+            ((const uint8_t*)item.Data)[
+                MaxNameLength +
+                sizeof(uint32_t) * 2 +
+                sizeof(uint32_t) * MipMapLevels
+            ] == MipMapData[0][0]
         );
 
         // First pixel of palette
         assert(
-                ((const uint8_t*)item.Data)[
-                        MaxNameLength +
-                        sizeof(uint32_t) * 2 +
-                        sizeof(uint32_t) * MipMapLevels +
-                        MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size() +
-                        sizeof(uint16_t)
-                ] == Palette[0].x
+            ((const uint8_t*)item.Data)[
+                MaxNameLength +
+                sizeof(uint32_t) * 2 +
+                sizeof(uint32_t) * MipMapLevels +
+                MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size() +
+                sizeof(uint16_t)
+            ] == Palette[0].x
         );
 
         return item;
@@ -877,5 +882,39 @@ namespace Decay::Wad
         out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
 
         return item;
+    }
+    void WadFile::Font::WriteCharacterPngs(const std::filesystem::path& dir) const
+    {
+        std::filesystem::create_directories(dir);
+        for(int charIndex = 0; charIndex < WadFile::Font::CharacterCount; charIndex++)
+        {
+            const auto& fc = Characters[charIndex];
+            assert(fc.Width >= 0);
+            if(fc.Width == 0)
+                continue;
+
+            WadFile::Image fc_img = WadFile::Image();
+            fc_img.Width = fc.Width;
+            fc_img.Height = RowHeight;
+            fc_img.Palette = Palette;
+            fc_img.Data.reserve(fc_img.Width * fc_img.Height);
+
+            int startX = fc.Offset % Width;
+            int startY = fc.Offset / Width;
+            for(int sy = 0; sy < fc_img.Height; sy++)
+            {
+                int i = (startY + sy) * Width + startX;
+                if(sy == 0)
+                    assert(i == fc.Offset);
+
+                for(int sx = 0; sx < fc_img.Width; sx++)
+                {
+                    fc_img.Data.emplace_back(Data[i + sx]);
+                }
+            }
+            assert(fc_img.Data.size() == fc_img.Width * fc_img.Height);
+
+            fc_img.WriteRgbaPng(dir / (std::to_string(charIndex) + ".png"));
+        }
     }
 }

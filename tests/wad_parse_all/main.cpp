@@ -40,7 +40,9 @@ int main()
                         countOther++;
                         break;
                 }
+#ifdef DEBUG
                 std::cout << item.Name << " = " << static_cast<uint32_t>(static_cast<uint8_t>(item.Type)) << std::endl;
+#endif
             }
 
             std::cout << "Texture: " << countTexture <<

@@ -22,3 +22,4 @@ add_subdirectory(wad_test_font)
 add_subdirectory(wad_test_texture)
 
 add_subdirectory(wad_export_textures)
+add_subdirectory(wad_export_fonts)

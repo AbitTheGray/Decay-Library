@@ -9,7 +9,8 @@
 
 int main(int argc, char* argv[])
 {
-    bsp_tree* bsp = bsp_tree_load("../../../half-life/cstrike/maps/de_dust2.bsp");
+    char err = 0;
+    bsp_tree* bsp = bsp_tree_load("../../../half-life/cstrike/maps/de_dust2.bsp", &err);
 
     // Vertices
     {

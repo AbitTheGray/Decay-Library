@@ -74,7 +74,7 @@ add_library(Decay::Library ALIAS DecayLib)
 target_link_libraries(DecayLib -static-libgcc -static-libstdc++ stdc++fs)
 target_link_libraries(DecayLib glm)
 
-target_include_directories(DecayLib PRIVATE lib/stb/)
+target_include_directories(DecayLib PUBLIC lib/stb/)
 
 if(DECAY_LIBRARY_API)
     target_compile_options(DecayLib PUBLIC -fPIC)
@@ -118,5 +118,6 @@ endif()
 #--------------------------------
 
 if(BUILD_TESTING)
+    enable_testing()
     add_subdirectory(tests)
 endif()
