@@ -13,38 +13,38 @@
 namespace Decay::Bsp::v30
 {
     std::array<std::size_t, BspFile::LumpType_Size> BspFile::s_DataMaxLength = {
-            MaxEntities,
-            MaxPlanes,
-            MaxTextures,
-            MaxVertices,
-            MaxVisibility,
-            MaxNodes,
-            MaxTextureMapping,
-            MaxFaces,
-            MaxLighting,
-            MaxClipNodes,
-            MaxLeaves,
-            MaxMarkSurfaces,
-            MaxEdges,
-            MaxSurfaceEdges,
-            MaxModels,
+        MaxEntities,
+        MaxPlanes,
+        MaxTextures,
+        MaxVertices,
+        MaxVisibility,
+        MaxNodes,
+        MaxTextureMapping,
+        MaxFaces,
+        MaxLighting,
+        MaxClipNodes,
+        MaxLeaves,
+        MaxMarkSurfaces,
+        MaxEdges,
+        MaxSurfaceEdges,
+        MaxModels,
     };
     std::array<std::size_t, BspFile::LumpType_Size> BspFile::s_DataElementSize = {
-            0, // sizeof(char), Not so simple
-            sizeof(Plane),
-            0, // sizeof(Texture), Not so simple
-            sizeof(glm::vec3),
-            0, // Visibility
-            sizeof(Node),
-            sizeof(TextureMapping),
-            sizeof(Face),
-            0, // Lighting
-            sizeof(ClipNode),
-            sizeof(Leaf),
-            sizeof(MarkSurface),
-            sizeof(Edge),
-            sizeof(SurfaceEdges),
-            sizeof(Model),
+        0, // sizeof(char), Not so simple
+        sizeof(Plane),
+        0, // sizeof(Texture), Not so simple
+        sizeof(glm::vec3),
+        0, // Visibility
+        sizeof(Node),
+        sizeof(TextureMapping),
+        sizeof(Face),
+        0, // Lighting
+        sizeof(ClipNode),
+        sizeof(Leaf),
+        sizeof(MarkSurface),
+        sizeof(Edge),
+        sizeof(SurfaceEdges),
+        sizeof(Model),
     };
 
     BspFile::BspFile(const std::filesystem::path& filename)

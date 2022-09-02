@@ -257,6 +257,9 @@ namespace Decay::Bsp::v30
         void ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension = ".png", bool dummyForMissing = false) const;
 
     public:
+        void ExportEntitiesJson(const std::filesystem::path& filename);
+
+    public:
         /// Parse raw entities string into vector of entities.
         static std::vector<std::map<std::string, std::string>> ParseEntities(const char* raw, size_t len);
 

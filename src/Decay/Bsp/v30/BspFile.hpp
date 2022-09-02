@@ -355,7 +355,6 @@ namespace Decay::Bsp::v30
         };
 
         [[nodiscard]] uint32_t GetTextureCount() const;
-
         [[nodiscard]] std::vector<Wad::Wad3::WadFile::Texture> GetTextures() const;
 
         void SetTextures(const std::vector<Wad::Wad3::WadFile::Texture>& textures);
