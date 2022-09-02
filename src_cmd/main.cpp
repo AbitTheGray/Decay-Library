@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-#include <Decay/Common.hpp>
+#include "Decay/Common.hpp"
 
 std::map<std::string, Command> Commands = {
         {

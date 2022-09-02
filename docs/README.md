@@ -9,7 +9,7 @@ All example C++ code is simplified for easier reading.
 Documentation is only for supported formats.
 
 - GoldSrc
-  - [BSP](GoldSrc/BSP.md) v30
+  - [BSP](GoldSrc/BSP.md) `v30` / `0x1E`
     - Binary Space Partitioning
     - [Valve Developer Community](https://developer.valvesoftware.com/wiki/BSP)
     - Map format
@@ -33,5 +33,10 @@ Documentation is only for supported formats.
     - Map development format from [Valve Hammer Editor](https://developer.valvesoftware.com/wiki/Valve_Hammer_Editor)
   - [SC](GoldSrc/SC.md)
     - Client-side events
+- Quake - https://www.gamers.org/dEngine/quake/spec/quake-spec34/
+  - Bsp `v28` / `0x1C`
+    - `Quake Shareware version, 22 June 96`
+  - WAD 2
+    - Same as [GoldSrc WAD 3](GoldSrc/WAD.md)
 
 __If the link does not work, it is not yet documented/supported.__

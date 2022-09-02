@@ -1,13 +1,13 @@
 #include "bsp.h"
 
-#include <Decay/Bsp/BspFile.hpp>
-#include <Decay/Bsp/BspTree.hpp>
+#include "Decay/Bsp/v30/BspFile.hpp"
+#include "Decay/Bsp/v30/BspTree.hpp"
 
-using namespace Decay::Bsp;
+using namespace Decay::Bsp::v30;
 
 std::vector<std::shared_ptr<BspFile>> BspFiles = {};
 
-inline static std::shared_ptr<BspFile> GetBspPointer(bsp_file* bspFile)
+inline static std::shared_ptr<BspFile> GetBspPointer(bsp30_file* bspFile)
 {
     for(auto& bsp : BspFiles)
         if(bsp.get() == bspFile)
@@ -15,7 +15,7 @@ inline static std::shared_ptr<BspFile> GetBspPointer(bsp_file* bspFile)
     return nullptr;
 }
 
-bsp_file* bsp_file_load(const char* path, char* error)
+bsp30_file* bsp_file_load(const char* path, char* error)
 {
     if(path == nullptr)
         return nullptr;
@@ -45,7 +45,7 @@ bsp_file* bsp_file_load(const char* path, char* error)
     }
 }
 
-void bsp_file_free(bsp_file* bspFile)
+void bsp_file_free(bsp30_file* bspFile)
 {
     std::size_t i;
     for(i = 0; i < BspFiles.size(); i++)
@@ -62,7 +62,7 @@ void bsp_file_free(bsp_file* bspFile)
 
 std::vector<std::shared_ptr<BspTree>> BspTrees = {};
 
-bsp_tree* bsp_tree_create(bsp_file* bspFile, char* error)
+bsp30_tree* bsp_tree_create(bsp30_file* bspFile, char* error)
 {
     auto bsp = GetBspPointer(bspFile);
     if(bsp == nullptr)
@@ -73,7 +73,7 @@ bsp_tree* bsp_tree_create(bsp_file* bspFile, char* error)
 
     try
     {
-        return reinterpret_cast<bsp_tree*>(BspTrees.emplace_back(std::make_shared<BspTree>(bsp)).get());
+        return reinterpret_cast<bsp30_tree*>(BspTrees.emplace_back(std::make_shared<BspTree>(bsp)).get());
     }
     catch(std::exception& ex)
     {
@@ -84,7 +84,7 @@ bsp_tree* bsp_tree_create(bsp_file* bspFile, char* error)
     }
 }
 
-void bsp_tree_free(bsp_tree* bspTree)
+void bsp_tree_free(bsp30_tree* bspTree)
 {
     std::size_t i;
     for(i = 0; i < BspTrees.size(); i++)
@@ -99,14 +99,14 @@ void bsp_tree_free(bsp_tree* bspTree)
     BspTrees.erase(BspTrees.begin() + i);
 }
 
-bsp_vertex* bsp_vertices(bsp_tree* bspTree, int* length)
+bsp30_vertex* bsp_vertices(bsp30_tree* bspTree, int* length)
 {
     *length = bspTree->Vertices.size();
 
     return bspTree->Vertices.data();
 }
 
-bsp_lightmap bsp_light(const bsp_tree* bspTree)
+bsp_lightmap bsp_light(const bsp30_tree* bspTree)
 {
     auto& light = bspTree->Light;
     return {

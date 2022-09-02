@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-#include <Decay/Common.hpp>
+#include "Decay/Common.hpp"
 
 int Exec_wad_add(int argc, const char** argv)
 {
@@ -31,7 +31,7 @@ int Exec_wad_add(int argc, const char** argv)
         }
     }
 
-    using namespace Decay::Wad;
+    using namespace Decay::Wad::Wad3;
 
     std::vector<WadFile::Texture> textures(argc-1);
     for(int i = 1; i < argc; i++)

@@ -96,7 +96,7 @@ namespace Decay
     template<typename Tlen>
     inline std::string Cstr2Str(const char* cstr, Tlen maxLength)
     {
-        static_assert(std::is_arithmetic<Tlen>::value, "maxLength must be numeric");
+        static_assert(std::is_integral<Tlen>::value, "maxLength must be numeric");
 
         for(std::size_t i = 0; i < maxLength; i++)
             if(cstr[i] == '\0')
@@ -107,7 +107,7 @@ namespace Decay
     template<typename T>
     inline bool IsMultipleOf2(T value)
     {
-        static_assert(std::is_arithmetic<T>::value, "value must be numeric");
+        static_assert(std::is_integral<T>::value, "value must be numeric");
 
         if(value == 0)
             return true;
@@ -134,7 +134,7 @@ namespace Decay
     /// - .png
     /// - .bmp
     /// - .tga
-    /// - .jpg / .jpeg (maximum quality
+    /// - .jpg / .jpeg (maximum quality)
     /// - .raw (uint32_t width, uint32_t width, uint8_t components, uint32_t... rgba_data)
     inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> ImageWriteFunction_RGBA(const std::string& extension)
     {

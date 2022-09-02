@@ -104,13 +104,19 @@ struct Font
     
     uint8_t Data[Width * Height];
     
-    uint16_t PaletteSize;
+    uint16_t PaletteSize = 256;
     glm::u8vec3 PaletteRGB[PaletteSize];
 };
 ```
 *This is not valid C++ structure but best description of the content.*
 
-`Width` is defined to be `256` but it failed to work.
+`FontChar.Width` can be `0` (for non-printable characters).
+
+`Font.Width` is always `256` but the binary data does not match.
+
+Some fonts (`fonts.wad`, not `gfx.wad`) have palette size above 256 when processed correctly.
+In the binary data there are all 256 characters repeated 3 times (like `!!!"""###$$$` but starting with `0x00`).
+Last color of the palette (index `255`) should be transparent (for `fonts.wad` to work).
 
 
 ### Image
@@ -127,6 +133,3 @@ struct Image
 };
 ```
 *This is not valid C++ structure but best description of the content.*
-
-All extracted images seemed weird.
-It is expected to be to reduce memory size because those images are used as either placeholder or during loading.

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Decay/Bsp/BspFile.hpp>
-#include <Decay/Bsp/BspTree.hpp>
+#include "Decay/Bsp/v30/BspFile.hpp"
+#include "Decay/Bsp/v30/BspTree.hpp"
 
-#include <Decay/Wad/WadFile.hpp>
+#include "Decay/Wad/Wad3/WadFile.hpp"
 
 #include <cstring>
 

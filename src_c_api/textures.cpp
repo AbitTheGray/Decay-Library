@@ -1,11 +1,11 @@
 #include "bsp.h"
 #include "wad.h"
 
-#include <Decay/Wad/WadFile.hpp>
+#include "Decay/Wad/Wad3/WadFile.hpp"
 
 #include "utility.hpp"
 
-using namespace Decay::Wad;
+using namespace Decay::Wad::Wad3;
 
 static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, int* length)
 {
@@ -119,7 +119,7 @@ wad_texture* wad_load_textures(const char* path, int* length)
     return LoadTextures(wad->ReadAllTextures(), length);
 }
 
-wad_texture* bsp_tree_textures(bsp_tree* bspTree, int* length)
+wad_texture* bsp_tree_textures(bsp30_tree* bspTree, int* length)
 {
     *length = bspTree->Textures.size();
 

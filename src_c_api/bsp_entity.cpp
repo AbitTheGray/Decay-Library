@@ -1,10 +1,10 @@
 #include "bsp.h"
 
-#include <Decay/Bsp/BspTree.hpp>
+#include "Decay/Bsp/v30/BspTree.hpp"
 
 using namespace Decay::Bsp;
 
-int bsp_tree_entities(const bsp_tree* bspTree, const bsp_entity** entities)
+int bsp_tree_entities(const bsp30_tree* bspTree, const bsp30_entity** entities)
 {
     if(entities != nullptr)
     {
@@ -15,7 +15,7 @@ int bsp_tree_entities(const bsp_tree* bspTree, const bsp_entity** entities)
     return bspTree->Entities.size();
 }
 
-int bsp_entity_keys(const bsp_entity* entity, const char** keys)
+int bsp_entity_keys(const bsp30_entity* entity, const char** keys)
 {
     if(keys != nullptr)
     {
@@ -27,7 +27,7 @@ int bsp_entity_keys(const bsp_entity* entity, const char** keys)
     return entity->size();
 }
 
-const char* bsp_entity_value(const bsp_entity* entity, const char* key)
+const char* bsp_entity_value(const bsp30_entity* entity, const char* key)
 {
     auto it = entity->find(key);
     if(it == entity->end())

@@ -52,7 +52,7 @@ Primary lump is `Models`, others are referred from it.
 ### Entities
 
 Entities lump is text-only data (followed by `'\0'`).
-Closest commonly-used format is JSON (except this lump does not use `,` and is 1 record per line).
+Closest commonly-used format is JSON (except this lump does not use `,`, is 1 record per line and value is not separated from key by `:`).
 
 ```
 {
@@ -72,7 +72,7 @@ Closest commonly-used format is JSON (except this lump does not use `,` and is 1
 }
 ```
 
-As you can see, the key may no be unique (but it will have same values, just use any of those).
+As you can see, the key may not be unique (but it will have same values, just use any of those).
 
 Common keys are:
 - `wad` = paths to `.wad` files used by the BSP file (relative to `Half-Life` directory, prefixed by `\sierra\half-life\`)

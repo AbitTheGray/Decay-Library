@@ -1,10 +1,10 @@
 #include "wad.h"
 
-#include <Decay/Wad/WadFile.hpp>
+#include "Decay/Wad/Wad3/WadFile.hpp"
 
 #include "utility.hpp"
 
-using namespace Decay::Wad;
+using namespace Decay::Wad::Wad3;
 
 static wad_image* LoadImages(const std::map<std::string, WadFile::Image>& images, int* length)
 {

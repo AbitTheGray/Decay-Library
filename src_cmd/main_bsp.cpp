@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-#include <Decay/Common.hpp>
+#include "Decay/Common.hpp"
 
 int Exec_bsp2obj(int argc, const char** argv)
 {
@@ -87,7 +87,7 @@ int Exec_bsp2obj(int argc, const char** argv)
             texturesDirectory = mtlFilename.parent_path() / "textures";
     }
 
-    using namespace Decay::Bsp;
+    using namespace Decay::Bsp::v30;
 
     std::shared_ptr<BspFile> bsp;
     try
@@ -219,8 +219,8 @@ int Exec_bsp2wad(int argc, const char** argv)
         }
     }
 
-    using namespace Decay::Bsp;
-    using namespace Decay::Wad;
+    using namespace Decay::Bsp::v30;
+    using namespace Decay::Wad::Wad3;
 
     std::shared_ptr<BspFile> bsp;
     try
@@ -331,7 +331,7 @@ int Exec_bsp_lightmap(int argc, const char** argv)
     }
 
     using namespace Decay;
-    using namespace Decay::Bsp;
+    using namespace Decay::Bsp::v30;
 
     std::shared_ptr<BspFile> bsp;
     try

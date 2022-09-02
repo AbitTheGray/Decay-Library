@@ -1,25 +1,27 @@
 #--------------------------------
-# BSP (Map)
+# BSP v30 (GoldSrc, Map)
 #--------------------------------
 
-add_subdirectory(bsp_parse)
+add_subdirectory(bsp30_parse)
+add_subdirectory(bsp30_parse_c)
 
-add_subdirectory(bsp_parse_c)
+add_subdirectory(bsp30_export_obj)
 
-add_subdirectory(bsp_export_obj)
+add_subdirectory(bsp30_export_entities)
 
 #--------------------------------
-# WAD (Textures)
+# WAD 3 (GoldSrc, Textures)
 #--------------------------------
 
-add_subdirectory(wad_parse)
-add_subdirectory(wad_parse_all)
+add_subdirectory(wad3_parse)
+add_subdirectory(wad3_parse_all)
 
-add_subdirectory(wad_parse_c)
+add_subdirectory(wad3_parse_c)
 
-add_subdirectory(wad_test_image)
-add_subdirectory(wad_test_font)
-add_subdirectory(wad_test_texture)
+add_subdirectory(wad3_test_image)
+add_subdirectory(wad3_test_font)
+add_subdirectory(wad3_test_texture)
 
-add_subdirectory(wad_export_textures)
-add_subdirectory(wad_export_fonts)
+add_subdirectory(wad3_export_images)
+add_subdirectory(wad3_export_textures)
+add_subdirectory(wad3_export_fonts)
