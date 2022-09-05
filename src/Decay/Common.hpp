@@ -128,6 +128,18 @@ namespace Decay
         return strcasecmp(str0.data(), str1.data()) == 0;
 #endif
     }
+    inline bool StringCaseInsensitiveEqual(const std::string_view& str0, const std::string_view& str1)
+    {
+        if(str0.length() != str1.length())
+            return false;
+
+#ifdef _WIN32
+        // May not be needed as MinGW supports `strcasecmp`
+        return stricmp(str0.data(), str1.data()) == 0;
+#else
+        return strcasecmp(str0.data(), str1.data()) == 0;
+#endif
+    }
 
     /// Extension always starts with period.
     /// Supported extensions:
@@ -144,12 +156,12 @@ namespace Decay
             {
                 // Write to file
                 stbi_write_png(
-                        path,
-                        width,
-                        height,
-                        4,
-                        rgba,
-                        static_cast<int32_t>(width) * 4
+                    path,
+                    width,
+                    height,
+                    4,
+                    rgba,
+                    static_cast<int32_t>(width) * 4
                 );
             };
         }
@@ -158,11 +170,11 @@ namespace Decay
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba) -> void
             {
                 stbi_write_bmp(
-                        path,
-                        width,
-                        height,
-                        4,
-                        rgba
+                    path,
+                    width,
+                    height,
+                    4,
+                    rgba
                 );
             };
         }
@@ -171,11 +183,11 @@ namespace Decay
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba) -> void
             {
                 stbi_write_tga(
-                        path,
-                        width,
-                        height,
-                        4,
-                        rgba
+                    path,
+                    width,
+                    height,
+                    4,
+                    rgba
                 );
             };
         }
@@ -184,12 +196,12 @@ namespace Decay
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba) -> void
             {
                 stbi_write_jpg(
-                        path,
-                        width,
-                        height,
-                        4,
-                        rgba,
-                        100 // 0 = minimum, 100 = maximum
+                    path,
+                    width,
+                    height,
+                    4,
+                    rgba,
+                    100 // 0 = minimum, 100 = maximum
                 );
             };
         }
@@ -229,12 +241,12 @@ namespace Decay
             {
                 // Write to file
                 stbi_write_png(
-                        path,
-                        width,
-                        height,
-                        3,
-                        rgb,
-                        static_cast<int32_t>(width) * 3
+                    path,
+                    width,
+                    height,
+                    3,
+                    rgb,
+                    static_cast<int32_t>(width) * 3
                 );
             };
         }
@@ -243,11 +255,11 @@ namespace Decay
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb) -> void
             {
                 stbi_write_bmp(
-                        path,
-                        width,
-                        height,
-                        3,
-                        rgb
+                    path,
+                    width,
+                    height,
+                    3,
+                    rgb
                 );
             };
         }
@@ -256,11 +268,11 @@ namespace Decay
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb) -> void
             {
                 stbi_write_tga(
-                        path,
-                        width,
-                        height,
-                        3,
-                        rgb
+                    path,
+                    width,
+                    height,
+                    3,
+                    rgb
                 );
             };
         }
@@ -269,12 +281,12 @@ namespace Decay
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb) -> void
             {
                 stbi_write_jpg(
-                        path,
-                        width,
-                        height,
-                        3,
-                        rgb,
-                        100 // 0 = minimum, 100 = maximum
+                    path,
+                    width,
+                    height,
+                    3,
+                    rgb,
+                    100 // 0 = minimum, 100 = maximum
                 );
             };
         }
@@ -297,5 +309,22 @@ namespace Decay
         }
         else
             throw std::runtime_error("Unsupported texture extension for export");
+    }
+
+    /// Call after reading quotation character (usually  '\"').
+    /// Reads until `endChar` is reached and returns the value.
+    /// Throws exception if EoF is reached before `endChar`.
+    inline std::string ReadQuotedString(std::istream& in, char endChar = '\"')
+    {
+        std::vector<char> str = {};
+        while(in.good())
+        {
+            char c = in.get();//TODO `prevChar` and escaped end char (like plaintext \" not being treated as " )
+            if(c == endChar)
+                return std::string(str.data(), str.size());
+
+            str.emplace_back(c);
+        }
+        throw std::runtime_error("Stream is not in a good state");
     }
 }
