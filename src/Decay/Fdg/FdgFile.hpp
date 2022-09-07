@@ -3,13 +3,14 @@
 #include <filesystem>
 #include <vector>
 #include <map>
-#include <glm/glm.hpp>
+#include "glm/glm.hpp"
 
 #include "Decay/Common.hpp"
 
 #include "Decay/Common.hpp"
 namespace Decay::Fdg
 {
+    /// Raw FGD file data, only basic validation is done on it.
     class FdgFile
     {
     public:

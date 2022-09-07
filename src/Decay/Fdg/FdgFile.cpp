@@ -107,6 +107,8 @@ namespace Decay::Fdg
                 // base(Something)
                 // decal()
                 // sprite()
+                // iconsprite("sprites/xxx.spr")
+                // studio("models/xxx.mdl")
                 std::vector<EntityHeaderWord_t> options = {};
                 v = ReadEntityHeaderWord(in);
                 while(v.first != "=")

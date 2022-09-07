@@ -5,6 +5,7 @@
 *.h text eol=lf
 *.hpp text eol=lf
 *.md text eol=lf
+*.fgd text eol=lf
 
 *.png binary
 *.jpg binary

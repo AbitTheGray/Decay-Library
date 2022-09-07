@@ -3,15 +3,15 @@
 Library for parsing BSP and WAD files from GoldSource (and maybe more later).
 
 Also contains C API which can be used from other programming languages.
-[C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) is being worked on (for future use in Unity3D).
+[C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) is being worked on (for future use in Unity3D) but may lag-behind in features.
 
 Can also be used as Command-line program.
 
 ## Libraries
 
-| Name | License | Version |
-|------|---------|---------|
-| [GLM](https://glm.g-truc.net) | [MIT](https://glm.g-truc.net/copying.txt) | branch: [`master`](https://github.com/g-truc/glm/tree/master) |
+| Name                                   | License                                                                    | Version                                                         |
+|----------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------|
+| [GLM](https://glm.g-truc.net)          | [MIT](https://glm.g-truc.net/copying.txt)                                  | branch: [`master`](https://github.com/g-truc/glm/tree/master)   |
 | [stb](https://github.com/nothings/stb) | [MIT / Public Domain](https://github.com/nothings/stb/blob/master/LICENSE) | branch: [`master`](https://github.com/nothings/stb/tree/master) |
 
 All libraries are used as `static library` to maximize optimization and limit problems with deployment and versions.
@@ -39,9 +39,7 @@ All libraries are used as `static library` to maximize optimization and limit pr
       - Raw data with palette
       - RGB and RGBA export supported
     - Images
-      - Some seem weird but it may be correct
-    - ~~Fonts~~
-      - **Currently fail to load, requires fixing**
+    - Fonts
       
 ## Compile & Use
 
@@ -95,6 +93,11 @@ Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to dis
 - ~~`mdl2obj <file.mdl> [file.obj] [file.mtl] [pose] [pose_time=0]` - Converts model to OBJ, optionally at specified pose (and time)~~
   - ~~Prints all available poses into standard output~~
 
+#### FGD
+
+- ~~`fgd2json <file.fgd>`~~
+  - ~~Converts all entities to JSON structure, implements base classes~~
+
 ## Linux tools
 
 Inside `linux` directory, there are [MIME type](https://en.wikipedia.org/wiki/Media_type#Mime.types) definitions for supported BSP and WAD files for [KDE](https://kde.org/).
@@ -102,11 +105,11 @@ Inside `linux` directory, there are [MIME type](https://en.wikipedia.org/wiki/Me
 They recommend having only 1 `.xml` file per application but several are used sor simplicity.
 All have weight `80` (same as `application/x-doom`) but are defined by file headers.
 
-| MIME | Definition File | File type |
-|------|-----------------|-----------|
+| MIME                        | Definition File     | File type      |
+|-----------------------------|---------------------|----------------|
 | `application/goldsrc-bsp30` | `goldsrc-bsp30.xml` | BSP version 30 |
-| `application/goldsrc-wad2` | `goldsrc-wad2.xml` | WAD2 |
-| `application/goldsrc-wad3` | `goldsrc-wad3.xml` | WAD3 |
+| `application/goldsrc-wad2`  | `goldsrc-wad2.xml`  | WAD2           |
+| `application/goldsrc-wad3`  | `goldsrc-wad3.xml`  | WAD3           |
 
 ## Game Engines
 
