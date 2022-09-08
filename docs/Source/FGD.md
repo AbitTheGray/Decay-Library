@@ -244,8 +244,24 @@ Only one value can be selected.
 
 ### Inputs
 
-//TODO
+```
+input <name>(<param>) : "comment"
+```
+For no `<param>` use `void`.
+
+```
+input Enable(void) : "Makes the entity active."
+input SetMaxPieces(integer) : "Sets Max Gib Count."
+```
 
 ### Outputs
 
-//TODO
+```
+output <name>(<param>) : "comment"
+```
+For no `<param>` use `void`.
+
+```
+output OnUser1(void) : "Fires in response to the FireUser1 input."
+output OnHealthChanged(float) : "Fired whenever the health of the prop has increased or decreased. Automatically puts the new health amount as a decimal percent (e.g. 45% = 0.45) as the input parameter, unless overridden by the mapper."
+```
