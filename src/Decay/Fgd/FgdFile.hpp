@@ -3,10 +3,14 @@
 #include <filesystem>
 #include <vector>
 #include <map>
+#include <set>
 #include <optional>
 #include "glm/glm.hpp"
 
 #include "Decay/Common.hpp"
+
+// Use `std::any_of` instead of loop implementation.
+//#define FGD_INPUT_OUTPUT_STD_ANY_OF
 
 namespace Decay::Fgd
 {
@@ -50,7 +54,7 @@ namespace Decay::Fgd
     // Classes
     public:
         /// Value for `choices` or `options` property types.
-        struct PropertyFlag
+        struct PropertyFlagOrChoice
         {
             /// `choices`: New value to set, can be `int`, `float` or `string`
             /// `flags`: Value to add or subtract, can only be `int`, for bit index use `FlagOrder()`
@@ -109,7 +113,7 @@ namespace Decay::Fgd
             std::string Description;
             // =
             /// Values for `choices` or `options` types.
-            std::vector<PropertyFlag> FlagsOrChoices;
+            std::vector<PropertyFlagOrChoice> FlagsOrChoices;
         };
     public:
         enum class InputOutputType
@@ -131,31 +135,42 @@ namespace Decay::Fgd
         struct Class
         {
             // @
-            std::string Type;
-            //
+            std::string Type; ///< Without '@' at the beginning.
             std::vector<Option> Options;
             // =
             std::string Codename;
             // :
-            std::string DisplayName;
+            std::string Description;
             // [
-            std::vector<Property> Items;
+            std::vector<Property> Properties;
             std::vector<InputOutput> IO;
             // ]
+
+            inline static bool HasType(const std::vector<InputOutput>& ios, InputOutputType type) noexcept
+            {
+#ifdef FGD_INPUT_OUTPUT_STD_ANY_OF
+                return std::any_of(ios.begin(), ios.end(), [&type](const InputOutput& io){ return io.Type == type; });
+#else
+                for(const InputOutput& io : ios) // NOLINT(readability-use-anyofallof)
+                    if(io.Type == type)
+                        return true;
+                return false;
+#endif
+            }
         };
     public:
         std::vector<Class> Classes = {};
 
     // Map Size
     public:
-        std::optional<glm::i32vec2> MapSize;
+        std::optional<glm::i32vec2> MapSize = {};
 
     // Auto Vis Group
     public:
         struct AutoVisGroup_Child
         {
             std::string DisplayName;
-            std::vector<std::string> Entities;
+            std::set<std::string> EntityClasses;
         };
         struct AutoVisGroup
         {
@@ -163,15 +178,15 @@ namespace Decay::Fgd
             std::vector<AutoVisGroup_Child> Child;
         };
     public:
-        std::vector<AutoVisGroup> AutoVisGroups;
+        std::vector<AutoVisGroup> AutoVisGroups = {};
 
     // Material exclusion
     public:
-        std::vector<std::string> MaterialExclusion;
+        std::set<std::string> MaterialExclusion = {};
 
     // Include other FGD files (paths)
     public:
-        std::vector<std::string> IncludeFiles;
+        std::set<std::string> IncludeFiles = {};
 
     public:
         explicit FgdFile(std::istream& in);
@@ -196,10 +211,15 @@ namespace Decay::Fgd
         /// This function is also called on included files before `Add` to allow nested includes.
         /// Every file is processed only once thanks to `filesToIgnore` being filled by files as they are being processed - it is recommended to place path to `this` FGD file there at the beginning.
         void ProcessIncludes(const std::filesystem::path& relativeToDirectory, std::vector<std::filesystem::path>& filesToIgnore);
+        /// Completely reworks the order of `Classes` based on `base(...)` option to make sure a class in listed AFTER its dependencies (=base calsses first).
+        /// Throws exception if a recursive dependency is found.
+        /// Tries to use Alphabetical sorting when possible.
+        void OrderClassesByDependency();
     };
 
-    std::istream& operator>>(std::istream& in, FgdFile::PropertyFlag&);
-    std::ostream& operator<<(std::ostream& out, const FgdFile::PropertyFlag& pf) { return pf.Write(out, true); }
+    std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice&);
+    [[deprecated("Use `FgdFile::PropertyFlagOrChoice.Write` as there you can specify whenever you want defaults or not (for `flags` or for `choices`)")]]
+    std::ostream& operator<<(std::ostream& out, const FgdFile::PropertyFlagOrChoice& pf) { return pf.Write(out, true); }
 
     std::istream& operator>>(std::istream& in, FgdFile::OptionParam&);
     std::ostream& operator<<(std::ostream& out, const FgdFile::OptionParam&);

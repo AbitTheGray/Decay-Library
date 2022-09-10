@@ -277,7 +277,8 @@ namespace Decay::Fgd
 
     }
 
-    std::istream& operator>>(std::istream& in, FgdFile::PropertyFlag& propertyFlag)
+    // Class >> Property >> FlagOrChoice
+    std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice& propertyFlag)
     {
         // "string" : "string"
         // "float" : "string"
@@ -341,7 +342,7 @@ namespace Decay::Fgd
 
         return in;
     }
-    std::ostream& FgdFile::PropertyFlag::Write(std::ostream& out, bool includeDefault) const
+    std::ostream& FgdFile::PropertyFlagOrChoice::Write(std::ostream& out, bool includeDefault) const
     {
         if(GuessIndexType() == ValueType::Integer)
             out << Index;
@@ -355,6 +356,7 @@ namespace Decay::Fgd
         return out;
     }
 
+    // Class >> Option >> Param
     std::istream& operator>>(std::istream& in, FgdFile::OptionParam& optionParam)
     {
         // This script processed only single `param` from the preview below:
@@ -430,6 +432,8 @@ namespace Decay::Fgd
         return out;
     }
 
+    // Class >> Option
+    // Class >> Property >> Option
     std::istream& operator>>(std::istream& in, FgdFile::Option& option)
     {
         IgnoreWhitespace(in);
@@ -513,11 +517,12 @@ GOTO_OPTION_PARAM:
         return out;
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile::Property&)
+    // Class >> Property
+    std::istream& operator>>(std::istream& in, FgdFile::Property&)
     {
 
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile::Property& property)
+    std::ostream& operator<<(std::ostream& out, const FgdFile::Property& property)
     {
         assert(!property.Codename.empty());
         assert(!property.Type.empty());
@@ -565,7 +570,7 @@ GOTO_OPTION_PARAM:
                 out << " = \n";
                 out << "\t[ \n";
 
-                for(const FgdFile::PropertyFlag& pf : property.FlagsOrChoices)
+                for(const FgdFile::PropertyFlagOrChoice& pf : property.FlagsOrChoices)
                 {
                     out << "\t\t";
                     pf.Write(out, false);
@@ -579,7 +584,7 @@ GOTO_OPTION_PARAM:
                 out << " = \n";
                 out << "\t[\n";
 
-                for(const FgdFile::PropertyFlag& pf : property.FlagsOrChoices)
+                for(const FgdFile::PropertyFlagOrChoice& pf : property.FlagsOrChoices)
                 {
                     out << "\t\t";
                     pf.Write(out, true);
@@ -594,7 +599,8 @@ GOTO_OPTION_PARAM:
         return out;
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile::InputOutputType& type)
+    // Class >> Input / Output >> Type
+    std::istream& operator>>(std::istream& in, FgdFile::InputOutputType& type)
     {
         if(!in.good())
             return in;
@@ -611,7 +617,7 @@ GOTO_OPTION_PARAM:
         }
         return in;
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile::InputOutputType& type)
+    std::ostream& operator<<(std::ostream& out, const FgdFile::InputOutputType& type)
     {
         switch(type)
         {
@@ -627,7 +633,8 @@ GOTO_OPTION_PARAM:
         return out;
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile::InputOutput& io)
+    // Class >> Input / Output
+    std::istream& operator>>(std::istream& in, FgdFile::InputOutput& io)
     {
         // input <name>(<param>) : "comment"
         // output <name>(<param>) : "comment"
@@ -706,7 +713,7 @@ GOTO_OPTION_PARAM:
 
         return in;
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile::InputOutput& io)
+    std::ostream& operator<<(std::ostream& out, const FgdFile::InputOutput& io)
     {
         out << io.Type << ' ' << io.Name << '(';
         if(io.ParamType.empty()) // Just a safety, should not be needed
@@ -721,23 +728,123 @@ GOTO_OPTION_PARAM:
         return out;
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile::Class& clss)
+    // Class
+    std::istream& operator>>(std::istream& in, FgdFile::Class& clss)
     {
 
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile::Class& clss)
+    std::ostream& operator<<(std::ostream& out, const FgdFile::Class& clss)
     {
+        { // Header
+            assert(!clss.Type.empty());
+            assert(clss.Type.find(' ') == std::string::npos);
+            out << '@' << clss.Type;
+            if(!clss.Options.empty())
+            {
+                for(const FgdFile::Option& option : clss.Options)
+                    out << ' ' << option;
+            }
+
+            assert(!clss.Codename.empty());
+            assert(clss.Codename.find(' ') == std::string::npos);
+            out << " = " << clss.Codename;
+
+            if(!clss.Description.empty())
+                out << " = \"" << clss.Codename << '\"';
+
+            if(clss.Properties.empty() && clss.IO.empty())
+            {
+                out << "[]";
+                return out;
+            }
+            out << '\n';
+        }
+
+        out << "[\n";
+
+        // Properties
+        for(const auto& property : clss.Properties)
+        {
+            out << '\t' << property << '\n';
+        }
+        bool hadPrevious = !clss.Properties.empty();
+
+        // Input
+        if(FgdFile::Class::HasType(clss.IO, FgdFile::InputOutputType::Input))
+        {
+            if(hadPrevious) // Just empty line between Inputs and Properties
+                out << '\n';
+
+            for(const auto& io: clss.IO)
+                if(io.Type == FgdFile::InputOutputType::Input)
+                    out << '\t' << io << '\n';
+        }
+
+        // Output
+        if(FgdFile::Class::HasType(clss.IO, FgdFile::InputOutputType::Output))
+        {
+            if(hadPrevious) // Just empty line between Outputs and Inputs/Properties
+                out << '\n';
+
+            for(const auto& io: clss.IO)
+                if(io.Type == FgdFile::InputOutputType::Output)
+                    out << '\t' << io << '\n';
+        }
+
+        out << "]\n";
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile::AutoVisGroup_Child& avgc)
+    // Auto Vis Group - Child
+    std::istream& operator>>(std::istream& in, FgdFile::AutoVisGroup_Child& avgc)
     {
+        IgnoreWhitespace(in);
 
+        int c = in.peek();
+        if(c != '\"')
+        {
+            in.setstate(std::ios_base::failbit);
+            return in;
+        }
+        std::vector<char> childName = ReadQuotedString(in);
+        if(childName.empty())
+            throw std::runtime_error("`@AutoVisGroup` child must have a name (empty does not count)");
+        avgc.DisplayName = str(childName);
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c != '[')
+            throw std::runtime_error("`@AutoVisGroup` child must be followed by '=', then name of the group and '[' after it");
+        in.ignore();
+
+        while(true) // Entity Classes
+        {
+            IgnoreWhitespace(in);
+
+            c = in.peek();
+            switch(c)
+            {
+                case '\"':
+                {
+                    std::vector<char> entityClass = ReadQuotedString(in);
+                    if(entityClass.empty())
+                        throw std::runtime_error("Entity class inside `@AutoVisGroup` cannot be empty");
+                    avgc.EntityClasses.emplace(str(entityClass));
+                    break;
+                }
+                case ']':
+                    in.ignore();
+                    return in;
+                default:
+                    throw std::runtime_error("`@AutoVisGroup` child must end by ']' and can only contain entity classes as quoted text (inside '\"')");
+            }
+        }
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile::AutoVisGroup_Child& avgc)
+    std::ostream& operator<<(std::ostream& out, const FgdFile::AutoVisGroup_Child& avgc)
     {
         out << "\t\"" << avgc.DisplayName << "\"\n";
         out << "\t[\n";
-        for(const std::string& entityName : avgc.Entities)
+        for(const std::string& entityName : avgc.EntityClasses)
         {
             if(entityName.empty())
                 continue;
@@ -746,11 +853,78 @@ GOTO_OPTION_PARAM:
         out << "\t]";
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile::AutoVisGroup& avg)
+    // Auto Vis Group
+    std::istream& operator>>(std::istream& in, FgdFile::AutoVisGroup& avg)
     {
+        IgnoreWhitespace(in);
 
+        int c = in.peek();
+        if(c == EOF)
+        {
+            in.setstate(std::ios_base::eofbit);
+            return in;
+        }
+        if(c != '@')
+            throw std::runtime_error("`@AutoVisGroup` must start with '@'");
+        std::vector<char> classname = ReadUntilAny(
+            in,
+            std::array<char, 4> {
+                ' ', '\t', // Whitespace
+                '\r', '\n' // New-line
+            }
+        );
+        if(!StringCaseInsensitiveEqual(str_view(classname), "@AutoVisGroup"))
+        {
+            in.seekg(-classname.size(), std::ios_base::cur); // Return object name back to stream
+            in.setstate(std::ios_base::failbit);
+            return in;
+        }
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c != '=')
+            throw std::runtime_error("`@AutoVisGroup` must be followed by '='");
+        in.ignore();
+
+        IgnoreWhitespace(in);
+
+        // Display Name
+        {
+            std::vector<char> displayName = ReadQuotedString(in);
+            if(displayName.empty())
+                throw std::runtime_error("`@AutoVisGroup` cannot have empty name");
+            avg.DisplayName = str(displayName);
+        }
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c != '[')
+            throw std::runtime_error("`@AutoVisGroup` must be followed by '=', then name of the group and '[' after it");
+        in.ignore();
+
+        while(true) // Child
+        {
+            FgdFile::AutoVisGroup_Child avgc = {};
+            in >> avgc;
+            if(in.fail())
+            {
+                in.clear(in.rdstate() & ~std::istream::failbit);
+                break;
+            }
+
+            avg.Child.emplace_back(avgc);
+        }
+
+        c = in.peek();
+        if(c != ']')
+            throw std::runtime_error("`@AutoVisGroup` must end by ']'");
+        in.ignore();
+
+        return in;
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile::AutoVisGroup& avg)
+    std::ostream& operator<<(std::ostream& out, const FgdFile::AutoVisGroup& avg)
     {
         out << "@AutoVisGroup = \"" << avg.DisplayName << "\"\n";
         out << "[\n";
@@ -760,18 +934,242 @@ GOTO_OPTION_PARAM:
         return out;
     }
 
-    std::istream& Fgd::operator>>(std::istream& in, FgdFile& fgd)
+    // FGD File
+    std::istream& operator>>(std::istream& in, FgdFile& fgd)
     {
+        while(true)
+        {
+            IgnoreWhitespace(in);
 
+            int c = in.peek();
+            if(c == EOF)
+                return in;
+            if(c != '@')
+                throw std::runtime_error("Unexpected character inside FGD file - expected a class (or other object) that starts with '@'");
+
+            std::vector<char> object = ReadUntilAny(
+                in,
+                std::array<char, 4> {
+                    ' ', '\t', // Whitespace
+                    '\r', '\n' // New-line
+                }
+            );
+
+            if(StringCaseInsensitiveEqual(str_view(object), "@mapsize")) [[unlikely]]
+            {
+                if(fgd.MapSize.has_value())
+                    throw std::runtime_error("Single FGD file cannot contain more than one `@mapsize`");
+
+                if(in.peek() != '(')
+                    throw std::runtime_error("`@mapsize` must be followed by '(', see documentation");
+                in.ignore();
+
+                IgnoreWhitespace(in);
+
+                // Min
+                std::vector<char> valueMin = ReadUntilAny( //TODO ReadOnlyAny(in, '-0123456789')
+                    in,
+                    std::array<char, 6> {
+                        ' ', '\t', // Whitespace
+                        '\r', '\n', // New-line
+                        ',', // Separator between min and max values
+                        ')' // Unexpected end of parameters
+                    }
+                );
+                if(valueMin.empty())
+                    throw std::runtime_error("Minimum value of `@mapsize` cannot be empty");
+                for(int vci = 0; vci < valueMin.size(); vci++)
+                {
+                    char vc = valueMin[vci];
+                    if(vci == 0 && vc == '-') // '-' is only allowed at the begining, '+' is not allowed
+                        continue;
+                    if(vc >= '0' && vc <= '9')
+                        continue;
+
+                    throw std::runtime_error("Minimum value of `@mapsize` contains invalid character");
+                }
+
+                IgnoreWhitespace(in);
+
+                // Separator between parameters
+                c = in.peek();
+                if(c != ',')
+                {
+                    if(c == ')')
+                        throw std::runtime_error("Unexpected character between parameters of `@mapsize`, 2 parameters must be present but ')' was reached after 1st parameter");
+                    else
+                        throw std::runtime_error("Unexpected character between parameters of `@mapsize`");
+                }
+                in.ignore();
+
+                IgnoreWhitespace(in);
+
+                // Max
+                std::vector<char> valueMax = ReadUntilAny( //TODO ReadOnlyAny(in, '-0123456789')
+                    in,
+                    std::array<char, 6> {
+                        ' ', '\t', // Whitespace
+                        '\r', '\n', // New-line
+                        ',', // Unexpected 3rd parameter
+                        ')' // End of parameters
+                    }
+                );
+                if(valueMax.empty())
+                    throw std::runtime_error("Maximum value of `@mapsize` cannot be empty");
+                for(int vci = 0; vci < valueMax.size(); vci++)
+                {
+                    char vc = valueMax[vci];
+                    if(vci == 0 && vc == '-') // '-' is only allowed at the begining, '+' is not allowed
+                        continue;
+                    if(vc >= '0' && vc <= '9')
+                        continue;
+                    throw std::runtime_error("Maximum value of `@mapsize` contains invalid character");
+                }
+
+                int min, max;
+                try // Min
+                {
+                    min = std::stoi(str(valueMin));
+                }
+                catch(std::out_of_range& ex)
+                {
+                    throw std::out_of_range("Minimum value of `@mapsize` is out of range of Int32");
+                }
+                catch(std::invalid_argument& ex)
+                {
+                    throw std::out_of_range("Value of `@mapsize` minimum value is not valid");
+                }
+                try // Max
+                {
+                    max = std::stoi(str(valueMax));
+                }
+                catch(std::out_of_range& ex)
+                {
+                    throw std::out_of_range("Maximum value of `@mapsize` is out of range of Int32");
+                }
+                catch(std::invalid_argument& ex)
+                {
+                    throw std::out_of_range("Value of `@mapsize` maximum value is not valid");
+                }
+
+                fgd.MapSize = glm::i32vec2{ min, max };
+            }
+            else if(StringCaseInsensitiveEqual(str_view(object), "@include")) [[unlikely]]
+            {
+                IgnoreWhitespace(in);
+
+                std::vector<char> filename;
+                try
+                {
+                    filename = ReadQuotedString(in);
+                }
+                catch(std::exception& ex)
+                {
+                    throw std::runtime_error(std::string("Failed to get `@include` path - ") + ex.what());//OPTIMIZE better joining of `const char[]` and `const char*`
+                }
+                if(filename.empty())
+                    throw std::runtime_error("Cannot `@include` empty path");
+
+                fgd.IncludeFiles.emplace(str(filename));
+            }
+            else if(StringCaseInsensitiveEqual(str_view(object), "@MaterialExclusion")) [[unlikely]]
+            {
+                IgnoreWhitespace(in);
+
+                c = in.peek();
+                if(c != '[')
+                    throw std::runtime_error("Content of `@MaterialExclusion` must be inside square brackets `[` + `]`");
+                in.ignore();
+
+                IgnoreWhitespace(in);
+
+                while(true)
+                {
+                    c = in.peek();
+                    switch(c)
+                    {
+                        case '\"':
+                        {
+                            std::vector<char> dir = ReadQuotedString(in);
+                            if(dir.empty())
+                                throw std::runtime_error("Entry of `@MaterialExclusion` cannot be empty text (just `\"\"`), if you want the list to be empty just use `[]`");
+
+                            fgd.MaterialExclusion.emplace(str(dir));
+                            break;
+                        }
+
+                        case ']': // End of content
+                            in.ignore();
+                            break;
+                        case EOF: // End of file (let's be lenient and allow it as the end of list)
+                            break;
+
+                        case ',':
+                            throw std::runtime_error("Content of `@MaterialExclusion` must end by `]` and contain only names of directories quoted by '\"', entries are not separated by ','");
+                        default:
+                            throw std::runtime_error("Content of `@MaterialExclusion` must end by `]` and contain only names of directories quoted by '\"'");
+                    }
+                }
+            }
+            else if(StringCaseInsensitiveEqual(str_view(object), "@AutoVisGroup")) [[unlikely]]
+            {
+                in.seekg(-object.size(), std::ios_base::cur); // Return object name back to stream
+
+                FgdFile::AutoVisGroup avg;
+                in >> avg;
+                if(in.fail())
+                    throw std::runtime_error("Failed to parse @AutoVisGroup");
+
+                //TODO Create function `bool TryCombine(AutoVisGroup& from)`
+
+                // Add to existing if possible
+                bool found_avg = false;
+                for(auto& fgd_avg : fgd.AutoVisGroups) // Loop through existing AutoVisGroups
+                {
+                    if(fgd_avg.DisplayName == avg.DisplayName)
+                    {
+                        for(auto& avgc : avg.Child) // Loop through child that we want to insert
+                        {
+                            bool found_avgc = false;
+                            for(auto& fgd_avgc : fgd_avg.Child) // Loop through child that exist - try to find matching ones
+                            {
+                                if(fgd_avgc.DisplayName == avgc.DisplayName)
+                                {
+                                    for(auto& avgc_e : avgc.EntityClasses) // Loop through entities we want in the AutoVisGroup's Child
+                                        fgd_avgc.EntityClasses.emplace(avgc_e);
+
+                                    found_avgc = true;
+                                    break;
+                                }
+                            }
+
+                            if(!found_avgc)
+                                fgd_avg.Child.emplace_back(avgc);
+                        }
+
+                        found_avg = true;
+                        break;
+                    }
+                }
+
+                if(!found_avg)
+                    fgd.AutoVisGroups.emplace_back(avg);
+            }
+            else // Class ?
+            {
+                in.seekg(-object.size(), std::ios_base::cur); // Return object name back to stream
+                //TODO Class
+            }
+        }
     }
-    std::ostream& Fgd::operator<<(std::ostream& out, const FgdFile& fgd)
+    std::ostream& operator<<(std::ostream& out, const FgdFile& fgd)
     {
         {
             out << "// Generated FGD file\n";
 
             auto t = std::time(nullptr);
             auto tm = *std::localtime(&t);
-            out << "// " << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << '\n';
+            out << "// " << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << '\n';
         }
 
         if(fgd.MapSize.has_value())
