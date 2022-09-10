@@ -310,21 +310,4 @@ namespace Decay
         else
             throw std::runtime_error("Unsupported texture extension for export");
     }
-
-    /// Call after reading quotation character (usually  '\"').
-    /// Reads until `endChar` is reached and returns the value.
-    /// Throws exception if EoF is reached before `endChar`.
-    inline std::string ReadQuotedString(std::istream& in, char endChar = '\"')
-    {
-        std::vector<char> str = {};
-        while(in.good())
-        {
-            char c = in.get();//TODO `prevChar` and escaped end char (like plaintext \" not being treated as " )
-            if(c == endChar)
-                return std::string(str.data(), str.size());
-
-            str.emplace_back(c);
-        }
-        throw std::runtime_error("Stream is not in a good state");
-    }
 }

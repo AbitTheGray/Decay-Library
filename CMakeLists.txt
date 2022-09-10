@@ -46,6 +46,12 @@ if(DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV)
     add_compile_definitions("DECAY_BSP_LIGHTMAP_ST_INSTEAD_OF_UV")
 endif()
 
+# More lenient parsing of Input / Output in FGD entities - "()" means "(void)"
+option(DECAY_FGD_IO_PARAM_VOID "Allow empty parameter brackets to mean `void`" ON)
+if(DECAY_FGD_IO_PARAM_VOID)
+    add_compile_definitions("FGD_IO_PARAM_VOID")
+endif()
+
 #--------------------------------
 # Compiler configuration
 #--------------------------------

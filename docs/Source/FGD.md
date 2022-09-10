@@ -242,6 +242,8 @@ Only one value can be selected.
 
 [Official documentation on Inputs and Outputs](https://developer.valvesoftware.com/wiki/Inputs_and_Outputs)
 
+Both `input` and `output` support single parameter.
+
 ### Inputs
 
 ```

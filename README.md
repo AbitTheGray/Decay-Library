@@ -97,6 +97,9 @@ Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to dis
 
 - ~~`fgd2json <file.fgd>`~~
   - ~~Converts all entities to JSON structure, implements base classes~~
+- ~~`format <in.fgd> <out.fgd>`~~
+- ~~`combine <out.fgd> <in.fgd...`~~
+  - Combine multiple FGD files into single one
 
 ## Linux tools
 
