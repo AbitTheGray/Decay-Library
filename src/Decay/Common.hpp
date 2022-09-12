@@ -94,7 +94,7 @@ namespace Decay
     };
 
     template<typename Tlen>
-    inline std::string Cstr2Str(const char* cstr, Tlen maxLength)
+    [[nodiscard]] inline std::string Cstr2Str(const char* cstr, Tlen maxLength)
     {
         static_assert(std::is_integral<Tlen>::value, "maxLength must be numeric");
 
@@ -105,7 +105,7 @@ namespace Decay
     }
 
     template<typename T>
-    inline bool IsMultipleOf2(T value)
+    [[nodiscard]] inline bool IsMultipleOf2(T value)
     {
         static_assert(std::is_integral<T>::value, "value must be numeric");
 
@@ -116,7 +116,7 @@ namespace Decay
         return false;
     }
 
-    inline bool StringCaseInsensitiveEqual(const std::string& str0, const std::string& str1)
+    [[nodiscard]] inline bool StringCaseInsensitiveEqual(const std::string& str0, const std::string& str1)
     {
         if(str0.length() != str1.length())
             return false;
@@ -128,17 +128,27 @@ namespace Decay
         return strcasecmp(str0.data(), str1.data()) == 0;
 #endif
     }
-    inline bool StringCaseInsensitiveEqual(const std::string_view& str0, const std::string_view& str1)
+    [[nodiscard]] inline bool StringCaseInsensitiveEqual(const std::string& str0, const char* str1)
+    {
+#ifdef _WIN32
+        // May not be needed as MinGW supports `strcasecmp`
+        return stricmp(str0.data(), str1) == 0;
+#else
+        return strcasecmp(str0.data(), str1) == 0;
+#endif
+    }
+    [[nodiscard]] inline bool StringCaseInsensitiveEqual(const std::string_view& str0, const std::string_view& str1)
     {
         if(str0.length() != str1.length())
             return false;
 
-#ifdef _WIN32
-        // May not be needed as MinGW supports `strcasecmp`
-        return stricmp(str0.data(), str1.data()) == 0;
-#else
-        return strcasecmp(str0.data(), str1.data()) == 0;
-#endif
+        // Temporary as `stricmp` and `strcasecmp` don't support std::string_view (const char* + length)
+        return StringCaseInsensitiveEqual(std::string(str0), std::string(str1));
+    }
+    [[nodiscard]] inline bool StringCaseInsensitiveEqual(const std::string_view& str0, const char* str1)
+    {
+        // Temporary as `stricmp` and `strcasecmp` don't support std::string_view (const char* + length)
+        return StringCaseInsensitiveEqual(std::string(str0), str1);
     }
 
     /// Extension always starts with period.
@@ -148,7 +158,7 @@ namespace Decay
     /// - .tga
     /// - .jpg / .jpeg (maximum quality)
     /// - .raw (uint32_t width, uint32_t width, uint8_t components, uint32_t... rgba_data)
-    inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> ImageWriteFunction_RGBA(const std::string& extension)
+    [[nodiscard]] inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> ImageWriteFunction_RGBA(const std::string& extension)
     {
         if(extension == ".png" || extension == ".PNG")
         {
@@ -233,7 +243,7 @@ namespace Decay
     /// - .tga
     /// - .jpg / .jpeg (maximum quality
     /// - .raw (uint32_t width, uint32_t width, uint8_t components, uint24_t... rgb_data)
-    inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb)> ImageWriteFunction_RGB(const std::string& extension)
+    [[nodiscard]] inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb)> ImageWriteFunction_RGB(const std::string& extension)
     {
         if(extension == ".png" || extension == ".PNG")
         {

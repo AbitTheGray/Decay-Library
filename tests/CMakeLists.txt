@@ -25,3 +25,11 @@ add_subdirectory(wad3_test_texture)
 add_subdirectory(wad3_export_images)
 add_subdirectory(wad3_export_textures)
 add_subdirectory(wad3_export_fonts)
+
+#--------------------------------
+# FGD (GoldSrc/Source, Entity Definitions)
+#--------------------------------
+
+add_subdirectory(fgd_out_and_in)
+
+add_subdirectory(fgd_testfile)

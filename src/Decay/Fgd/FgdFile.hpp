@@ -61,11 +61,31 @@ namespace Decay::Fgd
             bool Quoted;
 
             [[nodiscard]] inline operator bool() const noexcept { return Name.empty() && !Quoted; }
+
+            [[nodiscard]] inline bool operator==(const OptionParam& other) const
+            {
+                return Name == other.Name && Quoted == other.Quoted;
+            }
+            [[nodiscard]] inline bool operator!=(const OptionParam& other) const { return !operator==(other); }
         };
         struct Option
         {
             std::string Name;
             std::vector<OptionParam> Params;
+
+            [[nodiscard]] inline bool operator==(const Option& other) const
+            {
+                if(Name != other.Name)
+                    return false;
+
+                if(Params.size() != other.Params.size())
+                    return false;
+                for(int i = 0; i < Params.size(); i++)
+                    if(Params[i] != other.Params[i])
+                        return false;
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const Option& other) const { return !operator==(other); }
         };
         /// Value for `choices` or `options` property types.
         struct PropertyFlagOrChoice
@@ -97,6 +117,12 @@ namespace Decay::Fgd
 
             /// `includeDefault` should be set for `flags` type but not for `choices`
             std::ostream& Write(std::ostream& out, bool includeDefault) const;
+
+            [[nodiscard]] inline bool operator==(const PropertyFlagOrChoice& other) const
+            {
+                return Index == other.Index && DisplayName == other.DisplayName && Default == other.Default;
+            }
+            [[nodiscard]] inline bool operator!=(const PropertyFlagOrChoice& other) const { return !operator==(other); }
         };
         struct Property
         {
@@ -114,6 +140,31 @@ namespace Decay::Fgd
             // =
             /// Values for `choices` or `options` types.
             std::vector<PropertyFlagOrChoice> FlagsOrChoices;
+
+
+            [[nodiscard]] inline bool operator==(const Property& other) const
+            {
+                if(Codename != other.Codename)
+                    return false;
+                if(Type != other.Type)
+                    return false;
+                if(ReadOnly != other.ReadOnly)
+                    return false;
+                if(DisplayName != other.DisplayName)
+                    return false;
+                if(DefaultValue != other.DefaultValue)
+                    return false;
+                if(Description != other.Description)
+                    return false;
+
+                if(FlagsOrChoices.size() != other.FlagsOrChoices.size())
+                    return false;
+                for(int i = 0; i < FlagsOrChoices.size(); i++)
+                    if(FlagsOrChoices[i] != other.FlagsOrChoices[i])
+                        return false;
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const Property& other) const { return !operator==(other); }
         };
     public:
         enum class InputOutputType
@@ -130,6 +181,12 @@ namespace Decay::Fgd
             std::string ParamType;
             // ) :
             std::string Description;
+
+            [[nodiscard]] inline bool operator==(const InputOutput& other) const
+            {
+                return Type == other.Type && Name == other.Name && ParamType == other.ParamType && Description == other.Description;
+            }
+            [[nodiscard]] inline bool operator!=(const InputOutput& other) const { return !operator==(other); }
         };
     public:
         struct Class
@@ -159,6 +216,39 @@ namespace Decay::Fgd
                 return false;
 #endif
             }
+
+
+            [[nodiscard]] inline bool operator==(const Class& other) const
+            {
+                if(Type != other.Type)
+                    return false;
+
+                if(Options.size() != other.Options.size())
+                    return false;
+                for(int i = 0; i < Options.size(); i++)
+                    if(Options[i] != other.Options[i])
+                        return false;
+
+                if(Codename != other.Codename)
+                    return false;
+                if(Description != other.Description)
+                    return false;
+
+                if(Properties.size() != other.Properties.size())
+                    return false;
+                for(int i = 0; i < Properties.size(); i++)
+                    if(Properties[i] != other.Properties[i])
+                        return false;
+
+                if(IO.size() != other.IO.size())
+                    return false;
+                for(int i = 0; i < IO.size(); i++)
+                    if(IO[i] != other.IO[i])
+                        return false;
+
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const Class& other) const { return !operator==(other); }
         };
     public:
         std::vector<Class> Classes = {};
@@ -173,11 +263,43 @@ namespace Decay::Fgd
         {
             std::string DisplayName;
             std::set<std::string> EntityClasses;
+
+            [[nodiscard]] inline bool operator==(const AutoVisGroup_Child& other) const
+            {
+                if(DisplayName != other.DisplayName)
+                    return false;
+
+                if(EntityClasses.size() != other.EntityClasses.size())
+                    return false;
+                auto it0 = EntityClasses.begin();
+                auto it1 = other.EntityClasses.begin();
+                for(int i = 0; i < EntityClasses.size(); i++, it0++, it1++)
+                    if(*it0 != *it1)
+                        return false;
+
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const AutoVisGroup_Child& other) const { return !operator==(other); }
         };
         struct AutoVisGroup
         {
             std::string DisplayName;
             std::vector<AutoVisGroup_Child> Child;
+
+            [[nodiscard]] inline bool operator==(const AutoVisGroup& other) const
+            {
+                if(DisplayName != other.DisplayName)
+                    return false;
+
+                if(Child.size() != other.Child.size())
+                    return false;
+                for(int i = 0; i < Child.size(); i++)
+                    if(Child[i] != other.Child[i])
+                        return false;
+
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const AutoVisGroup& other) const { return !operator==(other); }
         };
     public:
         std::vector<AutoVisGroup> AutoVisGroups = {};
@@ -224,7 +346,7 @@ namespace Decay::Fgd
 #pragma region Stream Operators
     std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice&);
     [[deprecated("Use `FgdFile::PropertyFlagOrChoice.Write` as there you can specify whenever you want defaults or not (for `flags` or for `choices`)")]]
-    std::ostream& operator<<(std::ostream& out, const FgdFile::PropertyFlagOrChoice& pf) { return pf.Write(out, true); }
+    inline std::ostream& operator<<(std::ostream& out, const FgdFile::PropertyFlagOrChoice& pf) { return pf.Write(out, true); }
 
     std::istream& operator>>(std::istream& in, FgdFile::OptionParam&);
     std::ostream& operator<<(std::ostream& out, const FgdFile::OptionParam&);

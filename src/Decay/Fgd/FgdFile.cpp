@@ -3,6 +3,10 @@
 // Uncomment to use STD implementation of whitespace detection.
 //#define FGD_WHITESPACE_STD
 
+// Uncomment to enable debug (into `std::cerr`) of `IgnoreWhitespace`.
+// Only for testing purpose!
+//#define DEBUG_FGD_IGNORE_WHITESPACE
+
 // Utility functions
 namespace Decay::Fgd
 {
@@ -43,33 +47,54 @@ namespace Decay::Fgd
     /// Also skips all comments.
     inline static int IgnoreWhitespace(std::istream& in)
     {
+#ifdef DEBUG_FGD_IGNORE_WHITESPACE
+        std::cerr << std::endl;
+#endif
         int ignoredChars = 0;
 
         while(in.good())
         {
             int c = in.peek();
+#ifdef DEBUG_FGD_IGNORE_WHITESPACE
+            std::cerr << (char)c;
+#endif
             if(c == EOF) // End of File
             {
                 in.setstate(std::ios_base::eofbit);
                 return ignoredChars;
             }
-            if(!IsWhitespace(static_cast<char>(c))) // Not whitespace
+            else if(IsWhitespace(static_cast<char>(c))) // Whitespace
+            {
+                ignoredChars++;
+                in.ignore();
+                continue;
+            }
+            else // Not whitespace
             {
                 if(c == '/') // Potentially start of a comment
                 {
+                    ignoredChars++;
                     in.ignore(); // Skip 1st '/'
 
                     c = in.peek();
+#ifdef DEBUG_FGD_IGNORE_WHITESPACE
+                    std::cerr << (char)c;
+#endif
                     if(c == '/') // Confirmed, there is a comment
                     {
+                        ignoredChars++;
                         in.ignore(); // Skip 2nd '/'
 
                         // Skip all characters until newline is reached
                         while(true)
                         {
                             c = in.get();
+#ifdef DEBUG_FGD_IGNORE_WHITESPACE
+                            std::cerr << (char)c;
+#endif
                             if(c == EOF)
                                 break;
+                            ignoredChars++;
                             if(c == '\n' || c == '\r')
                                 break;
                         }
@@ -83,8 +108,6 @@ namespace Decay::Fgd
                 else
                     break;
             }
-            ignoredChars++;
-            in.ignore();
         }
 
         return ignoredChars;
@@ -209,9 +232,10 @@ namespace Decay::Fgd
                 throw std::runtime_error("Failed to read a char");
         }
     }
-    //TODO Comment
+    /// Reads text from `in` stream but only until first character which is not mentioned inside `readChars`.
+    /// Works like `ReadUntilAny` but you specify which characters to read and not by which ones to end.
     template<std::size_t N>
-    [[nodiscard]] inline static std::vector<char> ReadOnlyAny(std::istream& in, std::array<char, N> untilChars)
+    [[nodiscard]] inline static std::vector<char> ReadOnlyAny(std::istream& in, std::array<char, N> readChars)
     {
         std::vector<char> rtn = {};
         while(true)
@@ -223,7 +247,7 @@ namespace Decay::Fgd
             bool found = false;
             for(std::size_t i = 0; i < N; i++)
             {
-                if(c == untilChars[i])
+                if(c == readChars[i])
                 {
                     found = true;
                     if(!ReadChar(in, rtn)) // Read into `rtn`
@@ -235,7 +259,7 @@ namespace Decay::Fgd
                 return rtn;
         }
     }
-    //TODO Comment
+    /// Variant of `ReadOnlyAny` but reads only numeric characters and optionally '-' char.
     [[nodiscard]] inline static std::vector<char> ReadOnlyNumber(std::istream& in, bool allowNegative)
     {
         std::vector<char> rtn = {};
@@ -249,19 +273,19 @@ namespace Decay::Fgd
             {
                 in.ignore();
                 rtn.emplace_back(c);
-                break;
+                continue;
             }
             if(allowNegative && c == '-')
             {
                 in.ignore();
                 rtn.emplace_back('-');
-                break;
+                continue;
             }
             else
                 return rtn;
         }
     }
-    //TODO Comment
+    /// Extended version of `ReadUntilWhitespace` which allows you to specify 1 additional character.
     [[nodiscard]] inline static std::vector<char> ReadUntilWhitespaceOr(std::istream& in, char untilChar, bool skipUntilChar = false)
     {
         std::vector<char> rtn = {};
@@ -290,7 +314,7 @@ namespace Decay::Fgd
                 throw std::runtime_error("Failed to read a char");
         }
     }
-    //TODO Comment
+    /// Extended version of `ReadUntilWhitespace` which allows you to specify additional characters.
     template<std::size_t N>
     [[nodiscard]] inline static std::vector<char> ReadUntilWhitespaceOrAny(std::istream& in, std::array<char, N> untilChars, bool skipUntilChar = false)
     {
@@ -400,7 +424,8 @@ namespace Decay::Fgd
             int c = in.get();
             if(c == EOF || c != str[i])
             {
-                in.seekg(-(i + 1), std::ios_base::cur);
+                if(i != 0 || c != EOF)
+                    in.seekg(-(i + 1), std::ios_base::cur);
                 return false;
             }
         }
@@ -431,85 +456,6 @@ namespace Decay::Fgd
 // Stream Operators
 namespace Decay::Fgd
 {
-    // Class >> Property >> FlagOrChoice
-    std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice& propertyFlag)
-    {
-        // "string" : "string"
-        // "float" : "string"
-        // <int> : "string"
-        // <int> : "string" : <int>
-
-        IgnoreWhitespace(in);
-
-        int c = in.peek();
-        switch(c)
-        {
-            case EOF:
-                in.setstate(std::ios_base::failbit);
-                return in;
-            case '\"':
-            {
-                auto index = ReadQuotedString(in);
-                propertyFlag.Index = str(index);
-                break;
-            }
-            default:
-            {
-                int index;
-                in >> index;
-                if(!in.good())
-                    return in;
-                propertyFlag.Index = std::to_string(index);
-                break;
-            }
-        }
-
-        IgnoreWhitespace(in);
-
-        c = in.peek();
-        if(c != ':')
-            throw std::runtime_error("Property Flag does not have a name");
-        in.ignore();
-
-        IgnoreWhitespace(in);
-
-        c = in.peek();
-        if(c != '\"')
-            throw std::runtime_error("Property Flag does not contain valid name");
-        auto name = ReadQuotedString(in);
-        propertyFlag.DisplayName = str(name);
-
-        IgnoreWhitespace(in);
-
-        c = in.peek();
-        if(c == ':') // Has default value
-        {
-            in.ignore(); // Skip ':'
-
-            IgnoreWhitespace(in);
-
-            auto str = ReadUntilWhitespace(in);
-            propertyFlag.Default = (str.empty() || str[0] == '0');
-        }
-        else
-            propertyFlag.Default = false;
-
-        return in;
-    }
-    std::ostream& FgdFile::PropertyFlagOrChoice::Write(std::ostream& out, bool includeDefault) const
-    {
-        if(GuessIndexType() == ValueType::Integer)
-            out << Index;
-        else
-            out << '\"' << Index << '\"';
-
-        out << " : \"" << DisplayName << "\"";
-
-        if(includeDefault)
-            out << " : " << Default;
-        return out;
-    }
-
     // Class >> Option >> Param
     std::istream& operator>>(std::istream& in, FgdFile::OptionParam& optionParam)
     {
@@ -585,7 +531,6 @@ namespace Decay::Fgd
     }
 
     // Class >> Option
-    // Class >> Property >> Option
     std::istream& operator>>(std::istream& in, FgdFile::Option& option)
     {
         IgnoreWhitespace(in);
@@ -633,7 +578,7 @@ GOTO_OPTION_PARAM:
                         in.ignore(); // Skip the ',' character
                         goto GOTO_OPTION_PARAM;
                     default:
-                        throw std::runtime_error("Unexpected character after option parameter");
+                        throw std::runtime_error("Unexpected character after option parameter"); //TODO Support vector written as "1 2 3" (without quotes)
                 }
             }
         }
@@ -645,7 +590,12 @@ GOTO_OPTION_PARAM:
         assert(!option.Name.empty());
         assert(option.Name.find(' ') == std::string::npos); //TODO Check for other than alphanumeric characters
         out << option.Name;
-        if(!StringCaseInsensitiveEqual(option.Name, "halfgridsnap")) // `halfgridsnap` is exception and does not have `()` after it.
+        if(StringCaseInsensitiveEqual(option.Name, "halfgridsnap")) // `halfgridsnap` is exception and does not have `()` after it.
+        {
+            if(!option.Params.empty())
+                throw std::runtime_error("Entity class option `halfgridsnap` cannot have any parameters");
+        }
+        else
         {
             out << '(';
 
@@ -659,6 +609,88 @@ GOTO_OPTION_PARAM:
 
             out << ')';
         }
+        return out;
+    }
+
+    // Class >> Property >> FlagOrChoice
+    std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice& propertyFlag)
+    {
+        if(!in.good())
+            return in;
+
+        // "string" : "string"
+        // "float" : "string"
+        // <int> : "string"
+        // <int> : "string" : <int>
+
+        IgnoreWhitespace(in);
+
+        int c = in.peek();
+        switch(c)
+        {
+            case EOF:
+                in.setstate(std::ios_base::failbit);
+                return in;
+            case '\"':
+            {
+                auto index = ReadQuotedString(in);
+                propertyFlag.Index = str(index);
+                break;
+            }
+            default:
+            {
+                int index;
+                in >> index;
+                if(!in.good())
+                    return in;
+                propertyFlag.Index = std::to_string(index);
+                break;
+            }
+        }
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c != ':')
+            throw std::runtime_error("Property Flag does not have a name");
+        in.ignore();
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c != '\"')
+            throw std::runtime_error("Property Flag does not contain valid name");
+        auto name = ReadQuotedString(in);
+        propertyFlag.DisplayName = str(name);
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c == ':') // Has default value
+        {
+            in.ignore(); // Skip ':'
+
+            IgnoreWhitespace(in);
+
+            auto str = ReadUntilWhitespace(in);
+            propertyFlag.Default = (!str.empty() && str[0] != '0');
+        }
+        else
+            propertyFlag.Default = false;
+
+        return in;
+    }
+    std::ostream& FgdFile::PropertyFlagOrChoice::Write(std::ostream& out, bool includeDefault) const
+    {
+        if(GuessIndexType() == ValueType::Integer)
+            out << Index;
+        else
+            out << '\"' << Index << '\"';
+
+        out << " : \"" << DisplayName << "\"";
+
+        if(includeDefault)
+            out << " : " << Default;
         return out;
     }
 
@@ -691,7 +723,7 @@ GOTO_OPTION_PARAM:
             IgnoreWhitespace(in);
 
             {
-                auto type = ReadUntilWhitespaceOr(in, '(' /* Start of parameter */ );
+                auto type = ReadUntilWhitespaceOr(in, ')' /* End of parameter */ );
                 if(type.empty())
                     throw std::runtime_error("Type of property cannot be empty and `void` is not valid (cannot contain data), consider using `string` as it is the most versatile");
                 property.Type = str(type);
@@ -709,6 +741,8 @@ GOTO_OPTION_PARAM:
 
         // Readonly
         property.ReadOnly = TryReadText(in, "readonly");
+        if(in.eof())
+            return in;
 
         IgnoreWhitespace(in);
 
@@ -722,6 +756,8 @@ GOTO_OPTION_PARAM:
 
             if(in.peek() == '\"') // Has DisplayName
                 property.DisplayName = str(ReadQuotedString(in));
+
+            IgnoreWhitespace(in);
 
             c = in.peek();
             if(c == EOF)
@@ -742,52 +778,35 @@ GOTO_OPTION_PARAM:
                 c = in.peek();
                 if(c == EOF)
                     return in;
-                if(c == '=')
+                if(c == ':')
                 {
-                    in.ignore(); // Skip '='
-
-#ifdef FGD_PROPERTY_ITEMS_LIMIT_FLAGS_CHOICES
-                    if(!StringCaseInsensitiveEqual(property.Type, "flags") && !StringCaseInsensitiveEqual(property.Type, "choices"))
-                        throw std::runtime_error("List of values (for a property) is only available for `flags` and `choices` types");
-#endif
-
+                    in.ignore(); // Skip ':'
                     IgnoreWhitespace(in);
 
-                    if(in.peek() != '[')
-                        throw std::runtime_error("List of values (for a property) must be enclosed inside square brackets ('[' and ']')");
-                    in.ignore();
-
-                    while(true)
-                    {
-                        IgnoreWhitespace(in);
-
-                        c = in.peek();
-                        if(c == EOF) [[unlikely]]
-                            throw std::runtime_error("End-of-File reached inside FGD property items (`flags` or `choices`)");
-                        else if(c == ']')
-                        {
-                            in.ignore(); // Skip ']'
-                            break;
-                        }
-                        else
-                        {
-                            FgdFile::PropertyFlagOrChoice flagOrChoice;
-                            in >> flagOrChoice;
-                            if(in.fail())
-                                throw std::runtime_error("Failed to read Flag/Choice item");
-                            property.FlagsOrChoices.emplace_back(flagOrChoice);
-                        }
-                    }
+                    property.Description = str(ReadQuotedString(in));
                 }
             }
         }
+
+        IgnoreWhitespace(in);
 
         c = in.peek();
         if(c == EOF)
             return in;
         if(c == '=') // Flag or Choices item
         {
+#ifdef FGD_PROPERTY_ITEMS_LIMIT_FLAGS_CHOICES
+            if(!StringCaseInsensitiveEqual(property.Type, "flags") && !StringCaseInsensitiveEqual(property.Type, "choices"))
+                throw std::runtime_error("List of values (for a property) is only available for `flags` and `choices` types");
+#endif
+
             in.ignore(); // Skip '='
+
+            IgnoreWhitespace(in);
+
+            c = in.peek();
+            assert(c == '[');
+            in.ignore(); // Skip '['
 
             while(true)
             {
@@ -808,11 +827,10 @@ GOTO_OPTION_PARAM:
                     if(in.fail())
                         throw std::runtime_error("Failed to read `flags` or `choices` items");
                     property.FlagsOrChoices.emplace_back(item);
-                    break;
                 }
-
             }
         }
+        return in;
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Property& property)
     {
@@ -930,8 +948,11 @@ GOTO_OPTION_PARAM:
     {
         // input <name>(<param>) : "comment"
         // output <name>(<param>) : "comment"
-        FgdFile::InputOutputType type;
-        in >> type;
+        int c;
+        if(!in.good())
+            return in;
+
+        in >> io.Type;
         if(!in.good())
             return in;
 
@@ -954,10 +975,12 @@ GOTO_OPTION_PARAM:
                 ')' // End of parameter
             }
         );
-        if(in.peek() != ')') // Ended by whitespace character
+        c = in.peek();
+        if(c != ')') // Ended by whitespace character
         {
             IgnoreWhitespace(in);
-            int c = in.peek();
+
+            c = in.peek();
             if(c != ')') // Whitespace followed by character other than end of the parameter
             {
                 if(c == ',')
@@ -966,6 +989,7 @@ GOTO_OPTION_PARAM:
                     throw std::runtime_error("Input/Output parameter must be followed by ')'");
             }
         }
+        in.ignore(); // Skip ')'
         if(param.empty())
         {
 #ifdef FGD_IO_PARAM_VOID
@@ -980,15 +1004,14 @@ GOTO_OPTION_PARAM:
 
         // Description
         {
-            int c = in.peek();
+            c = in.peek();
             if(c == ':')
             {
                 in.ignore();
 
                 IgnoreWhitespace(in);
 
-                auto description = ReadQuotedString(in);
-                io.Description = str(description);
+                io.Description = str(ReadQuotedString(in));
             }
             else
                 io.Description = {};
@@ -1027,7 +1050,7 @@ GOTO_OPTION_PARAM:
             }
             in.ignore();
 
-            std::vector<char> type = ReadUntilWhitespaceOr(in, ':' /* Separator between class/option and name */ );
+            std::vector<char> type = ReadUntilWhitespaceOr(in, ':' /* Separator between class/option and codename */ );
             clss.Type = str(type);
 #ifdef FGD_CLASS_VALIDATE
             {
@@ -1070,9 +1093,18 @@ GOTO_OPTION_PARAM:
 
             IgnoreWhitespace(in);
 
-            std::vector<char> name = ReadUntilWhitespaceOr(in, ':');
-            if(name.empty())
-                throw std::runtime_error("Class name cannot be empty");
+            {
+                std::vector<char> codename = ReadUntilWhitespaceOrAny(
+                    in,
+                    std::array<char, 2> {
+                        ':', // Optional description
+                        '[' // Start of body
+                    }
+                );
+                if(codename.empty())
+                    throw std::runtime_error("Class codename cannot be empty");
+                clss.Codename = str(codename);
+            }
 
             IgnoreWhitespace(in);
 
@@ -1098,6 +1130,12 @@ GOTO_OPTION_PARAM:
 
         // Body
         {
+            IgnoreWhitespace(in);
+
+            c = in.peek();
+            assert(c == '[');
+            in.ignore();
+
             while(true)
             {
                 IgnoreWhitespace(in);
@@ -1112,21 +1150,6 @@ GOTO_OPTION_PARAM:
                     throw std::runtime_error("End-of-File inside a class");
                 else
                 {
-                    // Property
-                    {
-                        FgdFile::Property property;
-                        in >> property;
-                        if(in.good())
-                        {
-                            clss.Properties.emplace_back(property);
-                            continue;
-                        }
-                        else
-                        {
-                            in.clear(in.rdstate() & ~std::istream::failbit);
-                        }
-                    }
-
                     // Input / Output
                     {
                         FgdFile::InputOutput io;
@@ -1142,10 +1165,26 @@ GOTO_OPTION_PARAM:
                         }
                     }
 
+                    // Property
+                    {
+                        FgdFile::Property property;
+                        in >> property;
+                        if(in.good())
+                        {
+                            clss.Properties.emplace_back(property);
+                            continue;
+                        }
+                        else
+                        {
+                            in.clear(in.rdstate() & ~std::istream::failbit);
+                        }
+                    }
+
                     throw std::runtime_error("Class can only contain properties and Inputs/Outputs");
                 }
             }
         }
+        return in;
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Class& clss)
     {
@@ -1164,11 +1203,11 @@ GOTO_OPTION_PARAM:
             out << " = " << clss.Codename;
 
             if(!clss.Description.empty())
-                out << " = \"" << clss.Codename << '\"';
+                out << " : \"" << clss.Description << '\"';
 
             if(clss.Properties.empty() && clss.IO.empty())
             {
-                out << "[]";
+                out << " []";
                 return out;
             }
             out << '\n';
@@ -1205,7 +1244,8 @@ GOTO_OPTION_PARAM:
                     out << '\t' << io << '\n';
         }
 
-        out << "]\n";
+        out << ']';
+        return out;
     }
 
     // Auto Vis Group - Child
@@ -1265,6 +1305,7 @@ GOTO_OPTION_PARAM:
             out << "\t\t\"" << entityName << "\"\n";
         }
         out << "\t]";
+        return out;
     }
 
     // Auto Vis Group
@@ -1338,7 +1379,7 @@ GOTO_OPTION_PARAM:
         out << "[\n";
         for(const auto& ch : avg.Child)
             out << ch << '\n';
-        out << "]\n";
+        out << ']';
         return out;
     }
 
@@ -1552,6 +1593,7 @@ GOTO_OPTION_PARAM:
                 fgd.Classes.emplace_back(clss);
             }
         }
+        return in;
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile& fgd)
     {

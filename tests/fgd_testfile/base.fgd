@@ -1,0 +1,17 @@
+// Some comment
+// Another line of comment
+
+@mapsize(-512, 512)
+
+@MaterialExclusion
+[
+    "debug"
+]
+
+@AutoVisGroup = "Humanoid"
+[
+    "Player"
+    [
+        "info_player_spawn"
+    ]
+]
