@@ -53,6 +53,20 @@ namespace Decay::Fgd
 
     // Classes
     public:
+        struct OptionParam
+        {
+            std::string Name;
+            /// true = `Name` contains value.
+            /// false = `Name` contains property which then contains the value.
+            bool Quoted;
+
+            [[nodiscard]] inline operator bool() const noexcept { return Name.empty() && !Quoted; }
+        };
+        struct Option
+        {
+            std::string Name;
+            std::vector<OptionParam> Params;
+        };
         /// Value for `choices` or `options` property types.
         struct PropertyFlagOrChoice
         {
@@ -84,27 +98,13 @@ namespace Decay::Fgd
             /// `includeDefault` should be set for `flags` type but not for `choices`
             std::ostream& Write(std::ostream& out, bool includeDefault) const;
         };
-        struct OptionParam
-        {
-            std::string Name;
-            /// true = `Name` contains value.
-            /// false = `Name` contains property which then contains the value.
-            bool Quoted;
-
-            [[nodiscard]] inline operator bool() const noexcept { return Name.empty() && !Quoted; }
-        };
-        struct Option
-        {
-            std::string Name;
-            std::vector<OptionParam> Params;
-        };
         struct Property
         {
             std::string Codename;
             // (
             std::string Type;
             // )
-            std::vector<Option> Options;
+            bool ReadOnly;
             // :
             std::string DisplayName;
             // :
@@ -134,6 +134,8 @@ namespace Decay::Fgd
     public:
         struct Class
         {
+            static std::vector<std::string> ValidTypes;
+
             // @
             std::string Type; ///< Without '@' at the beginning.
             std::vector<Option> Options;
@@ -217,6 +219,9 @@ namespace Decay::Fgd
         void OrderClassesByDependency();
     };
 
+    // All >> (std::istream) operators should set `failbit` on fail only if the stream/data can recover from it (and seek back to original position).
+    // Exception should be thrown in middle of reading where there is no valid way to recover (was recognized as the type but formatting was wrong).
+#pragma region Stream Operators
     std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice&);
     [[deprecated("Use `FgdFile::PropertyFlagOrChoice.Write` as there you can specify whenever you want defaults or not (for `flags` or for `choices`)")]]
     std::ostream& operator<<(std::ostream& out, const FgdFile::PropertyFlagOrChoice& pf) { return pf.Write(out, true); }
@@ -253,4 +258,5 @@ namespace Decay::Fgd
 
     std::istream& operator>>(std::istream& in, FgdFile&);
     std::ostream& operator<<(std::ostream& out, const FgdFile&);
+#pragma endregion
 }

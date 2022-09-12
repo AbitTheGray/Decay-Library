@@ -3,6 +3,7 @@
 // Uncomment to use STD implementation of whitespace detection.
 //#define FGD_WHITESPACE_STD
 
+// Utility functions
 namespace Decay::Fgd
 {
     /// Convert `std::vector<char>` to `std::string`
@@ -48,7 +49,10 @@ namespace Decay::Fgd
         {
             int c = in.peek();
             if(c == EOF) // End of File
+            {
+                in.setstate(std::ios_base::eofbit);
                 return ignoredChars;
+            }
             if(!IsWhitespace(static_cast<char>(c))) // Not whitespace
             {
                 if(c == '/') // Potentially start of a comment
@@ -205,6 +209,120 @@ namespace Decay::Fgd
                 throw std::runtime_error("Failed to read a char");
         }
     }
+    //TODO Comment
+    template<std::size_t N>
+    [[nodiscard]] inline static std::vector<char> ReadOnlyAny(std::istream& in, std::array<char, N> untilChars)
+    {
+        std::vector<char> rtn = {};
+        while(true)
+        {
+            int c = in.peek();
+            if(c == EOF)
+                return rtn;
+
+            bool found = false;
+            for(std::size_t i = 0; i < N; i++)
+            {
+                if(c == untilChars[i])
+                {
+                    found = true;
+                    if(!ReadChar(in, rtn)) // Read into `rtn`
+                        throw std::runtime_error("Failed to read a char");
+                    break;
+                }
+            }
+            if(!found)
+                return rtn;
+        }
+    }
+    //TODO Comment
+    [[nodiscard]] inline static std::vector<char> ReadOnlyNumber(std::istream& in, bool allowNegative)
+    {
+        std::vector<char> rtn = {};
+        while(true)
+        {
+            int c = in.peek();
+            if(c == EOF)
+                return rtn;
+
+            if(c >= '0' && c <= '9')
+            {
+                in.ignore();
+                rtn.emplace_back(c);
+                break;
+            }
+            if(allowNegative && c == '-')
+            {
+                in.ignore();
+                rtn.emplace_back('-');
+                break;
+            }
+            else
+                return rtn;
+        }
+    }
+    //TODO Comment
+    [[nodiscard]] inline static std::vector<char> ReadUntilWhitespaceOr(std::istream& in, char untilChar, bool skipUntilChar = false)
+    {
+        std::vector<char> rtn = {};
+        while(true)
+        {
+            int c = in.peek();
+            if(c == EOF)
+                return rtn;
+
+            // Whitespace
+            if(IsWhitespace(c))
+            {
+                if(skipUntilChar)
+                    in.ignore(); // Skip peeked char
+                return rtn;
+            }
+            // User-provided character
+            if(c == untilChar)
+            {
+                if(skipUntilChar)
+                    in.ignore(); // Skip peeked char
+                return rtn;
+            }
+
+            if(!ReadChar(in, rtn)) // Read into `rtn`
+                throw std::runtime_error("Failed to read a char");
+        }
+    }
+    //TODO Comment
+    template<std::size_t N>
+    [[nodiscard]] inline static std::vector<char> ReadUntilWhitespaceOrAny(std::istream& in, std::array<char, N> untilChars, bool skipUntilChar = false)
+    {
+        std::vector<char> rtn = {};
+        while(true)
+        {
+            int c = in.peek();
+            if(c == EOF)
+                return rtn;
+
+            // Whitespace
+            if(IsWhitespace(c))
+            {
+                if(skipUntilChar)
+                    in.ignore(); // Skip peeked char
+                return rtn;
+            }
+            // User-provided list
+            for(std::size_t i = 0; i < N; i++)
+            {
+                if(c == untilChars[i])
+                {
+                    if(skipUntilChar)
+                        in.ignore(); // Skip peeked char
+                    return rtn;
+                }
+            }
+
+            if(!ReadChar(in, rtn)) // Read into `rtn`
+                throw std::runtime_error("Failed to read a char");
+        }
+    }
 
     /// Read quoted text.
     /// Sets `failbit` on End-of-File or other than '"' char.
@@ -232,7 +350,7 @@ namespace Decay::Fgd
 
             auto name2 = ReadUntil(in, '\"', true);
             if(name2.empty())
-                break;
+                break; //TODO `"" + ""` is one quoted string
 
             { // Insert `name2` into `name`
                 name.reserve(name2.size());
@@ -268,15 +386,51 @@ namespace Decay::Fgd
 
         return name;
     }
+
+    /// Reads data from stream and returns whenever they match.
+    /// Puts back (seeks back) all read characters if they did not match.
+    /// Does NOT skip whitespaces before the text.
+    [[nodiscard]] inline static bool TryReadText(std::istream& in, const std::string_view& str)
+    {
+        if(str.empty()) [[unlikely]]
+            return true;
+
+        for(int i = 0; i < str.length(); i++)
+        {
+            int c = in.get();
+            if(c == EOF || c != str[i])
+            {
+                in.seekg(-(i + 1), std::ios_base::cur);
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 namespace Decay::Fgd
 {
     FgdFile::FgdFile(std::istream& in)
     {
-
+        in >> *this;
+        if(in.fail())
+            throw std::runtime_error("Failed to read FGD file");
     }
 
+    std::vector<std::string> FgdFile::Class::ValidTypes = {
+        "BaseClass",
+        "PointClass",
+        "SolidClass",
+        "NPCClass",
+        "KeyFrameClass",
+        "MoveClass",
+        "FilterClass"
+    };
+}
+
+// Stream Operators
+namespace Decay::Fgd
+{
     // Class >> Property >> FlagOrChoice
     std::istream& operator>>(std::istream& in, FgdFile::PropertyFlagOrChoice& propertyFlag)
     {
@@ -384,11 +538,9 @@ namespace Decay::Fgd
         }
         else // Not quoted
         {
-            auto name = ReadUntilAny(
+            auto name = ReadUntilWhitespaceOrAny(
                 in,
-                std::array<char, 6>{
-                    ' ', '\t', // Whitespace
-                    '\r', '\n', // New-line
+                std::array<char, 2>{
                     ',', // Start of next parameter
                     ')' // End of parameters
                 }
@@ -437,14 +589,7 @@ namespace Decay::Fgd
     std::istream& operator>>(std::istream& in, FgdFile::Option& option)
     {
         IgnoreWhitespace(in);
-        auto name = ReadUntilAny(
-            in,
-            std::array<char, 6>{
-                ' ', '\t', // Whitespace
-                '\r', '\n', // New-line
-                '(' // Start of parameters
-            }
-        );
+        auto name = ReadUntilWhitespaceOr(in, '(' /* Start of parameters */ );
         option.Name = str(name);
 
         option.Params.clear();
@@ -518,17 +663,164 @@ GOTO_OPTION_PARAM:
     }
 
     // Class >> Property
-    std::istream& operator>>(std::istream& in, FgdFile::Property&)
+    std::istream& operator>>(std::istream& in, FgdFile::Property& property)
     {
+        IgnoreWhitespace(in);
+        if(in.eof())
+        {
+            in.setstate(std::ios_base::failbit);
+            return in;
+        }
 
+        int c;
+
+        // Codename + Type
+        {
+            {
+                auto codename = ReadUntilWhitespaceOr(in, '(' /* Start of parameter */);
+                if(codename.empty())
+                    throw std::runtime_error("Codename of property (inside class) cannot be empty - at least 1 character before '(' (property type)");
+                property.Codename = str(codename);
+            }
+
+            c = in.peek();
+            if(c != '(')
+                throw std::runtime_error("Property must have its type inside round brackets");
+            in.ignore();
+
+            IgnoreWhitespace(in);
+
+            {
+                auto type = ReadUntilWhitespaceOr(in, '(' /* Start of parameter */ );
+                if(type.empty())
+                    throw std::runtime_error("Type of property cannot be empty and `void` is not valid (cannot contain data), consider using `string` as it is the most versatile");
+                property.Type = str(type);
+            }
+
+            IgnoreWhitespace(in);
+
+            c = in.peek();
+            if(c != ')')
+                throw std::runtime_error("Property's type must end its round brackets");
+            in.ignore();
+        }
+
+        IgnoreWhitespace(in);
+
+        // Readonly
+        property.ReadOnly = TryReadText(in, "readonly");
+
+        IgnoreWhitespace(in);
+
+        c = in.peek();
+        if(c == EOF)
+            return in;
+        if(c == ':')
+        {
+            in.ignore(); // Skip ':'
+            IgnoreWhitespace(in);
+
+            if(in.peek() == '\"') // Has DisplayName
+                property.DisplayName = str(ReadQuotedString(in));
+
+            c = in.peek();
+            if(c == EOF)
+                return in;
+            if(c == ':')
+            {
+                in.ignore(); // Skip ':'
+                IgnoreWhitespace(in);
+
+                c = in.peek();
+                if(c == '\"') // Has quoted default value
+                    property.DefaultValue = str(ReadQuotedString(in));
+                else if(c == '-' || (c >= '0' && c <= '9'))
+                    property.DefaultValue = str(ReadOnlyNumber(in, true));
+
+                IgnoreWhitespace(in);
+
+                c = in.peek();
+                if(c == EOF)
+                    return in;
+                if(c == '=')
+                {
+                    in.ignore(); // Skip '='
+
+#ifdef FGD_PROPERTY_ITEMS_LIMIT_FLAGS_CHOICES
+                    if(!StringCaseInsensitiveEqual(property.Type, "flags") && !StringCaseInsensitiveEqual(property.Type, "choices"))
+                        throw std::runtime_error("List of values (for a property) is only available for `flags` and `choices` types");
+#endif
+
+                    IgnoreWhitespace(in);
+
+                    if(in.peek() != '[')
+                        throw std::runtime_error("List of values (for a property) must be enclosed inside square brackets ('[' and ']')");
+                    in.ignore();
+
+                    while(true)
+                    {
+                        IgnoreWhitespace(in);
+
+                        c = in.peek();
+                        if(c == EOF) [[unlikely]]
+                            throw std::runtime_error("End-of-File reached inside FGD property items (`flags` or `choices`)");
+                        else if(c == ']')
+                        {
+                            in.ignore(); // Skip ']'
+                            break;
+                        }
+                        else
+                        {
+                            FgdFile::PropertyFlagOrChoice flagOrChoice;
+                            in >> flagOrChoice;
+                            if(in.fail())
+                                throw std::runtime_error("Failed to read Flag/Choice item");
+                            property.FlagsOrChoices.emplace_back(flagOrChoice);
+                        }
+                    }
+                }
+            }
+        }
+
+        c = in.peek();
+        if(c == EOF)
+            return in;
+        if(c == '=') // Flag or Choices item
+        {
+            in.ignore(); // Skip '='
+
+            while(true)
+            {
+                IgnoreWhitespace(in);
+
+                c = in.peek();
+                if(c == ']') // End of items
+                {
+                    in.ignore(); // Skip ']'
+                    break;
+                }
+                else if(c == EOF) [[unlikely]]
+                    throw std::runtime_error("End-of-File reached inside `flags` or `choices` items");
+                else
+                {
+                    FgdFile::PropertyFlagOrChoice item;
+                    in >> item;
+                    if(in.fail())
+                        throw std::runtime_error("Failed to read `flags` or `choices` items");
+                    property.FlagsOrChoices.emplace_back(item);
+                    break;
+                }
+
+            }
+        }
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Property& property)
     {
         assert(!property.Codename.empty());
         assert(!property.Type.empty());
         out << property.Codename << '(' << property.Type << ')';
-        for(const FgdFile::Option& option : property.Options)
-            out << ' ' << option;
+        if(property.ReadOnly)
+            out << " readonly";
 
         if(!property.DisplayName.empty() || !property.DefaultValue.empty() || !property.Description.empty()) // A column separated by ':' exists
         {
@@ -645,14 +937,7 @@ GOTO_OPTION_PARAM:
 
         IgnoreWhitespace(in);
 
-        auto name = ReadUntilAny(
-            in,
-            std::array<char, 5> {
-                ' ', '\t', // Whitespace
-                '\r', '\n', // New-line
-                '(' // Start of parameter
-            }
-        );
+        auto name = ReadUntilWhitespaceOr(in, '(' /* Start of parameter */);
         if(in.peek() != '(') // Ended by whitespace character
             throw std::runtime_error("Input/Output name must be followed by '(' inside which must be a parameter type, for no parameter use \"(void)\"");
         if(name.empty())
@@ -662,11 +947,9 @@ GOTO_OPTION_PARAM:
 
         IgnoreWhitespace(in);
 
-        auto param = ReadUntilAny(
+        auto param = ReadUntilWhitespaceOrAny(
             in,
-            std::array<char, 6> {
-                ' ', '\t', // Whitespace
-                '\r', '\n', // New-line
+            std::array<char, 2> {
                 ',', // Multiple parameters = invalid
                 ')' // End of parameter
             }
@@ -731,7 +1014,138 @@ GOTO_OPTION_PARAM:
     // Class
     std::istream& operator>>(std::istream& in, FgdFile::Class& clss)
     {
+        IgnoreWhitespace(in);
+        int c;
 
+        // Header
+        {
+            c = in.peek();
+            if(c != '@')
+            {
+                in.setstate(std::ios_base::failbit);
+                return in;
+            }
+            in.ignore();
+
+            std::vector<char> type = ReadUntilWhitespaceOr(in, ':' /* Separator between class/option and name */ );
+            clss.Type = str(type);
+#ifdef FGD_CLASS_VALIDATE
+            {
+                bool found = false;
+                for(const auto& validClass : FgdFile::Class::ValidTypes)
+                {
+                    if(StringCaseInsensitiveEqual(validClass, str_view(type)))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found)
+                    throw std::runtime_error("Is '" + str(type) + "' a valid FGD class?");
+            }
+#endif
+
+            // Options
+            while(true)
+            {
+                IgnoreWhitespace(in);
+
+                c = in.peek();
+                if(c == EOF)
+                    throw std::runtime_error("End-of-File too soon, class must end by `[]` even when empty");
+                else if(c == '=') // End of options
+                {
+                    in.ignore(); // Skip '='
+                    break;
+                }
+                else // Option
+                {
+                    FgdFile::Option option;
+                    in >> option;
+                    if(in.fail())
+                        throw std::runtime_error("Failed to parse class option");
+                    clss.Options.emplace_back(option);
+                }
+            }
+
+            IgnoreWhitespace(in);
+
+            std::vector<char> name = ReadUntilWhitespaceOr(in, ':');
+            if(name.empty())
+                throw std::runtime_error("Class name cannot be empty");
+
+            IgnoreWhitespace(in);
+
+            clss.Description = {};
+            c = in.peek();
+            if(c == ':') // Optional description
+            {
+                in.ignore(); // Skip ':'
+
+                IgnoreWhitespace(in);
+
+                try
+                {
+                    std::vector<char> description = ReadQuotedString(in);
+                    clss.Description = str(description);
+                }
+                catch(std::exception& ex)
+                {
+                    throw std::runtime_error(std::string("Failed to read class description - ") + ex.what());
+                }
+            }
+        }
+
+        // Body
+        {
+            while(true)
+            {
+                IgnoreWhitespace(in);
+
+                c = in.peek();
+                if(c == ']')
+                {
+                    in.ignore(); // Skip ']'
+                    break;
+                }
+                else if(c == EOF) [[unlikely]]
+                    throw std::runtime_error("End-of-File inside a class");
+                else
+                {
+                    // Property
+                    {
+                        FgdFile::Property property;
+                        in >> property;
+                        if(in.good())
+                        {
+                            clss.Properties.emplace_back(property);
+                            continue;
+                        }
+                        else
+                        {
+                            in.clear(in.rdstate() & ~std::istream::failbit);
+                        }
+                    }
+
+                    // Input / Output
+                    {
+                        FgdFile::InputOutput io;
+                        in >> io;
+                        if(in.good())
+                        {
+                            clss.IO.emplace_back(io);
+                            continue;
+                        }
+                        else
+                        {
+                            in.clear(in.rdstate() & ~std::istream::failbit);
+                        }
+                    }
+
+                    throw std::runtime_error("Class can only contain properties and Inputs/Outputs");
+                }
+            }
+        }
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Class& clss)
     {
@@ -866,13 +1280,7 @@ GOTO_OPTION_PARAM:
         }
         if(c != '@')
             throw std::runtime_error("`@AutoVisGroup` must start with '@'");
-        std::vector<char> classname = ReadUntilAny(
-            in,
-            std::array<char, 4> {
-                ' ', '\t', // Whitespace
-                '\r', '\n' // New-line
-            }
-        );
+        std::vector<char> classname = ReadUntilWhitespaceOr(in, '=' /* Start of values */);
         if(!StringCaseInsensitiveEqual(str_view(classname), "@AutoVisGroup"))
         {
             in.seekg(-classname.size(), std::ios_base::cur); // Return object name back to stream
@@ -947,13 +1355,7 @@ GOTO_OPTION_PARAM:
             if(c != '@')
                 throw std::runtime_error("Unexpected character inside FGD file - expected a class (or other object) that starts with '@'");
 
-            std::vector<char> object = ReadUntilAny(
-                in,
-                std::array<char, 4> {
-                    ' ', '\t', // Whitespace
-                    '\r', '\n' // New-line
-                }
-            );
+            std::vector<char> object = ReadUntilWhitespace(in);
 
             if(StringCaseInsensitiveEqual(str_view(object), "@mapsize")) [[unlikely]]
             {
@@ -967,15 +1369,7 @@ GOTO_OPTION_PARAM:
                 IgnoreWhitespace(in);
 
                 // Min
-                std::vector<char> valueMin = ReadUntilAny( //TODO ReadOnlyAny(in, '-0123456789')
-                    in,
-                    std::array<char, 6> {
-                        ' ', '\t', // Whitespace
-                        '\r', '\n', // New-line
-                        ',', // Separator between min and max values
-                        ')' // Unexpected end of parameters
-                    }
-                );
+                std::vector<char> valueMin = ReadOnlyNumber(in, true);
                 if(valueMin.empty())
                     throw std::runtime_error("Minimum value of `@mapsize` cannot be empty");
                 for(int vci = 0; vci < valueMin.size(); vci++)
@@ -1005,15 +1399,7 @@ GOTO_OPTION_PARAM:
                 IgnoreWhitespace(in);
 
                 // Max
-                std::vector<char> valueMax = ReadUntilAny( //TODO ReadOnlyAny(in, '-0123456789')
-                    in,
-                    std::array<char, 6> {
-                        ' ', '\t', // Whitespace
-                        '\r', '\n', // New-line
-                        ',', // Unexpected 3rd parameter
-                        ')' // End of parameters
-                    }
-                );
+                std::vector<char> valueMax = ReadOnlyNumber(in, true);
                 if(valueMax.empty())
                     throw std::runtime_error("Maximum value of `@mapsize` cannot be empty");
                 for(int vci = 0; vci < valueMax.size(); vci++)
@@ -1158,12 +1544,18 @@ GOTO_OPTION_PARAM:
             else // Class ?
             {
                 in.seekg(-object.size(), std::ios_base::cur); // Return object name back to stream
-                //TODO Class
+
+                FgdFile::Class clss;
+                in >> clss;
+                if(in.fail())
+                    throw std::runtime_error("Failed to read class inside FGD file");
+                fgd.Classes.emplace_back(clss);
             }
         }
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile& fgd)
     {
+        // Comment header
         {
             out << "// Generated FGD file\n";
 

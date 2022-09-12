@@ -167,7 +167,8 @@ There may be multiple of same options on one class.
 <codename>(<type>) [options...] : "displayname" :: "description"
 ```
 
-The only known option is `readonly`.
+The only known option is `readonly` and probably the only one as otherwise the only way to detect new property from option is using new-line separator.
+It is not known whenever there can be '()' the same way it is used with classes.
 
 ### Basic Types
 

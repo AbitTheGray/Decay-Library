@@ -52,6 +52,20 @@ if(DECAY_FGD_IO_PARAM_VOID)
     add_compile_definitions("FGD_IO_PARAM_VOID")
 endif()
 
+# By official documentation, only `flags` and `choices` support multiple values/choices.
+# Turn this OFF to disable the check and allow it for more types of properties (in case you are creating a custom one?).
+option(DECAY_FGD_PROPERTY_ITEMS_LIMIT_FLAGS_CHOICES "Items in properties are only available to `flags` and `choices` types" ON)
+if(DECAY_FGD_PROPERTY_ITEMS_LIMIT_FLAGS_CHOICES)
+    add_compile_definitions("FGD_PROPERTY_ITEMS_LIMIT_FLAGS_CHOICES")
+endif()
+
+# Checks otherwise unrecognized objects (other than map size, excluded game directories...) against known list of valid classes.
+# Turn this off only when you need support for custom classes.
+option(DECAY_FGD_CLASS_VALIDATE "Validate objects inside FGD against build-in list of valid classes" ON)
+if(DECAY_FGD_CLASS_VALIDATE)
+    add_compile_definitions("FGD_CLASS_VALIDATE")
+endif()
+
 #--------------------------------
 # Compiler configuration
 #--------------------------------
