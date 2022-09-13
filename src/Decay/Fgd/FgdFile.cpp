@@ -10,21 +10,6 @@
 // Utility functions
 namespace Decay::Fgd
 {
-    /// Convert `std::vector<char>` to `std::string`
-    [[nodiscard]] inline static std::string str(const std::vector<char>& in)
-    {
-        if(in.empty())
-            return std::string();
-        return std::string(in.data(), in.size());
-    }
-    /// Represent `std::vector<char>` as `std::string_view`
-    [[nodiscard]] inline static std::string_view str_view(const std::vector<char>& in)
-    {
-        if(in.empty())
-            return std::string_view();
-        return std::string_view(in.data(), in.size());
-    }
-
     /// Simple logic to decide whenever an ASCII character is a whitespace character.
     [[nodiscard]] inline static constexpr bool IsWhitespace(char c) noexcept
     {
@@ -61,6 +46,7 @@ namespace Decay::Fgd
             if(c == EOF) // End of File
             {
                 in.setstate(std::ios_base::eofbit);
+                assert(!in.fail());
                 return ignoredChars;
             }
             else if(IsWhitespace(static_cast<char>(c))) // Whitespace
@@ -111,6 +97,64 @@ namespace Decay::Fgd
         }
 
         return ignoredChars;
+    }
+
+    /// Checks is provided "string" contains only numbers.
+    /// Optional negative numbers ('-' character) and whitespaces.
+    [[nodiscard]] inline static bool IsNumber(std::vector<char>& string, bool allowNegative, bool allowWhitespace)
+    {
+        for(char c : string)
+        {
+            if(c >= '0' && c <= '9')
+                continue;
+            if(allowNegative && c == '-')
+                continue;
+            if(allowWhitespace && IsWhitespace(c))
+                continue;
+            return false;
+        }
+        return true;
+    }
+
+    /// Convert `std::vector<char>` to `std::string`
+    [[nodiscard]] inline static std::string str(const std::vector<char>& in, bool trim = false)
+    {
+        if(in.empty())
+            return {};
+        if(trim)
+        {
+            int startIndex = 0;
+            { // Trim Start
+                for(; startIndex < in.size(); startIndex++)
+                {
+                    if(!IsWhitespace(in[startIndex]))
+                        break;
+                }
+                if(startIndex == in.size()) // All whitespace
+                    return {};
+            }
+            int endIndex = 0;
+            { // Trim End
+                for(; endIndex >= 0; endIndex--)
+                {
+                    if(!IsWhitespace(in[in.size() - 1 - endIndex]))
+                        break;
+                }
+                if(endIndex == 0) [[unlikely]] // All whitespace
+                    return {};
+            }
+            return std::string(in.data() + startIndex, in.size() - startIndex - endIndex); // Trim
+            //return std::string(in.data() + startIndex, in.size() - startIndex); // Trim Start
+            //return std::string(in.data(), in.size() - endIndex); // Trim End
+        }
+        return std::string(in.data(), in.size());
+    }
+    /// Represent `std::vector<char>` as `std::string_view`
+    [[nodiscard]] inline static std::string_view str_view(const std::vector<char>& in)
+    {
+        if(in.empty())
+            return std::string_view();
+        return std::string_view(in.data(), in.size());
     }
 
     /// Utility function to open file for read (text).
@@ -348,62 +392,93 @@ namespace Decay::Fgd
         }
     }
 
+    /// Puts `std::vector<char>` at the end of another `std::vector<char>`.
+    inline static void Combine(std::vector<char>& to, const std::vector<char>& from)
+    {
+        to.reserve(from.size());
+        for(int n2i = 0; n2i < from.size(); n2i++)
+            to.emplace_back(from[n2i]);
+    }
+
     /// Read quoted text.
     /// Sets `failbit` on End-of-File or other than '"' char.
     [[nodiscard]] inline static std::vector<char> ReadQuotedString(std::istream& in)
     {
-        IgnoreWhitespace(in);
+        if(!in.good())
+            throw std::runtime_error("Stream is not in a good shape");
 
-        int c = in.peek();
-        if(c == EOF) // End of file
+        std::vector<char> name;
+        int c;
         {
-            in.setstate(std::ios_base::failbit);
-            return {};
-        }
-        if(c != '\"') // Not quoted text, no processing
-        {
-            in.setstate(std::ios_base::failbit);
-            return {};
-        }
-        in.ignore(); // Skip the `\"` char
+GOTO_QUOTED_STRING_START:
+            IgnoreWhitespace(in);
 
-        auto name = ReadUntil(in, '\"', true);
-        while(!name.empty() && name[name.size() - 1] == '\\') // Last char is `\` which mean there was `\"` found.
-        {
-            name.emplace_back('\"');
+            c = in.peek();
+            if(c == EOF) // End of file
+            {
+                in.setstate(std::ios_base::failbit);
+                return {};
+            }
+            if(c != '\"') // Not quoted text, no processing
+            {
+                in.setstate(std::ios_base::failbit);
+                return {};
+            }
+            in.ignore(); // Skip the `\"` char
 
-            auto name2 = ReadUntil(in, '\"', true);
-            if(name2.empty())
-                break; //TODO `"" + ""` is one quoted string
+            { // Main part, always exists
+                auto name2 = ReadUntil(in, '\"', true);
+                // Insert `name2` into `name`
+                Combine(name, name2);
+            }
+            while(!name.empty() && name[name.size() - 1] == '\\') // Last char is `\` which mean there was `\"` found.
+            {
+                name.emplace_back('\"');
 
-            { // Insert `name2` into `name`
-                name.reserve(name2.size());
-                for(int n2i = 0; n2i < name2.size(); n2i++)
-                    name.emplace_back(name2[n2i]);
+                auto name2 = ReadUntil(in, '\"', true);
+
+                // Insert `name2` into `name`
+                if(!name2.empty())
+                Combine(name, name2);
+            }
+
+            IgnoreWhitespace(in);
+
+            c = in.peek();
+            if(c == '+')
+            {
+                in.ignore(); // Skip '+'
+
+                // `goto` to the beginning of parsing.
+                // Recursion could be used here (but at different position in code - later in this function).
+                goto GOTO_QUOTED_STRING_START;
             }
         }
 
-        // Replace "\n" by newline character
-        for(int ci = 0; ci < name.size(); ci++)
+        // Post-processing
         {
-            if(name[ci] == '\\')
+            // Replace "\n" by newline character
+            for(int ci = 0; ci < name.size(); ci++)
             {
-                if(ci + 1 >= name.size())
-                    throw std::runtime_error("Text cannot end by `\\` character");
-                switch(name[ci + 1])
+                if(name[ci] == '\\')
                 {
-                    case 'n': // \n
-                        name[ci] = '\n';
-                        name.erase(name.begin() + (ci + 1)); // Set first char to `\n` and erase the second one
-                        break;
-                    case '\\': // \\
+                    if(ci + 1 >= name.size())
+                        throw std::runtime_error("Text cannot end by `\\` character");
+                    switch(name[ci + 1])
+                    {
+                        case 'n': // \n
+                            name[ci] = '\n';
+                            name.erase(name.begin() + (ci + 1)); // Set first char to `\n` and erase the second one
+                            break;
+                        case '\\': // \\
                             name.erase(name.begin() + (ci + 1)); // Erase the second `\`
-                        break;
-                    case '\"': // \"
-                        name.erase(name.begin() + ci); // Erase the `\` and leave `"` there
-                        break;
-                    default:
-                        throw std::runtime_error("Unsupported escaped character");
+                            break;
+                        case '\"': // \"
+                            name.erase(name.begin() + ci); // Erase the `\` and leave `"` there
+                            break;
+                        default:
+                            throw std::runtime_error("Unsupported escaped character");
+                    }
                 }
             }
         }
@@ -451,6 +526,42 @@ namespace Decay::Fgd
         "MoveClass",
         "FilterClass"
     };
+
+    int FgdFile::OptionParam::GetVectorSize() const
+    {
+        if(Quoted)
+            return false;
+
+        int dimension = 0;
+        bool isPreviousChar_Number = false;
+        bool isPreviousChar_Whitespace = false;
+        for(char c : Name)
+        {
+            if(c == '-' || (c >= '0' && c <= '9'))
+            {
+                isPreviousChar_Number = true;
+                isPreviousChar_Whitespace = false;
+
+                continue;
+            }
+            else if(IsWhitespace(c))
+            {
+                if(isPreviousChar_Number)
+                    dimension++;
+
+                isPreviousChar_Number = false;
+                isPreviousChar_Whitespace = true;
+
+                continue;
+            }
+            else
+                return 0; // Only whitespace and numeric characters (including '-') are valid for vectors
+        }
+        if(isPreviousChar_Number)
+            dimension++;
+        assert(dimension <= 4);
+        return dimension;
+    }
 }
 
 // Stream Operators
@@ -465,6 +576,8 @@ namespace Decay::Fgd
         // key(param, param)
         // key(param, param, param)
 
+        if(!in.good())
+            return in;
         IgnoreWhitespace(in);
         if(!in.good())
             return in;
@@ -484,20 +597,38 @@ namespace Decay::Fgd
         }
         else // Not quoted
         {
-            auto name = ReadUntilWhitespaceOrAny(
-                in,
-                std::array<char, 2>{
-                    ',', // Start of next parameter
-                    ')' // End of parameters
-                }
-            );
-            if(name.empty())
+            std::vector<char> name;
+            while(true)
             {
-                in.setstate(std::ios_base::failbit);
+                auto name2 = ReadUntilWhitespaceOrAny(
+                    in,
+                    std::array<char, 2>{
+                        ',', // Start of next parameter
+                        ')' // End of parameters
+                    }
+                );
+                if(name2.empty())
+                {
+                    in.setstate(std::ios_base::failbit);
+                    return in;
+                }
+                Combine(name, name2);
+
+                // Check for number -> consider it a vector
+                if(IsNumber(name, true, true))
+                {
+                    c = in.peek();
+                    if(IsWhitespace(c))
+                    {
+                        in.ignore();
+                        name.emplace_back(' ');
+                        continue;
+                    }
+                }
+
+                optionParam.Name = str(name);
                 return in;
             }
-            optionParam.Name = str(name);
-            return in;
         }
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::OptionParam& optionParam)
@@ -578,7 +709,7 @@ GOTO_OPTION_PARAM:
                         in.ignore(); // Skip the ',' character
                         goto GOTO_OPTION_PARAM;
                     default:
-                        throw std::runtime_error("Unexpected character after option parameter"); //TODO Support vector written as "1 2 3" (without quotes)
+                        throw std::runtime_error("Unexpected character after option parameter");
                 }
             }
         }
@@ -1141,9 +1272,14 @@ GOTO_OPTION_PARAM:
                 IgnoreWhitespace(in);
 
                 c = in.peek();
+                assert(in.good() || in.eof());
+                if(in.bad() || in.fail())
+                    throw std::runtime_error("Failed reading FGD class from stream");
                 if(c == ']')
                 {
                     in.ignore(); // Skip ']'
+                    if(in.bad() || in.fail())
+                        throw std::runtime_error("Failed reading FGD class from stream");
                     break;
                 }
                 else if(c == EOF) [[unlikely]]
@@ -1162,6 +1298,7 @@ GOTO_OPTION_PARAM:
                         else
                         {
                             in.clear(in.rdstate() & ~std::istream::failbit);
+                            assert(in.good() || in.eof());
                         }
                     }
 
@@ -1177,6 +1314,7 @@ GOTO_OPTION_PARAM:
                         else
                         {
                             in.clear(in.rdstate() & ~std::istream::failbit);
+                            assert(in.good() || in.eof());
                         }
                     }
 
@@ -1390,22 +1528,31 @@ GOTO_OPTION_PARAM:
         {
             IgnoreWhitespace(in);
 
+            if(in.eof())
+                return in;
             int c = in.peek();
-            if(c == EOF)
+            if(in.fail())
+                throw std::runtime_error("Failed reading FGD from stream");
+            if(c == EOF || in.eof())
                 return in;
             if(c != '@')
                 throw std::runtime_error("Unexpected character inside FGD file - expected a class (or other object) that starts with '@'");
 
-            std::vector<char> object = ReadUntilWhitespace(in);
+            std::vector<char> object = ReadUntilWhitespaceOr(in, '(' /* Start of `@mapsize` data */);
+#ifdef DEBUG
+            std::cout << str_view(object) << std::endl;
+#endif
 
-            if(StringCaseInsensitiveEqual(str_view(object), "@mapsize")) [[unlikely]]
+            if(object.empty())
+                return in;
+            else if(StringCaseInsensitiveEqual(str_view(object), "@mapsize")) [[unlikely]]
             {
                 if(fgd.MapSize.has_value())
                     throw std::runtime_error("Single FGD file cannot contain more than one `@mapsize`");
 
                 if(in.peek() != '(')
                     throw std::runtime_error("`@mapsize` must be followed by '(', see documentation");
-                in.ignore();
+                in.ignore(); // Skip '('
 
                 IgnoreWhitespace(in);
 
@@ -1435,7 +1582,7 @@ GOTO_OPTION_PARAM:
                     else
                         throw std::runtime_error("Unexpected character between parameters of `@mapsize`");
                 }
-                in.ignore();
+                in.ignore(); // Skip ','
 
                 IgnoreWhitespace(in);
 
@@ -1452,6 +1599,10 @@ GOTO_OPTION_PARAM:
                         continue;
                     throw std::runtime_error("Maximum value of `@mapsize` contains invalid character");
                 }
+
+                c = in.peek();
+                assert(c == ')');
+                in.ignore();
 
                 int min, max;
                 try // Min
@@ -1508,10 +1659,10 @@ GOTO_OPTION_PARAM:
                     throw std::runtime_error("Content of `@MaterialExclusion` must be inside square brackets `[` + `]`");
                 in.ignore();
 
-                IgnoreWhitespace(in);
-
                 while(true)
                 {
+                    IgnoreWhitespace(in);
+
                     c = in.peek();
                     switch(c)
                     {
@@ -1526,8 +1677,9 @@ GOTO_OPTION_PARAM:
                         }
 
                         case ']': // End of content
-                            in.ignore();
-                            break;
+                            in.ignore(); // Skip ']'
+                            //break 2;
+                            goto GOTO_OUTSIDE_MATERIAL_EXCLUSION_WHILE;
                         case EOF: // End of file (let's be lenient and allow it as the end of list)
                             break;
 
@@ -1537,6 +1689,7 @@ GOTO_OPTION_PARAM:
                             throw std::runtime_error("Content of `@MaterialExclusion` must end by `]` and contain only names of directories quoted by '\"'");
                     }
                 }
+                GOTO_OUTSIDE_MATERIAL_EXCLUSION_WHILE:;
             }
             else if(StringCaseInsensitiveEqual(str_view(object), "@AutoVisGroup")) [[unlikely]]
             {
@@ -1590,6 +1743,9 @@ GOTO_OPTION_PARAM:
                 in >> clss;
                 if(in.fail())
                     throw std::runtime_error("Failed to read class inside FGD file");
+#ifdef DEBUG
+                std::cout << clss.Codename << std::endl;
+#endif
                 fgd.Classes.emplace_back(clss);
             }
         }
@@ -1636,7 +1792,7 @@ GOTO_OPTION_PARAM:
         {
             out << '\n';
             out << "// " << fgd.Classes.size() << " classes\n";
-            for(const auto& cls : fgd.AutoVisGroups)
+            for(const auto& cls : fgd.Classes)
                 out << cls << '\n';
         }
 

@@ -23,9 +23,15 @@
 ]
 
 @BaseClass base(Angles) size(-16 -16 -36, 16 16 36) color(0 255 0) = Humanoid []
-@PointClass base(Humanoid) = info_player_spawn : "Player spawn point"
+@PointClass base(Humanoid) = info_player_spawn : "Player spawn point." +
+	" You should have some for each team (except for deathmatch maps)."
 [
-	player_index(integer) : "Index of player that can spawn on this point" : 0
+	team(choices) : "Player team" + " (default is deathmatch)" : 0 =
+	[
+		0 : "Deathmatch"
+		1 : "Team A"
+		2 : "Team B"
+	]
 ]
 
 @SolidClass = func_buyzone : "Zone in which players can purchase items"
@@ -38,5 +44,5 @@
 	input Enable(void)
 	input Disable(void)
 
-	output OnPurchase(void)
+	output OnPurchase(void) : "Fires when a player purchases something"
 ]

@@ -31,6 +31,7 @@ namespace Decay::Fgd
             String = 3
         };
         /// Tries to guess type from string variable.
+        /// Useful for property type.
         [[nodiscard]] inline static ValueType GuessTypeFromString(const std::string& str) noexcept
         {
             if(str.empty())
@@ -61,6 +62,10 @@ namespace Decay::Fgd
             bool Quoted;
 
             [[nodiscard]] inline operator bool() const noexcept { return Name.empty() && !Quoted; }
+
+            /// Can also be used as boolean because 0 means not a vector.
+            /// Won't work with floating-point numbers.
+            [[nodiscard]] int GetVectorSize() const;
 
             [[nodiscard]] inline bool operator==(const OptionParam& other) const
             {
@@ -216,7 +221,6 @@ namespace Decay::Fgd
                 return false;
 #endif
             }
-
 
             [[nodiscard]] inline bool operator==(const Class& other) const
             {

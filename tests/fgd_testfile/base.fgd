@@ -6,6 +6,7 @@
 @MaterialExclusion
 [
     "debug"
+    "bin"
 ]
 
 @AutoVisGroup = "Humanoid"
@@ -13,5 +14,12 @@
     "Player"
     [
         "info_player_spawn"
+    ]
+]
+@AutoVisGroup = "Humanoid"
+[
+    "Enemy"
+    [
+        "info_enemy_spawn"
     ]
 ]
