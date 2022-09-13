@@ -6,3 +6,7 @@
 	path = lib/stb
 	url = git@github.com:nothings/stb.git
 	branch = master
+[submodule "nlohmann_json"]
+	path = lib/nlohmann_json
+	url = git@github.com:nlohmann/json.git
+	branch = master

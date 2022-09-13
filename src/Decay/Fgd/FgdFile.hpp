@@ -6,6 +6,9 @@
 #include <set>
 #include <optional>
 #include "glm/glm.hpp"
+#ifdef DECAY_JSON_LIB
+#   include "nlohmann/json.hpp"
+#endif
 
 #include "Decay/Common.hpp"
 
@@ -145,7 +148,6 @@ namespace Decay::Fgd
             // =
             /// Values for `choices` or `options` types.
             std::vector<PropertyFlagOrChoice> FlagsOrChoices;
-
 
             [[nodiscard]] inline bool operator==(const Property& other) const
             {
@@ -343,6 +345,10 @@ namespace Decay::Fgd
         /// Throws exception if a recursive dependency is found.
         /// Tries to use Alphabetical sorting when possible.
         void OrderClassesByDependency();
+
+#ifdef DECAY_JSON_LIB
+        [[nodiscard]] nlohmann::json ExportAsJson() const;
+#endif
     };
 
     // All >> (std::istream) operators should set `failbit` on fail only if the stream/data can recover from it (and seek back to original position).

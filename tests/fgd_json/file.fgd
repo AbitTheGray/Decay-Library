@@ -1,0 +1,69 @@
+// Some comment
+// Another line of comment
+
+@mapsize(-512, 512)
+
+@MaterialExclusion
+[
+    "debug"
+    "bin"
+]
+
+@AutoVisGroup = "Humanoid"
+[
+    "Player"
+    [
+        "info_player_spawn"
+    ]
+]
+@AutoVisGroup = "Humanoid"
+[
+    "Enemy"
+    [
+        "info_enemy_spawn"
+    ]
+]
+
+@SolidClass = worldspawn : "World entity"
+[
+	message(string) : "Map Description / Title"
+]
+
+@BaseClass = Angles
+[
+	angles(string) : "Pitch Yaw Roll (Y Z X)" : "0 0 0"
+]
+
+@BaseClass = Targetname
+[
+	targetname(target_source) : "Name"
+]
+@BaseClass = Target
+[
+	target(target_destination) : "Target"
+]
+
+@BaseClass base(Angles) size(-16 -16 -36, 16 16 36) color(0 255 0) = Humanoid []
+@PointClass base(Humanoid) = info_player_spawn : "Player spawn point." +
+	" You should have some for each team (except for deathmatch maps)."
+[
+	team(choices) : "Player team" + " (default is deathmatch)" : 0 =
+	[
+		0 : "Deathmatch"
+		1 : "Team A"
+		2 : "Team B"
+	]
+]
+
+@SolidClass = func_buyzone : "Zone in which players can purchase items"
+[
+	spawnflags(flags) =
+	[
+		1 : "Start on"
+	]
+
+	input Enable(void)
+	input Disable(void)
+
+	output OnPurchase(void) : "Fires when a player purchases something"
+]

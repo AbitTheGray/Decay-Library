@@ -66,6 +66,12 @@ if(DECAY_FGD_CLASS_VALIDATE)
     add_compile_definitions("FGD_CLASS_VALIDATE")
 endif()
 
+# Link nlohmann/JSON library
+option(DECAY_JSON_LIB "Use nlohmann's JSON library and allow JSON conversions" ON)
+if(DECAY_JSON_LIB)
+    add_compile_definitions("DECAY_JSON_LIB")
+endif()
+
 #--------------------------------
 # Compiler configuration
 #--------------------------------
@@ -79,7 +85,7 @@ endif()
 # External libraries
 #--------------------------------
 
-add_subdirectory(lib/glm)
+add_subdirectory(lib)
 
 #--------------------------------
 # Source
@@ -98,6 +104,9 @@ target_include_directories(DecayLib PUBLIC lib/stb/)
 
 if(DECAY_LIBRARY_API)
     target_compile_options(DecayLib PUBLIC -fPIC)
+endif()
+if(DECAY_JSON_LIB)
+    target_link_libraries(DecayLib nlohmann_json)
 endif()
 
 #--------------------------------

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <functional>
+#ifdef DECAY_JSON_LIB
+#   include "nlohmann/json.hpp"
+#endif
 
 #include "Decay/Bsp/v30/BspFile.hpp"
 
@@ -257,7 +260,11 @@ namespace Decay::Bsp::v30
         void ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension = ".png", bool dummyForMissing = false) const;
 
     public:
-        void ExportEntitiesJson(const std::filesystem::path& filename);
+        [[deprecated("Not fully implemented, use nlohmann::json variant instead")]]
+        void ExportEntitiesJson(const std::filesystem::path& filename) const;
+#ifdef DECAY_JSON_LIB
+        [[nodiscard]] nlohmann::json ExportEntitiesJson() const;
+#endif
 
     public:
         /// Parse raw entities string into vector of entities.

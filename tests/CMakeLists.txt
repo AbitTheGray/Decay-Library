@@ -33,3 +33,5 @@ add_subdirectory(wad3_export_fonts)
 add_subdirectory(fgd_out_and_in)
 
 add_subdirectory(fgd_testfile)
+
+add_subdirectory(fgd_json)

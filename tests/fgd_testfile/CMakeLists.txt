@@ -6,7 +6,7 @@ configure_file(file.fgd ${CMAKE_BINARY_DIR}/tests/fgd_testfile COPYONLY)
 configure_file(base.fgd ${CMAKE_BINARY_DIR}/tests/fgd_testfile COPYONLY)
 
 add_test(NAME Test_Fgd_TestFile COMMAND Test_Fgd_TestFile file.fgd)
-set_tests_properties(Test_Fgd_TestFile PROPERTIES LABELS "GoldSrc;fgd")
+set_tests_properties(Test_Fgd_TestFile PROPERTIES LABELS "GoldSrc;Source;fgd")
 
 add_test(NAME Test_Fgd_TestFile2 COMMAND Test_Fgd_TestFile base.fgd)
-set_tests_properties(Test_Fgd_TestFile2 PROPERTIES LABELS "GoldSrc;fgd")
+set_tests_properties(Test_Fgd_TestFile2 PROPERTIES LABELS "GoldSrc;Source;fgd")
