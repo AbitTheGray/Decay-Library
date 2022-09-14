@@ -14,7 +14,7 @@ int main(int argc, const char* argv[])
     if(std::string("file.fgd") == argv[1])
     {
         assert(fgd.IncludeFiles.size() == 1);
-        assert(fgd.IncludeFiles.contains("base.fgd"));
+        assert(std::find(fgd.IncludeFiles.begin(), fgd.IncludeFiles.end(), "base.fgd") != fgd.IncludeFiles.end());
 
         assert(fgd.Classes.size() == 7);
         FgdFile::Class* clss = nullptr;

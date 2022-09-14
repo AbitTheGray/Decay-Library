@@ -516,7 +516,6 @@ namespace Decay::Fgd
         if(in.fail())
             throw std::runtime_error("Failed to read FGD file");
     }
-
     std::vector<std::string> FgdFile::Class::ValidTypes = {
         "BaseClass",
         "PointClass",
@@ -526,7 +525,6 @@ namespace Decay::Fgd
         "MoveClass",
         "FilterClass"
     };
-
     int FgdFile::OptionParam::GetVectorSize() const
     {
         if(Quoted)
@@ -562,6 +560,216 @@ namespace Decay::Fgd
         assert(dimension <= 4);
         return dimension;
     }
+    void FgdFile::Add(const FgdFile& toAdd)
+    {
+        // Map Size
+        if(toAdd.MapSize.has_value())
+        {
+            if(MapSize.has_value())
+            {
+                int toAddSize = toAdd.MapSize.value().y - toAdd.MapSize.value().x;
+                int thisSize  =       MapSize.value().y -       MapSize.value().x;
+                if(toAddSize > thisSize)
+                    MapSize = toAdd.MapSize;
+            }
+            else
+                MapSize = toAdd.MapSize;
+        }
+
+        // Auto Vis Group
+        if(!toAdd.AutoVisGroups.empty())
+        {
+            for(const auto& toAddAVG : toAdd.AutoVisGroups)
+            {
+                AutoVisGroup* existingAVG = nullptr;
+                for(auto& avg : AutoVisGroups)
+                {
+                    if(avg.DisplayName == toAddAVG.DisplayName)
+                    {
+                        existingAVG = &avg;
+                        break;
+                    }
+                }
+                if(existingAVG == nullptr)
+                {
+                    AutoVisGroups.emplace_back(toAddAVG);
+                    continue;
+                }
+
+                // Merge Auto-Vis-Group
+                for(const auto& toAddChild : toAddAVG.Child)
+                {
+                    AutoVisGroup_Child* existingChild = nullptr;
+                    for(auto& avgc : existingAVG->Child)
+                    {
+                        if(avgc.DisplayName == toAddChild.DisplayName)
+                        {
+                            existingChild = &avgc;
+                            break;
+                        }
+                    }
+                    if(existingChild == nullptr)
+                    {
+                        existingAVG->Child.emplace_back(toAddChild);
+                        continue;
+                    }
+
+                    // Merge Auto-Vis-Group Child
+                    for(const auto& toAddEntity : toAddChild.EntityClasses)
+                        existingChild->EntityClasses.emplace(toAddEntity);
+                }
+            }
+        }
+
+        // Includes
+        if(!toAdd.IncludeFiles.empty())
+        {
+            for(const auto& toAddInclude : toAdd.IncludeFiles)
+            {
+                bool found = false;
+                for(const auto& existingInclude : IncludeFiles)
+                {
+                    if(StringCaseInsensitiveEqual(toAddInclude, existingInclude))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found)
+                    IncludeFiles.emplace_back(toAddInclude);
+            }
+        }
+
+        // Material Exclusions
+        if(!toAdd.MaterialExclusion.empty())
+        {
+            for(const auto& toAddDir : toAdd.MaterialExclusion)
+                MaterialExclusion.emplace(toAddDir);
+        }
+
+        // Classes
+        if(!toAdd.Classes.empty())
+        {
+            for(const auto& toAddClass : toAdd.Classes)
+            {
+                Class* existingClass = nullptr;
+                for(auto& clss : Classes)
+                {
+                    if(clss.Codename == toAddClass.Codename)
+                    {
+                        existingClass = &clss;
+                        break;
+                    }
+                }
+                if(existingClass == nullptr)
+                {
+                    Classes.emplace_back(toAddClass);
+                    continue;
+                }
+
+                // Properties
+                for(const Property& toAddProperty : toAddClass.Properties)
+                {
+                    Property* existingProperty = nullptr;
+                    for(auto& prop : existingClass->Properties)
+                    {
+                        if(prop.Codename == toAddProperty.Codename)
+                        {
+                            existingProperty = &prop;
+                            break;
+                        }
+                    }
+                    if(existingProperty == nullptr)
+                    {
+                        existingClass->Properties.emplace_back(toAddProperty);
+                        continue;
+                    }
+
+                    // Combine property
+                    existingProperty->Type = toAddProperty.Type;
+                    existingProperty->ReadOnly = toAddProperty.ReadOnly;
+                    if(!toAddProperty.DisplayName.empty())
+                        existingProperty->DisplayName = toAddProperty.DisplayName;
+                    if(!toAddProperty.DefaultValue.empty())
+                        existingProperty->DefaultValue = toAddProperty.DefaultValue;
+                    if(!toAddProperty.Description.empty())
+                        existingProperty->Description = toAddProperty.Description;
+                    if(StringCaseInsensitiveEqual(existingProperty->Type, "flags") || StringCaseInsensitiveEqual(existingProperty->Type, "flags"))
+                    {
+                        for(const auto& toAddFC : toAddProperty.FlagsOrChoices)
+                        {
+                            PropertyFlagOrChoice* existingFlagChoice = nullptr;
+                            for(auto& fc : existingProperty->FlagsOrChoices)
+                            {
+                                if(fc.Index == toAddFC.Index)
+                                {
+                                    existingFlagChoice = &fc;
+                                    break;
+                                }
+                            }
+                            if(existingFlagChoice == nullptr)
+                            {
+                                existingProperty->FlagsOrChoices.emplace_back(toAddFC);
+                                continue;
+                            }
+
+                            // Combine Flag/Choice
+                            if(!toAddFC.DisplayName.empty())
+                                existingFlagChoice->DisplayName = toAddFC.DisplayName;
+                            existingFlagChoice->Default = toAddFC.Default;
+                        }
+                    }
+                    else
+                        existingProperty->FlagsOrChoices.clear();
+                }
+
+                // Input / Output
+                if(!toAddClass.IO.empty())
+                {
+                    for(const InputOutput& toAddIO : toAddClass.IO)
+                    {
+                        InputOutput* existingIO = nullptr;
+                        for(auto& io : existingClass->IO)
+                        {
+                            if(io.Type == toAddIO.Type && io.Name == toAddIO.Name)
+                            {
+                                existingIO = &io;
+                                break;
+                            }
+                        }
+                        if(existingIO == nullptr)
+                        {
+                            existingClass->IO.emplace_back(toAddIO);
+                            continue;
+                        }
+
+                        // Combine IO
+                        existingIO->ParamType = toAddIO.ParamType;
+                        if(!toAddIO.Description.empty())
+                            existingIO->Description = toAddIO.Description;
+                    }
+                }
+            }
+        }
+    }
+    /*
+    void FgdFile::Subtract(const FgdFile& toSub)
+    {
+        throw std::runtime_error("Not Implemented"); //TODO
+    }
+    void FgdFile::Include(const FgdFile& toAdd)
+    {
+        throw std::runtime_error("Not Implemented"); //TODO
+    }
+    void FgdFile::ProcessIncludes(const std::filesystem::path& relativeToDirectory, std::vector<std::filesystem::path>& filesToIgnore)
+    {
+        throw std::runtime_error("Not Implemented"); //TODO
+    }
+    void FgdFile::OrderClassesByDependency()
+    {
+        throw std::runtime_error("Not Implemented"); //TODO
+    }
+    */
 }
 
 // Stream Operators
@@ -1648,7 +1856,7 @@ GOTO_OPTION_PARAM:
                 if(filename.empty())
                     throw std::runtime_error("Cannot `@include` empty path");
 
-                fgd.IncludeFiles.emplace(str(filename));
+                fgd.IncludeFiles.emplace_back(str(filename));
             }
             else if(StringCaseInsensitiveEqual(str_view(object), "@MaterialExclusion")) [[unlikely]]
             {

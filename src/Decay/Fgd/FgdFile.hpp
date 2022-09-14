@@ -316,7 +316,7 @@ namespace Decay::Fgd
 
     // Include other FGD files (paths)
     public:
-        std::set<std::string> IncludeFiles = {};
+        std::vector<std::string> IncludeFiles = {};
 
     public:
         explicit FgdFile(std::istream& in);
@@ -325,8 +325,8 @@ namespace Decay::Fgd
     public:
         /// Combines current and provided FGD files together.
         /// Bigger map size is used.
-        /// Auto Vis Groups are combined (union) without duplicates.
-        /// Includes are combined (you need to manually remove paths to both files if you don't want them there).
+        /// Auto Vis Groups are combined (union) without duplicates (case-sensitive).
+        /// Includes are combined without (case-insensitive) duplicates (you need to manually remove paths to both files if you don't want them there).
         /// Material Exclusions are combined.
         /// Classes are combined
         /// - Properties of existing ones are extended or overwritten (if type differs, the new one is used).
