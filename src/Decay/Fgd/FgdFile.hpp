@@ -323,6 +323,7 @@ namespace Decay::Fgd
         ~FgdFile() = default;
 
     public:
+        /// TL;DR: Add newer file.
         /// Combines current and provided FGD files together.
         /// Bigger map size is used.
         /// Auto Vis Groups are combined (union) without duplicates (case-sensitive).
@@ -334,14 +335,15 @@ namespace Decay::Fgd
         void Add(const FgdFile& toAdd);
         /// Opposite to `Add(FgdFile)`, can be used to generate the parameter for `Add(FgdFile)`.
         /// Use to minimize current FGD using `Base.fgd`.
-        void Subtract(const FgdFile& toSub);
+        void Subtract(const FgdFile& toSub, bool ignoreDescription, bool ignoreDisplayName);
+        /// TL;DR: Add older file.
         /// Include acts similar to `Add` but prioritizes data in `this` FGD and not `toAdd` one.
         void Include(const FgdFile& toAdd);
         /// Call `Include` for all FGD files mentioned in `IncludeFiles`.
         /// This function is also called on included files before `Add` to allow nested includes.
         /// Every file is processed only once thanks to `filesToIgnore` being filled by files as they are being processed - it is recommended to place path to `this` FGD file there at the beginning.
         void ProcessIncludes(const std::filesystem::path& relativeToDirectory, std::vector<std::filesystem::path>& filesToIgnore);
-        /// Completely reworks the order of `Classes` based on `base(...)` option to make sure a class in listed AFTER its dependencies (=base calsses first).
+        /// Completely reworks the order of `Classes` based on `base(...)` option to make sure a class in listed AFTER its dependencies (=base classes first).
         /// Throws exception if a recursive dependency is found.
         /// Tries to use Alphabetical sorting when possible.
         void OrderClassesByDependency();
