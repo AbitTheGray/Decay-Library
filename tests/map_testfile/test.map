@@ -1,0 +1,124 @@
+{
+"classname" "worldspawn"
+"classname" "worldspawn"
+"MaxRange" "4096"
+"mapversion" "220"
+"wad" "\half-life\cstrike\ajawad.wad;\half-life\cstrike\cached.wad;\half-life\cstrike\chateau.wad;\half-life\cstrike\cs_747.wad;\half-life\cstrike\cs_assault.wad;\half-life\cstrike\cs_bdog.wad;\half-life\cstrike\cs_cbble.wad;\half-life\cstrike\cs_dust.wad;\half-life\cstrike\cs_havana.wad;\half-life\cstrike\cs_office.wad;\half-life\cstrike\cstraining.wad;\half-life\cstrike\cstrike.wad;\half-life\cstrike\de_airstrip.wad;\half-life\cstrike\de_aztec.wad;\half-life\cstrike\de_piranesi.wad;\half-life\cstrike\de_storm.wad;\half-life\cstrike\de_vertigo.wad;\half-life\cstrike\decals.wad;\half-life\cstrike\itsitaly.wad;\half-life\cstrike\n0th1ng.wad;\half-life\cstrike\prodigy.wad;\half-life\cstrike\tempdecal.wad;\half-life\cstrike\torntextures.wad;\half-life\cstrike\tswad.wad;\half-life\valve\cached.wad;\half-life\valve\decals.wad;\half-life\valve\fonts.wad;\half-life\valve\gfx.wad;\half-life\valve\halflife.wad;\half-life\valve\liquids.wad;\half-life\valve\spraypaint.wad;\half-life\valve\tempdecal.wad;\half-life\valve\xeno.wad"
+{
+( -512 512 0 ) ( 512 512 0 ) ( 512 -512 0 ) ASPHALT01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 -512 -64 ) ( 512 -512 -64 ) ( 512 512 -64 ) ASPHALT01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 512 0 ) ( -512 -512 0 ) ( -512 -512 -64 ) ASPHALT01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 512 -64 ) ( 512 -512 -64 ) ( 512 -512 0 ) ASPHALT01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 512 0 ) ( -512 512 0 ) ( -512 512 -64 ) ASPHALT01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 -512 -64 ) ( -512 -512 -64 ) ( -512 -512 0 ) ASPHALT01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+{
+( 512 576 320 ) ( 576 576 320 ) ( 576 -576 320 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 512 -576 -64 ) ( 576 -576 -64 ) ( 576 576 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 512 576 320 ) ( 512 -576 320 ) ( 512 -576 -64 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 576 576 -64 ) ( 576 -576 -64 ) ( 576 -576 320 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 576 576 320 ) ( 512 576 320 ) ( 512 576 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 576 -576 -64 ) ( 512 -576 -64 ) ( 512 -576 320 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+{
+( -576 576 320 ) ( -512 576 320 ) ( -512 -576 320 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -576 -576 -64 ) ( -512 -576 -64 ) ( -512 576 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -576 576 320 ) ( -576 -576 320 ) ( -576 -576 -64 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -512 576 -64 ) ( -512 -576 -64 ) ( -512 -576 320 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -512 576 320 ) ( -576 576 320 ) ( -576 576 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -512 -576 -64 ) ( -576 -576 -64 ) ( -576 -576 320 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+{
+( -512 -512 320 ) ( 512 -512 320 ) ( 512 -576 320 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 -576 -64 ) ( 512 -576 -64 ) ( 512 -512 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 -512 320 ) ( -512 -576 320 ) ( -512 -576 -64 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 -512 -64 ) ( 512 -576 -64 ) ( 512 -576 320 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 -512 320 ) ( -512 -512 320 ) ( -512 -512 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 -576 -64 ) ( -512 -576 -64 ) ( -512 -576 320 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+{
+( -512 576 320 ) ( 512 576 320 ) ( 512 512 320 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 512 -64 ) ( 512 512 -64 ) ( 512 576 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 576 320 ) ( -512 512 320 ) ( -512 512 -64 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 576 -64 ) ( 512 512 -64 ) ( 512 512 320 ) BRICK01 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 576 320 ) ( -512 576 320 ) ( -512 576 -64 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 512 -64 ) ( -512 512 -64 ) ( -512 512 320 ) BRICK01 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+{
+( -512 512 320 ) ( 512 512 320 ) ( 512 -512 320 ) C1A3FLOOR02 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 -512 256 ) ( 512 -512 256 ) ( 512 512 256 ) C1A3FLOOR02 [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -512 512 320 ) ( -512 -512 320 ) ( -512 -512 256 ) C1A3FLOOR02 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 512 256 ) ( 512 -512 256 ) ( 512 -512 320 ) C1A3FLOOR02 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 512 320 ) ( -512 512 320 ) ( -512 512 256 ) C1A3FLOOR02 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 512 -512 256 ) ( -512 -512 256 ) ( -512 -512 320 ) C1A3FLOOR02 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+}
+{
+"classname" "info_player_start"
+"angles" "0 90 0"
+"origin" "0 -256 64"
+}
+{
+"classname" "info_player_deathmatch"
+"angles" "0 270 0"
+"origin" "0 256 64"
+}
+{
+"classname" "light"
+"_light" "255 255 128 200"
+"origin" "0 0 192"
+}
+{
+"classname" "light"
+"_light" "0 128 255 200"
+"origin" "0 -448 192"
+}
+{
+"classname" "light"
+"_light" "255 0 0 200"
+"origin" "0 448 192"
+}
+{
+"classname" "light"
+"_light" "255 255 255 200"
+"origin" "448 0 192"
+}
+{
+"classname" "func_buyzone"
+"team" "2"
+{
+( -128 -128 128 ) ( 128 -128 128 ) ( 128 -384 128 ) AAATRIGGER [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -128 -384 0 ) ( 128 -384 0 ) ( 128 -128 0 ) AAATRIGGER [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -128 -128 128 ) ( -128 -384 128 ) ( -128 -384 0 ) AAATRIGGER [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 128 -128 0 ) ( 128 -384 0 ) ( 128 -384 128 ) AAATRIGGER [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 128 -128 128 ) ( -128 -128 128 ) ( -128 -128 0 ) AAATRIGGER [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 128 -384 0 ) ( -128 -384 0 ) ( -128 -384 128 ) AAATRIGGER [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+}
+{
+"classname" "func_buyzone"
+"team" "1"
+{
+( -128 384 128 ) ( 128 384 128 ) ( 128 128 128 ) AAATRIGGER [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -128 128 0 ) ( 128 128 0 ) ( 128 384 0 ) AAATRIGGER [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( -128 384 128 ) ( -128 128 128 ) ( -128 128 0 ) AAATRIGGER [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 128 384 0 ) ( 128 128 0 ) ( 128 128 128 ) AAATRIGGER [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 128 384 128 ) ( -128 384 128 ) ( -128 384 0 ) AAATRIGGER [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 128 128 0 ) ( -128 128 0 ) ( -128 128 128 ) AAATRIGGER [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+}
+}
+{
+"classname" "func_breakable"
+"spawnflags" "256"
+"rendercolor" "0 0 0"
+"health" "100"
+"material" "1"
+{
+( -48 48 128 ) ( 48 48 128 ) ( 48 -48 128 ) CRATE13 [ 1 0 0 48 ] [ 0 -1 0 48 ] 0 1 1
+( -48 -48 0 ) ( 48 -48 0 ) ( 48 48 0 ) CRATE13 [ 1 0 0 48 ] [ 0 -1 0 48 ] 0 1 1
+( -48 48 128 ) ( -48 -48 128 ) ( -48 -48 0 ) CRATE11 [ 0 1 0 48 ] [ 0 0 -1 128 ] 0 1 1
+( 48 48 0 ) ( 48 -48 0 ) ( 48 -48 128 ) CRATE11 [ 0 1 0 48 ] [ 0 0 -1 128 ] 0 1 1
+( 48 48 128 ) ( -48 48 128 ) ( -48 48 0 ) CRATE10 [ 1 0 0 48 ] [ 0 0 -1 128 ] 0 1 1
+( 48 -48 0 ) ( -48 -48 0 ) ( -48 -48 128 ) CRATE10 [ 1 0 0 48 ] [ 0 0 -1 128 ] 0 1 1
+}
+}

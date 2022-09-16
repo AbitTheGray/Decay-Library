@@ -12,7 +12,8 @@ namespace Decay::Map
     public:
         struct Plane
         {
-            glm::i32vec3 PlaneVertices[3];
+            static const int PlaneVertexCount = 3;
+            glm::i32vec3 PlaneVertices[PlaneVertexCount];
             std::string Texture;
 
             glm::i32vec3 S;
@@ -24,12 +25,52 @@ namespace Decay::Map
             int Rotation;
 
             glm::vec2 Scale;
+
+            [[nodiscard]] inline bool operator==(const Plane& other) const
+            {
+                for(int i = 0; i < Plane::PlaneVertexCount; i++)
+                    if(PlaneVertices[i] != other.PlaneVertices[i])
+                        return false;
+
+                if(Texture != other.Texture)
+                    return false;
+
+                if(S != other.S)
+                    return false;
+                if(SOffset != other.SOffset)
+                    return false;
+
+                if(T != other.T)
+                    return false;
+                if(TOffset != other.TOffset)
+                    return false;
+
+                if(Rotation != other.Rotation)
+                    return false;
+                if(Scale != other.Scale)
+                    return false;
+
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const Plane& other) const { return !operator==(other); }
         };
         struct Brush
         {
             /// At least 4
             std::vector<Plane> Planes;
             //TODO More utility functions
+
+            [[nodiscard]] inline bool operator==(const Brush& other) const
+            {
+                if(Planes.size() != other.Planes.size())
+                    return false;
+                for(int i = 0; i < Planes.size(); i++)
+                    if(Planes[i] != other.Planes[i])
+                        return false;
+
+                return true;
+            }
+            [[nodiscard]] inline bool operator!=(const Brush& other) const { return !operator==(other); }
         };
         struct Entity
         {
@@ -38,6 +79,11 @@ namespace Decay::Map
         };
 
         std::vector<Entity> Entities;
+
+    public:
+        MapFile() = default;
+        explicit MapFile(std::istream& in);
+        ~MapFile() = default;
     };
 
     std::istream& operator>>(std::istream& in, MapFile::Plane&);

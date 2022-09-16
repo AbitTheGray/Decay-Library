@@ -313,6 +313,7 @@ namespace Decay::Fgd
         std::vector<std::string> IncludeFiles = {};
 
     public:
+        explicit FgdFile() = default;
         explicit FgdFile(std::istream& in);
         ~FgdFile() = default;
 

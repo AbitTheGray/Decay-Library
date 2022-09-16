@@ -35,3 +35,11 @@ add_subdirectory(fgd_out_and_in)
 add_subdirectory(fgd_testfile)
 
 add_subdirectory(fgd_json)
+
+#--------------------------------
+# MAP (GoldSrc/Quake, Map Development File)
+#--------------------------------
+
+add_subdirectory(map_out_and_in)
+
+add_subdirectory(map_testfile)
