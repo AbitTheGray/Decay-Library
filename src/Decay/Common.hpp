@@ -5,6 +5,12 @@
 #include <functional>
 #include <string>
 #include <strings.h>
+#include <vector>
+#include <map>
+#include <set>
+#include <optional>
+#include <filesystem>
+#include "glm/glm.hpp"
 
 #include <stb_image_write.h>
 

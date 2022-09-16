@@ -1,16 +1,10 @@
 #pragma once
 
-#include <filesystem>
-#include <vector>
-#include <map>
-#include <set>
-#include <optional>
-#include "glm/glm.hpp"
+#include "Decay/Common.hpp"
+
 #ifdef DECAY_JSON_LIB
 #   include "nlohmann/json.hpp"
 #endif
-
-#include "Decay/Common.hpp"
 
 // Use `std::any_of` instead of loop implementation.
 //#define FGD_INPUT_OUTPUT_STD_ANY_OF

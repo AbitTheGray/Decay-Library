@@ -1,11 +1,21 @@
 # Decay Library
 
-Library for parsing BSP and WAD files from GoldSource (and maybe more later).
+Library for parsing BSP and WAD files from GoldSource (and later Quake and Source) engine.
 
 Also contains C API which can be used from other programming languages.
 [C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) is being worked on (for future use in Unity3D) but may lag-behind in features.
 
 Can also be used as Command-line program.
+
+## Goal
+
+Goal of this project is to learn, test and document.
+
+Learn = get to know how others approached the problem before and what decisions they made.
+
+Test = write a code that can interpret the data, see whenever it can be done easier today, validate files.
+
+Document = write documentation for others and "share the knowledge" (as did people before this project).
 
 ## Libraries
 
