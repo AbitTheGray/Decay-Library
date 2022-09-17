@@ -26,6 +26,25 @@ namespace Decay::Map
 
             glm::vec2 Scale;
 
+            /// Calculates normal vector for the plane.
+            /// Can be {0, 0, 0} for invalid planes.
+            /// cross((p2 - p0), (p1 - p0))
+            [[nodiscard]] inline glm::dvec3 Normal() const noexcept { return glm::normalize(glm::cross(glm::dvec3(PlaneVertices[2] - PlaneVertices[0]), glm::dvec3(PlaneVertices[1] - PlaneVertices[0]))); }
+            /// Calculates distance of the plane from origin
+            [[nodiscard]] inline double DistanceFromOrigin() const noexcept
+            {
+                auto normal = Normal();
+                double d0 = (normal.x * PlaneVertices[0].x) + (normal.y * PlaneVertices[0].y) + (normal.z * PlaneVertices[0].z);
+#ifdef DEBUG
+                double d1 = (normal.x * PlaneVertices[1].x) + (normal.y * PlaneVertices[1].y) + (normal.z * PlaneVertices[1].z);
+                double d2 = (normal.x * PlaneVertices[2].x) + (normal.y * PlaneVertices[2].y) + (normal.z * PlaneVertices[2].z);
+                assert(abs(d0 - d1) < 0.001);
+                assert(abs(d0 - d2) < 0.001);
+                assert(abs(d1 - d2) < 0.001);
+#endif
+                return d0;
+            }
+
             [[nodiscard]] inline bool operator==(const Plane& other) const
             {
                 for(int i = 0; i < Plane::PlaneVertexCount; i++)
@@ -54,11 +73,18 @@ namespace Decay::Map
             }
             [[nodiscard]] inline bool operator!=(const Plane& other) const { return !operator==(other); }
         };
+        template<std::size_t N, typename T>
+        struct Polygon
+        {
+            std::vector<glm::vec<N, T, glm::defaultp>> Vertices;
+        };
         struct Brush
         {
-            /// At least 4
+            /// At least 4 planes creating convex object.
             std::vector<Plane> Planes;
+
             //TODO More utility functions
+            std::vector<Polygon<3, double>> Polygons() const;
 
             [[nodiscard]] inline bool operator==(const Brush& other) const
             {

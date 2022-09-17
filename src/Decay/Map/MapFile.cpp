@@ -5,6 +5,7 @@
 // Uncomment to output more human-friendly `*.map` files
 #define MAP_TAB_OFFSET
 
+// Parting utils
 namespace Decay::Map
 {
     /// Read vector inside round brackets.
@@ -86,6 +87,7 @@ namespace Decay::Map
         val = std::stoi(str(num3));
     }
 }
+
 namespace Decay::Map
 {
     MapFile::MapFile(std::istream& in)
@@ -94,7 +96,16 @@ namespace Decay::Map
         if(in.fail())
             throw std::runtime_error("Failed to read Map file");
     }
+    std::vector<MapFile::Polygon<3, double>> MapFile::Brush::Polygons() const
+    {
+        typedef MapFile::Polygon<3, double> Polygon3d;
+        std::vector<Polygon3d> polygons = {};
+
+        throw std::runtime_error("Not Implemented"); //TODO
+    }
 }
+
+// Stream Operators
 namespace Decay::Map
 {
     std::istream& operator>>(std::istream& in, MapFile::Plane& plane)
@@ -163,6 +174,9 @@ namespace Decay::Map
 #ifdef MAP_TAB_OFFSET
         out << "\t\t";
 #endif
+        // cross((p3 - p1), (p2 - p1)) != null
+        assert(glm::cross(glm::vec3(plane.PlaneVertices[2] - plane.PlaneVertices[0]), glm::vec3(plane.PlaneVertices[1] - plane.PlaneVertices[0])) != glm::vec3{});
+
         for(int i = 0; i < MapFile::Plane::PlaneVertexCount; i++)
         {
             auto& pv = plane.PlaneVertices[i];

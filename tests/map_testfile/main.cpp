@@ -12,6 +12,19 @@ int main(int argc, const char* argv[])
     MapFile map(in);
 
     std::cout << map;
+#ifdef DEBUG
+    for(const auto& entity : map.Entities)
+    {
+        for(const auto& brush : entity.Brushes)
+        {
+            for(const auto& plane : brush.Planes)
+            {
+                const auto normal = plane.Normal();
+                std::cout << "( " << std::to_string(normal.x) << " * x ) + ( " << std::to_string(normal.y) << " * y ) + ( " << std::to_string(normal.z) << " * z )" << " = " << std::to_string(plane.DistanceFromOrigin()) << std::endl;
+            }
+        }
+    }
+#endif
 
     {
         std::fstream out = std::fstream(argv[1] + std::string("_out"), std::ios_base::out);
