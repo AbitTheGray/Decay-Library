@@ -17,29 +17,21 @@ int main(int argc, const char* argv[])
         assert(std::find(fgd.IncludeFiles.begin(), fgd.IncludeFiles.end(), "base.fgd") != fgd.IncludeFiles.end());
 
         assert(fgd.Classes.size() == 7);
-        FgdFile::Class* clss = nullptr;
-        for(FgdFile::Class& c : fgd.Classes)
-        {
-            if(c.Codename == "info_player_spawn")
-            {
-                clss = &c;
-                break;
-            }
-        }
-        assert(clss != nullptr);
-        assert(clss->Type == "PointClass");
-        assert(clss->Options.size() == 1);
-        assert(clss->Options[0].Name == "base");
-        assert(clss->Options[0].Params.size() == 1);
-        assert(clss->Options[0].Params[0].Name == "Humanoid");
-        assert(clss->Options[0].Params[0].Quoted == false);
-        assert(clss->Description == "Player spawn point. You should have some for each team (except for deathmatch maps).");
-        assert(clss->Properties.size() == 1);
-        assert(clss->Properties[0].Codename == "team");
-        assert(clss->Properties[0].Type == "choices");
-        assert(clss->Properties[0].DisplayName == "Player team (default is deathmatch)");
-        assert(clss->Properties[0].DefaultValue == "0");
-        assert(clss->Properties[0].FlagsOrChoices.size() == 3);
+        assert(fgd.Classes.contains("info_player_spawn"));
+        FgdFile::Class& clss = fgd.Classes["info_player_spawn"];
+        assert(clss.Type == "PointClass");
+        assert(clss.Options.size() == 1);
+        assert(clss.Options[0].Name == "base");
+        assert(clss.Options[0].Params.size() == 1);
+        assert(clss.Options[0].Params[0].Name == "Humanoid");
+        assert(clss.Options[0].Params[0].Quoted == false);
+        assert(clss.Description == "Player spawn point. You should have some for each team (except for deathmatch maps).");
+        assert(clss.Properties.size() == 1);
+        assert(clss.Properties[0].Codename == "team");
+        assert(clss.Properties[0].Type == "choices");
+        assert(clss.Properties[0].DisplayName == "Player team (default is deathmatch)");
+        assert(clss.Properties[0].DefaultValue == "0");
+        assert(clss.Properties[0].FlagsOrChoices.size() == 3);
     }
     else if(std::string("base.fgd") == argv[1])
     {

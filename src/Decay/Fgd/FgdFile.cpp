@@ -146,26 +146,18 @@ namespace Decay::Fgd
         {
             for(const auto& toAddClass : toAdd.Classes)
             {
-                Class* existingClass = nullptr;
-                for(auto& clss : Classes)
+                if(!Classes.contains(toAddClass.first))
                 {
-                    if(clss.Codename == toAddClass.Codename)
-                    {
-                        existingClass = &clss;
-                        break;
-                    }
-                }
-                if(existingClass == nullptr)
-                {
-                    Classes.emplace_back(toAddClass);
+                    Classes.emplace(toAddClass);
                     continue;
                 }
+                auto& existingClass = Classes[toAddClass.first];
 
                 // Properties
-                for(const Property& toAddProperty : toAddClass.Properties)
+                for(const Property& toAddProperty : toAddClass.second.Properties)
                 {
                     Property* existingProperty = nullptr;
-                    for(auto& prop : existingClass->Properties)
+                    for(auto& prop : existingClass.Properties)
                     {
                         if(prop.Codename == toAddProperty.Codename)
                         {
@@ -175,7 +167,7 @@ namespace Decay::Fgd
                     }
                     if(existingProperty == nullptr)
                     {
-                        existingClass->Properties.emplace_back(toAddProperty);
+                        existingClass.Properties.emplace_back(toAddProperty);
                         continue;
                     }
 
@@ -218,12 +210,12 @@ namespace Decay::Fgd
                 }
 
                 // Input / Output
-                if(!toAddClass.IO.empty())
+                if(!toAddClass.second.IO.empty())
                 {
-                    for(const InputOutput& toAddIO : toAddClass.IO)
+                    for(const InputOutput& toAddIO : toAddClass.second.IO)
                     {
                         InputOutput* existingIO = nullptr;
-                        for(auto& io : existingClass->IO)
+                        for(auto& io : existingClass.IO)
                         {
                             if(io.Type == toAddIO.Type && io.Name == toAddIO.Name)
                             {
@@ -233,7 +225,7 @@ namespace Decay::Fgd
                         }
                         if(existingIO == nullptr)
                         {
-                            existingClass->IO.emplace_back(toAddIO);
+                            existingClass.IO.emplace_back(toAddIO);
                             continue;
                         }
 
@@ -344,26 +336,18 @@ namespace Decay::Fgd
         {
             for(const auto& toAddClass : toAdd.Classes)
             {
-                Class* existingClass = nullptr;
-                for(auto& clss : Classes)
+                if(!Classes.contains(toAddClass.first))
                 {
-                    if(clss.Codename == toAddClass.Codename)
-                    {
-                        existingClass = &clss;
-                        break;
-                    }
-                }
-                if(existingClass == nullptr)
-                {
-                    Classes.emplace_back(toAddClass);
+                    Classes.emplace(toAddClass);
                     continue;
                 }
+                auto& existingClass = Classes[toAddClass.first];
 
                 // Properties
-                for(const Property& toAddProperty : toAddClass.Properties)
+                for(const Property& toAddProperty : toAddClass.second.Properties)
                 {
                     Property* existingProperty = nullptr;
-                    for(auto& prop : existingClass->Properties)
+                    for(auto& prop : existingClass.Properties)
                     {
                         if(prop.Codename == toAddProperty.Codename)
                         {
@@ -373,7 +357,7 @@ namespace Decay::Fgd
                     }
                     if(existingProperty == nullptr)
                     {
-                        existingClass->Properties.emplace_back(toAddProperty);
+                        existingClass.Properties.emplace_back(toAddProperty);
                         continue;
                     }
 
@@ -413,12 +397,12 @@ namespace Decay::Fgd
                 }
 
                 // Input / Output
-                if(!toAddClass.IO.empty())
+                if(!toAddClass.second.IO.empty())
                 {
-                    for(const InputOutput& toAddIO : toAddClass.IO)
+                    for(const InputOutput& toAddIO : toAddClass.second.IO)
                     {
                         InputOutput* existingIO = nullptr;
-                        for(auto& io : existingClass->IO)
+                        for(auto& io : existingClass.IO)
                         {
                             if(io.Type == toAddIO.Type && io.Name == toAddIO.Name)
                             {
@@ -428,7 +412,7 @@ namespace Decay::Fgd
                         }
                         if(existingIO == nullptr)
                         {
-                            existingClass->IO.emplace_back(toAddIO);
+                            existingClass.IO.emplace_back(toAddIO);
                             continue;
                         }
 
@@ -446,12 +430,10 @@ namespace Decay::Fgd
         throw std::runtime_error("Not Implemented"); //TODO
     }
     */
-    /*
     void FgdFile::OrderClassesByDependency()
     {
         throw std::runtime_error("Not Implemented"); //TODO
     }
-    */
 }
 
 // Stream Operators
@@ -1636,7 +1618,9 @@ GOTO_OPTION_PARAM:
 #ifdef DEBUG
                 std::cout << clss.Codename << std::endl;
 #endif
-                fgd.Classes.emplace_back(clss);
+                if(fgd.Classes.contains(clss.Codename))
+                    throw std::runtime_error("Class '" + clss.Codename + "' already exists in the FGD file");
+                fgd.Classes.emplace(clss.Codename, clss);
             }
         }
         return in;
@@ -1683,7 +1667,7 @@ GOTO_OPTION_PARAM:
             out << '\n';
             out << "// " << fgd.Classes.size() << " classes\n";
             for(const auto& cls : fgd.Classes)
-                out << cls << '\n';
+                out << cls.second << '\n';
         }
 
         if(!fgd.AutoVisGroups.empty())

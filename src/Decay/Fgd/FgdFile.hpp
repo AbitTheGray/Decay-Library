@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Decay/Common.hpp"
+#include <unordered_map>
 
 #ifdef DECAY_JSON_LIB
 #   include "nlohmann/json.hpp"
@@ -251,7 +252,7 @@ namespace Decay::Fgd
             [[nodiscard]] inline bool operator!=(const Class& other) const { return !operator==(other); }
         };
     public:
-        std::vector<Class> Classes = {};
+        std::unordered_map<std::string, Class> Classes = {};
 
     // Map Size
     public:
