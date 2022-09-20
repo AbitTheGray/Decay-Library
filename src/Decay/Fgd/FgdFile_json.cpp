@@ -131,15 +131,15 @@ namespace nlohmann
 
 namespace Decay::Fgd
 {
-    nlohmann::json FgdFile::ExportAsJson() const
+    nlohmann::json FgdFile::ExportAsJson(bool orderClassesByDependency) const
     {
         using namespace nlohmann;
-        json j = {};
+        ordered_json j = {};
         {
             // Includes
             if(!IncludeFiles.empty())
             {
-                json& jObj = j["include_files"];
+                ordered_json& jObj = j["include_files"];
                 jObj = json::array();
                 for(const auto& include : IncludeFiles)
                     jObj.emplace_back(include);
@@ -154,7 +154,7 @@ namespace Decay::Fgd
             // Material Exclusion
             if(!MaterialExclusion.empty())
             {
-                json& jObj = j["material_exclusion"];
+                ordered_json& jObj = j["material_exclusion"];
                 jObj = json::array();
                 for(const auto& materialDir : MaterialExclusion)
                     jObj.emplace_back(materialDir);
@@ -163,7 +163,7 @@ namespace Decay::Fgd
             // Auto Vis Group
             if(!AutoVisGroups.empty())
             {
-                json& jObj = j["auto_vis_groups"];
+                ordered_json& jObj = j["auto_vis_groups"];
                 jObj = json::object();
                 for(const auto& avg : AutoVisGroups)
                 {
@@ -186,10 +186,38 @@ namespace Decay::Fgd
             // Classes
             if(!Classes.empty())
             {
-                json& jObj = j["classes"];
-                jObj = json::array();
-                for(const auto& clss : Classes)
-                    jObj.emplace_back(clss);
+                ordered_json& jObj = j["classes"];
+                jObj = ordered_json::array();//TODO Use nlohmann::ordered_json
+                if(orderClassesByDependency)
+                {
+                    std::vector<std::string> orderedClasses = OrderClassesByDependency();
+                    assert(orderedClasses.size() == Classes.size());
+                    for(const auto& clssName : orderedClasses)
+                    {
+                        bool found = false;
+                        for(const auto& clss : Classes) // Will process only 1 class with correct name (key of the map)
+                        {
+                            //THINK use lower-case name as `key` of `Classes` to be able to use lookup
+                            if(StringCaseInsensitiveEqual(clss.first, clssName)) // Correct class
+                            {
+                                json jClss = clss;
+                                jObj.emplace_back(std::move(jClss)); // Cannot use `clss` directly as it uses `json` and not `ordered_json`
+
+                                found = true;
+                                break;
+                            }
+                        }
+                        assert(found);
+                    }
+                }
+                else
+                {
+                    for(const auto& clss : Classes)
+                    {
+                        json jClss = clss;
+                        jObj.emplace_back(std::move(jClss)); // Cannot use `clss` directly as it uses `json` and not `ordered_json`
+                    }
+                }
             }
         }
         return j;

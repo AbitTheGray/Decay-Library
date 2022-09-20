@@ -153,25 +153,6 @@ namespace Decay
         return std::fstream(filename, std::ios_base::in);
     }
 
-    /// Checks whenever provided character is UTF-8 character (works for both first and any following characters).
-    [[nodiscard]] inline static bool IsUtf8Char(char c) { return (c & 0xb1000'0000) != 0; }
-    /// Get total number of UTF-8 characters (for one codepoint of value) from 1st character.
-    /// Returns `0` for invalid input.
-    [[nodiscard]] inline static int GetUtf8Chars(char c) noexcept
-    {
-        if(!IsUtf8Char(c))
-            return 1;
-        if((c & 0xb1100'0000) == 0xb1000'0000)
-            return 0;
-        if((c & 0xb1110'0000) == 0xb1100'0000)
-            return 2;
-        if((c & 0xb1111'0000) == 0xb1110'0000)
-            return 3;
-        if((c & 0xb1111'1000) == 0xb1111'0000)
-            return 4;
-        return 0;
-    }
-
     /// Read single UTF-8 char (1 to 4 bytes).
     /// Returns whenever reading succeeded.
     [[nodiscard]] inline static bool ReadChar(std::istream& in, std::vector<char>& str)

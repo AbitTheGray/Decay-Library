@@ -342,10 +342,10 @@ namespace Decay::Fgd
         /// Completely reworks the order of `Classes` based on `base(...)` option to make sure a class in listed AFTER its dependencies (=base classes first).
         /// Throws exception if a recursive dependency is found.
         /// Tries to use Alphabetical sorting when possible.
-        void OrderClassesByDependency();
+        std::vector<std::string> OrderClassesByDependency() const;
 
 #ifdef DECAY_JSON_LIB
-        [[nodiscard]] nlohmann::json ExportAsJson() const;
+        [[nodiscard]] nlohmann::json ExportAsJson(bool orderClassesByDependency = true) const;
 #endif
     };
 

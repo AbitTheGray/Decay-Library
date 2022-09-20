@@ -9,12 +9,32 @@ int main()
         std::fstream in = std::fstream("file.fgd", std::ios_base::in);
         FgdFile fgd(in);
 
-        nlohmann::json j = fgd.ExportAsJson();
+        {
+            std::cout << std::endl;
+            std::cout << "================" << std::endl;
+            std::cout << "| Not ordered  |" << std::endl;
+            std::cout << "================" << std::endl;
+            std::cout << std::endl;
+            nlohmann::json j = fgd.ExportAsJson(false);
 
-        std::cout << j.dump(2);
+            std::cout << j.dump(2);
 
-        std::fstream out = std::fstream("fgd.json", std::ios_base::out);
-        out << j.dump(2);
+            std::fstream out = std::fstream("fgd.json", std::ios_base::out);
+            out << j.dump(2);
+        }
+        {
+            std::cout << std::endl;
+            std::cout << "================" << std::endl;
+            std::cout << "| Ordered      |" << std::endl;
+            std::cout << "================" << std::endl;
+            std::cout << std::endl;
+            nlohmann::json j = fgd.ExportAsJson(true);
+
+            std::cout << j.dump(2);
+
+            std::fstream out = std::fstream("fgd_ordered.json", std::ios_base::out);
+            out << j.dump(2);
+        }
     }
 #endif
 }

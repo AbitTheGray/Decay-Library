@@ -1,7 +1,79 @@
 #include "FgdFile.hpp"
 
+#include <unordered_map>
 #include "Decay/CommonReadUtils.hpp"
 
+// Utility functions
+namespace Decay::Fgd
+{
+    template<typename TIn, typename TVal>
+    [[nodiscard]] inline bool ContainsAll(const TIn& inside, const TVal& values)
+    {
+        for(const auto& val : values)
+        {
+            bool found = false;
+            for(const auto& in : inside)
+            {
+                if(in == val)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                return false;
+        }
+        return true;
+    }
+    void AddClassAndDependencies(
+        std::vector<std::string>& orderedClasses, ///< Output
+        const std::string& className, ///< Name of the class currently being processed
+        const std::set<std::string>& classDependencies, ///< Direct base-classes of current class
+        std::unordered_map<std::string, std::set<std::string>>& dependencyGraph, ///< Dependency for the class (pre-processed "base" option)
+        std::vector<std::string>& recursionPrevention ///< Classes which were already processed
+    )
+    {
+        recursionPrevention.emplace_back(className);
+
+        if(classDependencies.empty()) // No base classes
+        {
+            orderedClasses.emplace_back(className);
+        }
+        else if(ContainsAll(orderedClasses, classDependencies)) // All base classes already mentioned
+        {
+            orderedClasses.emplace_back(className);
+        }
+        else // Some baseclass is missing
+        {
+            for(const std::string& dep : classDependencies)
+            {
+                auto it = dependencyGraph.find(dep);
+                if(it == dependencyGraph.end())
+                    throw std::runtime_error("Failed to order classes - class '" + className + "' depends on '" + dep + "' which does not exist"); //OPTIMIZE better string concat
+
+                // Not references to keep a copy
+                auto itName = it->first;
+                auto itDepend = it->second;
+
+                // Check for recursion
+                for(const auto& processedClass : recursionPrevention)
+                    if(processedClass == itName)
+                        throw std::runtime_error("Failed to process dependency for '" + itName + "' - recursion of base classes");
+
+                // Remove the class from list
+                dependencyGraph.erase(it);
+
+                // Process the `it` class
+                AddClassAndDependencies(orderedClasses, itName, itDepend, dependencyGraph, recursionPrevention);
+            }
+
+            // All base classes have been processed
+            orderedClasses.emplace_back(className);
+        }
+
+        recursionPrevention.resize(recursionPrevention.size() - 1); //OPTIMIZE Remove last but keep original capacity
+    }
+}
 namespace Decay::Fgd
 {
     FgdFile::FgdFile(std::istream& in)
@@ -430,9 +502,52 @@ namespace Decay::Fgd
         throw std::runtime_error("Not Implemented"); //TODO
     }
     */
-    void FgdFile::OrderClassesByDependency()
+    std::vector<std::string> FgdFile::OrderClassesByDependency() const
     {
-        throw std::runtime_error("Not Implemented"); //TODO
+        // key = class
+        // value = all of its base-classes
+        std::unordered_map<std::string, std::set<std::string>> dependencyGraph = {};
+        for(const auto& clss : Classes)
+        {
+            std::set<std::string> baseClasses = {};
+            for(const auto& option : clss.second.Options)
+            {
+                if(StringCaseInsensitiveEqual(option.Name, "base"))
+                {
+                    for(const auto& baseClass : option.Params)
+                    {
+                        assert(!baseClass.Quoted);
+                        baseClasses.emplace(ToLowerAscii(baseClass.Name));
+                    }
+                }
+            }
+            dependencyGraph[ToLowerAscii(clss.first)] = baseClasses;
+        }
+
+        std::vector<std::string> orderedClasses = {};
+        {
+            std::vector<std::string> recursionPrevention{};
+            recursionPrevention.reserve(10);
+
+            while(!dependencyGraph.empty())
+            {
+                auto it = dependencyGraph.begin();
+
+                // Not references to keep a copy
+                auto itName = it->first;
+                auto itDepend = it->second;
+
+                // Remove the class from list
+                dependencyGraph.erase(it);
+
+                // Process the `it` class
+                AddClassAndDependencies(orderedClasses, itName, itDepend, dependencyGraph, recursionPrevention);
+                assert(recursionPrevention.empty());
+            }
+        }
+        assert(dependencyGraph.empty());
+        assert(orderedClasses.size() == Classes.size());
+        return orderedClasses;
     }
 }
 

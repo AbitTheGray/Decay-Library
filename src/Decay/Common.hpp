@@ -110,6 +110,25 @@ namespace Decay
         return std::string();
     }
 
+    /// Checks whenever provided character is UTF-8 character (works for both first and any following characters).
+    [[nodiscard]] inline static bool IsUtf8Char(char c) { return (c & 0xb1000'0000) != 0; }
+    /// Get total number of UTF-8 characters (for one codepoint of value) from 1st character.
+    /// Returns `0` for invalid input.
+    [[nodiscard]] inline static int GetUtf8Chars(char c) noexcept
+    {
+        if(!IsUtf8Char(c))
+            return 1;
+        if((c & 0xb1100'0000) == 0xb1000'0000)
+            return 0;
+        if((c & 0xb1110'0000) == 0xb1100'0000)
+            return 2;
+        if((c & 0xb1111'0000) == 0xb1110'0000)
+            return 3;
+        if((c & 0xb1111'1000) == 0xb1111'0000)
+            return 4;
+        return 0;
+    }
+
     template<typename T>
     [[nodiscard]] inline bool IsMultipleOf2(T value)
     {
@@ -155,6 +174,37 @@ namespace Decay
     {
         // Temporary as `stricmp` and `strcasecmp` don't support std::string_view (const char* + length)
         return StringCaseInsensitiveEqual(std::string(str0), str1);
+    }
+
+    [[nodiscard]] inline std::string ToLowerAscii(std::string value) noexcept
+    {
+        for(int i = 0; i < value.length();)
+        {
+            char& c = value[i];
+            int utf8chars = GetUtf8Chars(c);
+            if(utf8chars == 1) // ASCII
+            {
+                if(c >= 'A' && c <= 'Z')
+                    c += 'a' - 'A';
+            }
+            i += utf8chars;
+        }
+        return value;
+    }
+    [[nodiscard]] inline std::string ToUpperAscii(std::string value) noexcept
+    {
+        for(int i = 0; i < value.length();)
+        {
+            char& c = value[i];
+            int utf8chars = GetUtf8Chars(c);
+            if(utf8chars == 1) // ASCII
+            {
+                if(c >= 'a' && c <= 'z')
+                    c -= 'a' - 'A';
+            }
+            i += utf8chars;
+        }
+        return value;
     }
 
     /// Extension always starts with period.
