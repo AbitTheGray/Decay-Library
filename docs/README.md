@@ -32,15 +32,15 @@ This helps with both development of this library and preservation of history.
   - [MAP](GoldSrc/MAP.md)
     - Text format defining map geometry
     - [Valve Developer Community](https://developer.valvesoftware.com/wiki/MAP_file_format)
-    - Map development format from [Valve Hammer Editor](https://developer.valvesoftware.com/wiki/Valve_Hammer_Editor)
+    - Map development format, predecessor for [RMF](GoldSrc/RMF.md)
   - [SC](GoldSrc/SC.md)
     - Client-side events
-- **Quake** - https://www.gamers.org/dEngine/quake/spec/quake-spec34/
+- **IdTech 2** (Quake 1/2) - https://www.gamers.org/dEngine/quake/spec/quake-spec34/
   - Bsp `v28` / `0x1C`
     - `Quake Shareware version, 22 June 96`
   - WAD 2
     - Same as [GoldSrc WAD 3](GoldSrc/WAD.md) but contains more types of entries
-  - MAP - should be compatible with [GoldSrc](GoldSrc/MAP.md) version but not tested
+  - MAP - very similar to [GoldSrc](GoldSrc/MAP.md) (which is based on it)
 - **Source**
   - BSP
     - Map

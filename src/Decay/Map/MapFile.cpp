@@ -96,6 +96,7 @@ namespace Decay::Map
         if(in.fail())
             throw std::runtime_error("Failed to read Map file");
     }
+    /*
     std::vector<MapFile::Polygon<3, double>> MapFile::Brush::Polygons() const
     {
         typedef MapFile::Polygon<3, double> Polygon3d;
@@ -103,6 +104,7 @@ namespace Decay::Map
 
         throw std::runtime_error("Not Implemented"); //TODO
     }
+    */
 }
 
 // Stream Operators
@@ -133,23 +135,23 @@ namespace Decay::Map
         int c = in.peek();
         if(c == '[') // GoldSrc
         {
-            ReadTextureVector(in, plane.S, plane.SOffset);
+            ReadTextureVector(in, plane.UAxis, plane.UOffset);
             IgnoreWhitespace(in);
-            ReadTextureVector(in, plane.T, plane.TOffset);
+            ReadTextureVector(in, plane.VAxis, plane.VOffset);
         }
-        else // Quake
+        else // IdTech2
         {
             std::vector<char> num;
 
-            plane.S = {0, 0, 0};
+            plane.UAxis = { 0, 0, 0};
             num = ReadOnlyNumber(in, true);
-            plane.SOffset = std::stoi(str(num));
+            plane.UOffset = std::stoi(str(num));
 
             IgnoreWhitespace(in);
 
-            plane.T = {0, 0, 0};
+            plane.VAxis = { 0, 0, 0};
             num = ReadOnlyNumber(in, true);
-            plane.TOffset = std::stoi(str(num));
+            plane.VOffset = std::stoi(str(num));
         }
 
         IgnoreWhitespace(in);
@@ -186,8 +188,8 @@ namespace Decay::Map
         assert(plane.Texture.find(' ') == std::string::npos);
         out << plane.Texture << ' ';
 
-        out << "[ " << plane.S.x << ' ' << plane.S.y << ' ' << plane.S.z << ' ' << plane.SOffset << " ] ";
-        out << "[ " << plane.T.x << ' ' << plane.T.y << ' ' << plane.T.z << ' ' << plane.TOffset << " ] ";
+        out << "[ " << plane.UAxis.x << ' ' << plane.UAxis.y << ' ' << plane.UAxis.z << ' ' << plane.UOffset << " ] ";
+        out << "[ " << plane.VAxis.x << ' ' << plane.VAxis.y << ' ' << plane.VAxis.z << ' ' << plane.VOffset << " ] ";
 
         out << plane.Rotation << ' ';
 
@@ -195,6 +197,7 @@ namespace Decay::Map
 
         return out;
     }
+
     std::istream& operator>>(std::istream& in, MapFile::Brush& brush)
     {
         assert(in.good());
@@ -252,6 +255,7 @@ namespace Decay::Map
         out << '}';
         return out;
     }
+
     std::istream& operator>>(std::istream& in, MapFile::Entity& entity)
     {
         assert(in.good());
@@ -328,6 +332,7 @@ namespace Decay::Map
         out << "}";
         return out;
     }
+
     std::istream& operator>>(std::istream& in, MapFile& mapFile)
     {
         assert(in.good());

@@ -13,18 +13,18 @@ namespace Decay::Map
         struct Plane
         {
             static const int PlaneVertexCount = 3;
-            glm::i32vec3 PlaneVertices[PlaneVertexCount];
-            std::string Texture;
+            glm::i32vec3 PlaneVertices[PlaneVertexCount]{};
+            std::string Texture{};
 
-            glm::i32vec3 S;
-            int32_t SOffset;
+            glm::i32vec3 UAxis;
+            int32_t UOffset = 0;
 
-            glm::i32vec3 T;
-            int32_t TOffset;
+            glm::i32vec3 VAxis;
+            int32_t VOffset = 0;
 
-            int Rotation;
+            int Rotation = 0;
 
-            glm::vec2 Scale;
+            glm::vec2 Scale = { 1, 1 };
 
             /// Calculates normal vector for the plane.
             /// Can be {0, 0, 0} for invalid planes.
@@ -54,14 +54,14 @@ namespace Decay::Map
                 if(Texture != other.Texture)
                     return false;
 
-                if(S != other.S)
+                if(UAxis != other.UAxis)
                     return false;
-                if(SOffset != other.SOffset)
+                if(UOffset != other.UOffset)
                     return false;
 
-                if(T != other.T)
+                if(VAxis != other.VAxis)
                     return false;
-                if(TOffset != other.TOffset)
+                if(VOffset != other.VOffset)
                     return false;
 
                 if(Rotation != other.Rotation)
@@ -81,10 +81,10 @@ namespace Decay::Map
         struct Brush
         {
             /// At least 4 planes creating convex object.
-            std::vector<Plane> Planes;
+            std::vector<Plane> Planes{};
 
             //TODO More utility functions
-            std::vector<Polygon<3, double>> Polygons() const;
+            [[nodiscard]] std::vector<Polygon<3, double>> Polygons() const;
 
             [[nodiscard]] inline bool operator==(const Brush& other) const
             {
@@ -100,11 +100,11 @@ namespace Decay::Map
         };
         struct Entity
         {
-            std::vector<Brush> Brushes;
-            std::unordered_map<std::string, std::string> Values;
+            std::unordered_map<std::string, std::string> Values{};
+            std::vector<Brush> Brushes{};
         };
 
-        std::vector<Entity> Entities;
+        std::vector<Entity> Entities{};
 
     public:
         MapFile() = default;

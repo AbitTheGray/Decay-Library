@@ -120,7 +120,7 @@ namespace Decay::Bsp::v30
             else
             {
                 assert(-surfaceEdge < Bsp->GetEdgeCount());
-                faceIndices[seii] = Bsp->GetRawEdges()[-surfaceEdge].Second; // Quake used ~ (swap bits) instead of - (swap sign)
+                faceIndices[seii] = Bsp->GetRawEdges()[-surfaceEdge].Second; // IdTech2 used ~ (swap bits) instead of - (swap sign)
             }
         }
 

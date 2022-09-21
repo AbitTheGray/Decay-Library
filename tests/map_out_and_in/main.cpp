@@ -22,10 +22,10 @@ void Test_Plane(const MapFile::Plane& original)
         assert(result.PlaneVertices[i] == original.PlaneVertices[i]);
     }
     assert(result.Texture == original.Texture);
-    assert(result.S == original.S);
-    assert(result.SOffset == original.SOffset);
-    assert(result.T == original.T);
-    assert(result.TOffset == original.TOffset);
+    assert(result.UAxis == original.UAxis);
+    assert(result.UOffset == original.UOffset);
+    assert(result.VAxis == original.VAxis);
+    assert(result.VOffset == original.VOffset);
     assert(result.Rotation == original.Rotation);
     assert(result.Scale == original.Scale);
     assert(result == original);
