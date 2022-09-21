@@ -74,6 +74,7 @@ namespace Decay::Fgd
         recursionPrevention.resize(recursionPrevention.size() - 1); //OPTIMIZE Remove last but keep original capacity
     }
 }
+
 namespace Decay::Fgd
 {
     FgdFile::FgdFile(std::istream& in)
@@ -83,9 +84,12 @@ namespace Decay::Fgd
             throw std::runtime_error("Failed to read FGD file");
     }
     std::vector<std::string> FgdFile::Class::ValidTypes = {
+        // GoldSrc + Source
         "BaseClass",
         "PointClass",
         "SolidClass",
+
+        // Source
         "NPCClass",
         "KeyFrameClass",
         "MoveClass",
@@ -310,12 +314,155 @@ namespace Decay::Fgd
             }
         }
     }
-    /*
-    void FgdFile::Subtract(const FgdFile& toSub, bool ignoreDescription, bool ignoreDisplayName)
+    void FgdFile::Subtract(const FgdFile& toSub, bool ignoreDescription, bool ignorePropertyDisplayName)
     {
-        throw std::runtime_error("Not Implemented"); //TODO
+        // Map Size
+        if(toSub.MapSize.has_value() && MapSize.has_value() && toSub.MapSize.value() == MapSize.value())
+            MapSize = {};
+
+        // Auto Vis Group
+        if(!toSub.AutoVisGroups.empty())
+        {
+            for(const auto& toSubAutoVisGroup : toSub.AutoVisGroups)
+            {
+                auto foundAVG = std::find_if(AutoVisGroups.begin(), AutoVisGroups.end(), [&toSubAutoVisGroup](const FgdFile::AutoVisGroup& existing) { return existing.DisplayName == toSubAutoVisGroup.DisplayName; });//THINK case-insensitive search?
+                if(foundAVG == AutoVisGroups.end()) // Not Found
+                    continue;
+
+                for(const auto& toSubAutoVisGroupChild : toSubAutoVisGroup.Child)
+                {
+                    auto foundAVGC = std::find_if(foundAVG->Child.begin(), foundAVG->Child.end(), [&toSubAutoVisGroupChild](const FgdFile::AutoVisGroup_Child& existing) { return existing.DisplayName == toSubAutoVisGroupChild.DisplayName; });//THINK case-insensitive search?
+                    if(foundAVGC == foundAVG->Child.end()) // Not Found
+                        continue;
+
+                    foundAVG->Child.erase(foundAVGC);
+                }
+
+                if(foundAVG->Child.empty())
+                    AutoVisGroups.erase(foundAVG);
+            }
+        }
+
+        // Includes
+        if(!toSub.IncludeFiles.empty())
+        {
+            for(const auto& includeFile : toSub.IncludeFiles)
+            {
+                auto foundFile = std::find(IncludeFiles.begin(), IncludeFiles.end(), includeFile);//THINK case-insensitive search?
+                if(foundFile != IncludeFiles.end()) // Found -> Remove
+                    IncludeFiles.erase(foundFile);
+            }
+        }
+
+        // Material Exclusions
+        if(!toSub.MaterialExclusion.empty())
+        {
+            for(const auto& matExclusion : toSub.MaterialExclusion)
+            {
+                auto foundMaterial = std::find(MaterialExclusion.begin(), MaterialExclusion.end(), matExclusion);//THINK case-insensitive search?
+                if(foundMaterial != MaterialExclusion.end()) // Found -> Remove
+                    MaterialExclusion.erase(foundMaterial);
+            }
+        }
+
+        // Classes
+        if(!toSub.Classes.empty())
+        {
+            // Process classes
+            for(const auto& clss : toSub.Classes)
+            {
+                auto foundClass = Classes.find(clss.first);
+                if(foundClass == Classes.end()) // Not found
+                    continue;
+
+                // Process properties
+                {
+                    auto& foundClassProperties = foundClass->second.Properties;
+                    for(const auto& prop : clss.second.Properties)
+                    {
+                        auto foundProperty = std::find_if(foundClassProperties.begin(), foundClassProperties.end(), [&prop](const FgdFile::Property& existing) { return existing.Codename == prop.Codename; });//THINK case-insensitive search?
+                        if(foundProperty == foundClassProperties.end()) // Not Found
+                            continue;
+
+                        bool isSame = prop.Type == foundProperty->Type;
+                        isSame &= prop.ReadOnly == foundProperty->ReadOnly;
+                        isSame &= (ignoreDescription || prop.Description == foundProperty->Description);
+                        isSame &= (ignorePropertyDisplayName || prop.DisplayName == foundProperty->DisplayName);
+                        isSame &= prop.DefaultValue == foundProperty->DefaultValue;
+                        isSame &= prop.FlagsOrChoices.size() == foundProperty->FlagsOrChoices.size();
+                        if(!prop.FlagsOrChoices.empty())
+                            for(int i = 0; i < prop.FlagsOrChoices.size(); i++)
+                                isSame &= prop.FlagsOrChoices[i] == foundProperty->FlagsOrChoices[i];
+
+                        if(isSame)
+                            foundClassProperties.erase(foundProperty);
+                    }
+                }
+
+                // Process IO
+                {
+                    auto& foundClassIO = foundClass->second.IO;
+                    for(const auto& io : clss.second.IO)
+                    {
+                        auto foundIO = std::find_if(foundClassIO.begin(), foundClassIO.end(), [&io](const FgdFile::InputOutput& existing) { return existing.Name == io.Name; });//THINK case-insensitive search?
+                        if(foundIO == foundClassIO.end()) // Not Found
+                            continue;
+
+                        bool isSame = io.Type == foundIO->Type;
+                        isSame &= io.ParamType == foundIO->ParamType;
+                        isSame &= (ignoreDescription || io.Description == foundIO->Description);
+
+                        if(isSame)
+                            foundClassIO.erase(foundIO);
+                    }
+                }
+
+                // Delete class?
+                {
+                    bool isSame = clss.second.Type == foundClass->second.Type;
+                    isSame &= (ignoreDescription || clss.second.Description == foundClass->second.Description);
+
+                    // Options
+                    {
+                        isSame &= clss.second.Options.size() == foundClass->second.Options.size();
+                        for(int oi = 0; isSame && oi < clss.second.Options.size(); oi++)
+                        {
+                            const auto& clssOption = clss.second.Options[oi];
+                            const auto& foundOption = foundClass->second.Options[oi];
+
+                            isSame &= StringCaseInsensitiveEqual(clssOption.Name, foundOption.Name);
+                            isSame &= clssOption.Params.size() == foundOption.Params.size();
+
+                            // Option Parameters
+                            {
+                                auto foundOptionParams = foundOption.Params;
+                                for(int opi = 0; isSame && opi < clssOption.Params.size(); opi++) // Order-independent comparison
+                                {
+                                    const auto& clssOptionParam = clssOption.Params[oi];
+                                    auto foundOptionParam = std::find_if(foundOptionParams.begin(), foundOptionParams.end(), [&clssOptionParam](const FgdFile::OptionParam& existing) { return existing.Quoted == clssOptionParam.Quoted && StringCaseInsensitiveEqual(existing.Name, clssOptionParam.Name); });
+                                    if(foundOptionParam == foundOptionParams.end()) // Not Found
+                                    {
+                                        isSame = false;
+                                        break;
+                                    }
+                                    else // Found
+                                    {
+                                        foundOptionParams.erase(foundOptionParam);
+                                    }
+                                }
+                                if(!foundOptionParams.empty())
+                                    isSame = false;
+                            }
+                        }
+                    }
+                    if(isSame && foundClass->second.Properties.empty() && foundClass->second.IO.empty()) // No additional properties/io
+                    {
+                        Classes.erase(foundClass); // Delete the class, they are same (or similar enough)
+                    }
+                }
+            }
+        }
     }
-    */
     void FgdFile::Include(const FgdFile& toAdd)
     {
         // Map Size
@@ -496,12 +643,23 @@ namespace Decay::Fgd
             }
         }
     }
-    /*
     void FgdFile::ProcessIncludes(const std::filesystem::path& relativeToDirectory, std::vector<std::filesystem::path>& filesToIgnore)
     {
-        throw std::runtime_error("Not Implemented"); //TODO
+        for(const std::string& includeFile : IncludeFiles)
+        {
+            if(includeFile.empty())
+                continue; // Empty file
+            std::filesystem::path fullIncludeFile = relativeToDirectory / includeFile; //THINK Process for absolute path?
+
+            if(std::find(filesToIgnore.begin(), filesToIgnore.end(), fullIncludeFile) != filesToIgnore.end())
+                continue; // File should be ignored / already processed
+            filesToIgnore.emplace_back(fullIncludeFile);
+
+            std::fstream in(fullIncludeFile, std::ios_base::in | std::ios_base::binary);
+            FgdFile includeFgd(in);
+            Include(includeFgd);
+        }
     }
-    */
     std::vector<std::string> FgdFile::OrderClassesByDependency() const
     {
         // key = class

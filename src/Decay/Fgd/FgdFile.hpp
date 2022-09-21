@@ -54,10 +54,10 @@ namespace Decay::Fgd
     public:
         struct OptionParam
         {
-            std::string Name;
+            std::string Name{};
             /// true = `Name` contains value.
             /// false = `Name` contains property which then contains the value.
-            bool Quoted;
+            bool Quoted = false;
 
             [[nodiscard]] inline operator bool() const noexcept { return Name.empty() && !Quoted; }
 
@@ -73,8 +73,8 @@ namespace Decay::Fgd
         };
         struct Option
         {
-            std::string Name;
-            std::vector<OptionParam> Params;
+            std::string Name{};
+            std::vector<OptionParam> Params{};
 
             [[nodiscard]] inline bool operator==(const Option& other) const
             {
@@ -95,9 +95,9 @@ namespace Decay::Fgd
         {
             /// `choices`: New value to set, can be `int`, `float` or `string`
             /// `flags`: Value to add or subtract, can only be `int`, for bit index use `FlagOrder()`
-            std::string Index;
+            std::string Index{};
             /// Display text
-            std::string DisplayName;
+            std::string DisplayName{};
             /// Valid only for `flags`
             bool Default = false;
 
@@ -129,20 +129,20 @@ namespace Decay::Fgd
         };
         struct Property
         {
-            std::string Codename;
+            std::string Codename{};
             // (
-            std::string Type;
+            std::string Type{};
             // )
-            bool ReadOnly;
+            bool ReadOnly = false;
             // :
-            std::string DisplayName;
+            std::string DisplayName{};
             // :
-            std::string DefaultValue;
+            std::string DefaultValue{};
             // :
-            std::string Description;
+            std::string Description{};
             // =
             /// Values for `choices` or `options` types.
-            std::vector<PropertyFlagOrChoice> FlagsOrChoices;
+            std::vector<PropertyFlagOrChoice> FlagsOrChoices{};
 
             [[nodiscard]] inline bool operator==(const Property& other) const
             {
@@ -176,13 +176,13 @@ namespace Decay::Fgd
         };
         struct InputOutput
         {
-            InputOutputType Type;
+            InputOutputType Type{};
             //
-            std::string Name;
+            std::string Name{};
             // (
-            std::string ParamType;
+            std::string ParamType{};
             // ) :
-            std::string Description;
+            std::string Description{};
 
             [[nodiscard]] inline bool operator==(const InputOutput& other) const
             {
@@ -196,15 +196,15 @@ namespace Decay::Fgd
             static std::vector<std::string> ValidTypes;
 
             // @
-            std::string Type; ///< Without '@' at the beginning.
-            std::vector<Option> Options;
+            std::string Type{}; ///< Without '@' at the beginning.
+            std::vector<Option> Options{};
             // =
-            std::string Codename;
+            std::string Codename{};
             // :
-            std::string Description;
+            std::string Description{};
             // [
-            std::vector<Property> Properties;
-            std::vector<InputOutput> IO;
+            std::vector<Property> Properties{};
+            std::vector<InputOutput> IO{};
             // ]
 
             inline static bool HasType(const std::vector<InputOutput>& ios, InputOutputType type) noexcept
@@ -262,8 +262,8 @@ namespace Decay::Fgd
     public:
         struct AutoVisGroup_Child
         {
-            std::string DisplayName;
-            std::set<std::string> EntityClasses;
+            std::string DisplayName{};
+            std::set<std::string> EntityClasses{};
 
             [[nodiscard]] inline bool operator==(const AutoVisGroup_Child& other) const
             {
@@ -284,8 +284,8 @@ namespace Decay::Fgd
         };
         struct AutoVisGroup
         {
-            std::string DisplayName;
-            std::vector<AutoVisGroup_Child> Child;
+            std::string DisplayName{};
+            std::vector<AutoVisGroup_Child> Child{};
 
             [[nodiscard]] inline bool operator==(const AutoVisGroup& other) const
             {
@@ -331,7 +331,7 @@ namespace Decay::Fgd
         void Add(const FgdFile& toAdd);
         /// Opposite to `Add(FgdFile)`, can be used to generate the parameter for `Add(FgdFile)`.
         /// Use to minimize current FGD using `Base.fgd`.
-        void Subtract(const FgdFile& toSub, bool ignoreDescription, bool ignoreDisplayName);
+        void Subtract(const FgdFile& toSub, bool ignoreDescription, bool ignorePropertyDisplayName);
         /// TL;DR: Add older file.
         /// Include acts similar to `Add` but prioritizes data in `this` FGD and not `toAdd` one.
         void Include(const FgdFile& toAdd);
