@@ -121,8 +121,6 @@ if(DECAY_LIBRARY_API)
     add_library(Decay::LibraryAPI ALIAS DecayLib_API)
 
     target_link_libraries(DecayLib_API DecayLib)
-    target_link_libraries(DecayLib_API -static-libgcc -static-libstdc++ stdc++fs)
-    target_link_libraries(DecayLib_API glm)
 endif()
 
 #--------------------------------
@@ -136,8 +134,7 @@ if(DECAY_LIBRARY_CMD)
     add_executable(Decay::LibraryCmd ALIAS DecayLib_Command)
 
     target_link_libraries(DecayLib_Command DecayLib)
-    target_link_libraries(DecayLib_Command -static-libgcc -static-libstdc++ stdc++fs)
-    target_link_libraries(DecayLib_Command glm)
+    target_link_libraries(DecayLib_Command cxxopts)
 
     target_include_directories(DecayLib_Command PRIVATE lib/stb/)
 endif()

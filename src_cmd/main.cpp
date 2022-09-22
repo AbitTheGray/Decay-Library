@@ -8,7 +8,6 @@ std::unordered_map<std::string, Command> Commands = {
         Command{
             Exec_help,
             Exec_help,
-            {},
             "Show this help"
         }
     },
@@ -17,7 +16,6 @@ std::unordered_map<std::string, Command> Commands = {
         Command{
             Exec_bsp2obj,
             Help_bsp2obj,
-            "<map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]",
             "Extract OBJ (model) from BSP (map), including packed textures"
         }
     },
@@ -26,7 +24,6 @@ std::unordered_map<std::string, Command> Commands = {
         Command{
             Exec_bsp2wad,
             Help_bsp2wad,
-            "<map.bsp> [map.wad] [new_map.bsp]",
             "Extracts textures from BSP to WAD"
         }
     },
@@ -35,7 +32,6 @@ std::unordered_map<std::string, Command> Commands = {
         Command{
             Exec_wad_add,
             Help_wad_add,
-            "<file.wad> <texture...",
             "Add textures to WAD"
         }
     },
@@ -44,7 +40,6 @@ std::unordered_map<std::string, Command> Commands = {
         Command{
             Exec_bsp_lightmap,
             Help_bsp_lightmap,
-            "<map.bsp> <lightmap.png>",
             "Extracts lightmap texture"
         }
     }
@@ -80,9 +75,6 @@ int Exec_help(int argc, const char** argv)
         {
             auto& command = it.second;
             std::cout << "\t" << ansi_commandName << it.first << ansi_reset;
-
-            if(!command.Help_Params.empty())
-                std::cout << ' ' << command.Help_Params;
 
             assert(!command.Help_Description.empty());
             std::cout << "\t\t" << ansi_description << command.Help_Description << ansi_reset << std::endl;

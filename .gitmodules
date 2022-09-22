@@ -10,3 +10,7 @@
 	path = lib/nlohmann_json
 	url = git@github.com:nlohmann/json.git
 	branch = master
+[submodule "cxxopts"]
+	path = lib/cxxopts
+	url = git@github.com:jarro2783/cxxopts.git
+	branch = master

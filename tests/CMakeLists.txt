@@ -2,6 +2,7 @@
 # command-line
 #--------------------------------
 
+add_subdirectory(cmd_help)
 add_subdirectory(cmd)
 
 #--------------------------------

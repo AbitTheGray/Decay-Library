@@ -11,7 +11,6 @@ struct Command
 {
     int (*Exec)(int argc, const char** argv);
     int (*HelpExec)(int argc, const char** argv);
-    std::string Help_Params;
     std::string Help_Description;
 };
 

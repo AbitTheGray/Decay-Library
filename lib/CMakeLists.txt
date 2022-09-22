@@ -20,3 +20,21 @@ if(NOT TARGET nlohmann_json)
     set(JSON_Install OFF)
     add_subdirectory(nlohmann_json)
 endif()
+
+
+
+#--------------------------------
+# cxxopts
+# Command-line parsing library
+#--------------------------------
+
+if(NOT TARGET cxxopts)
+    set(CXXOPTS_BUILD_EXAMPLES OFF)
+    set(CXXOPTS_BUILD_TESTS OFF)
+    set(CXXOPTS_ENABLE_INSTALL OFF)
+    set(CXXOPTS_ENABLE_WARNINGS OFF)
+
+    set(CXXOPTS_USE_UNICODE_HELP OFF)
+
+    add_subdirectory(cxxopts)
+endif()
