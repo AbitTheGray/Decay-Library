@@ -9,6 +9,6 @@
   -[ ] Document in [MAP.md](docs/GoldSrc/MAP.md) how to convert brush into polygons
   -[ ] Cleanup entity properties using [FGD file](docs/Source/FGD.md)
 - Commands
-  -[ ] Rework implementation
+  -[ ] WIP - Rework implementation
   -[ ] Add FGD commands
   -[ ] Add MAP commands

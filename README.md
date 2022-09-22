@@ -60,69 +60,106 @@ Look into `tests` directory for different usages.
 All tests expect `half-life` directory (the one containing `valve`, `cstrike`, `platform`...) in project directory (same as `lib`, `src`...).
 It is recommended to keep it where it is and use [Symbolic link](https://en.wikipedia.org/wiki/Symbolic_link).
 
-### Command-line utility
+## Command-line utility
 
 Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to disable.
 
-- `help` = display information how to use the command-line utility.
+### Help
+`help`
 
-#### BSP
+Display information how to use the command-line utility.
 
-- ~~`bsp_optimize <map.bsp>` - Decreases size of BSP file~~
-  - At this time, `bsp2wad` can be used to minimize BSP file but generated WAD file (it may not create one if the BSP does not have packed textures)
-- `bsp2obj <map.bsp> [file.obj] [file.mtl] [textures_dir=`file.mtl`/../textures]` = converts BSP to OBJ + MTD, exports textures into own directory.
-  - Used textures without data are exported only as placeholders (with correct dimensions).
-- ~~`bsp2wad <map.bsp> [map.wad] [new_map.bsp]`~~ - Extracts textures from BSP to WAD
-  - If `new_map.bsp` is supplied, new BSP is created without those textures (only referenced, not packed)
-    - `new_map.bsp` **DOES NOT** reference the `map.wad` file!
-- ~~`bsp2png <map.bsp> <texture_dir=.>` - Extracts textures from BSP to PNG files~~
-- `bsp_lightmap <map.bsp> [lightmap.png]` = extracts per-face lightmap and packs them into few big lightmaps
-  - Big lightmap(s) have "holes" (unused pixels)
-- ~~`bsp_wadref <map.bsp> <wad...` - Search `<wad...` (files & dirs) for textures and unpack them from BSP where possible~~
-  - ~~This is reverse action to `-nowadtextures` or `-wadinclude` for [`hlcsg.exe`](http://zhlt.info/command-reference.html#hlcsg)~~
-  - ~~Also acts like `-wadautodetect` and removes reference to unused WAD files~~
-    - ~~Won't do anything if there are textures which could not be found in provided WAD files~~
-  - ~~Prints all used WADs into standard output, including list of used textures from the WAD~~
-- ~~`bsp_entity_extract <map.bsp> <entities.txt>` - Extracts entities to text document~~
-  - ~~Total number of entities is written into standard output~~
-- ~~`bsp_entity_apply <map.bsp> <entities.txt>` - Applies entities back into BSP (after `bsp_entity`)~~
-- ~~`bsp_entity_validate <map.bsp/entities.txt> <gamemode.fgd>` - Validates entities against FGD file~~
+### BSP -> OBJ
+`bsp2obj`
 
-#### WAD
+| Argument                         | Required | Description                           |
+|----------------------------------|:--------:|---------------------------------------|
+| `--file <map.bsp>`               |    ✓     | Source BSP map file                   |
+| `--obj <map.obj>`                |          | 3D model of the map                   |
+| `--mtl <map.mtl>`                |          | Material + texture assignment file    |
+| `--textures <texture_directory>` |          | Directory to store extracted textures |
 
-- ~~`wad_optimize <file.wad>` - Decreases size of WAD file~~
-- `wad_add <file.wad> <texture...` = add texture(s) into WAD
-  - Does not parse textures, only WAD header
+### BSP -> WAD
+`bsp2wad`
 
-#### SPR
+| Argument                                     | Required | Description                                       |
+|----------------------------------------------|:--------:|---------------------------------------------------|
+| `--file <map.bsp>`                           |    ✓     | Source BSP map file                               |
+| `--wad <map.wad>`                            |          | Add (or create) packed textures from BSP into WAD |
+| `--newbsp <new_map.bsp>`                     |          | Save BSP map with no packed textures              |
+| ~~`--newbspwad <\half-life\valve\map.bsp>`~~ |          | ~~Path to add into map's "wad" path~~             |
 
-- ~~`spr2png <file.spr>` - Converts sprite to PNG~~
+### BSP Lightmap
+`bsp_lightmap`
 
-#### MDL
+| Argument                    | Required | Description                      |
+|-----------------------------|:--------:|----------------------------------|
+| `--file <map.bsp>`          |    ✓     | Source BSP map file              |
+| `--lightmap <lightmap.png>` |          | Where to save generated lightmap |
 
-- ~~`mdl2obj <file.mdl> [file.obj] [file.mtl] [pose] [pose_time=0]` - Converts model to OBJ, optionally at specified pose (and time)~~
-  - ~~Prints all available poses into standard output~~
+### BSP Entity
+~~`bsp_entity`~~ - NOT IMPLEMENTED
 
-#### FGD
+| Argument                         | Required | Description                                                                                    |
+|----------------------------------|:--------:|------------------------------------------------------------------------------------------------|
+| `--file <map.bsp>`               |    ✓     | Source BSP map file                                                                            |
+| `--extract <entities>`           |          | Extract entity info from the map                                                               |
+| `--extract_json <entities.json>` |          | Extract entity info from the map as JSON                                                       |
+| `--add <entities>`               |          | Add entity info at the end of existing entity info in the map                                  |
+| `--add_json <entities.json>`     |          | Add entity info (JSON) at the end of existing entity info in the map                           |
+| `--replace <entities>`           |          | Replace entity info in the map                                                                 |
+| `--replace_json <entities.json>` |          | Replace entity info in the map using JSON-formatted entity info                                |
+| `--validate <gamemode.fgd>`      |          | Validate map's entities against FGD and print additional/missing values (into standard output) |
 
-- ~~`fgd2json <file.fgd>`~~
-  - ~~Converts all entities to JSON structure, implements base classes~~
-- ~~`format <in.fgd> <out.fgd>`~~
-- ~~`combine <out.fgd> <in.fgd...`~~
-  - Combine multiple FGD files into single one
+- Make sure you reference same entities when using `--add` and `--replace` (or their JSON variants)
+
+### Add texture to WAD
+`wad_add`
+
+| Argument                  | Required | Description                                       |
+|---------------------------|:--------:|---------------------------------------------------|
+| `--file <file.wad>`       |    ✓     | Source WAD file                                   |
+| `--texture <texture.png>` |          | Textures to add to the BSP                        |
+| ~~`--font <font.png>`~~   |          | ~~16x16 font characters image to add to the BSP~~ |
+| ~~`--image <image.png>`~~ |          | ~~Image to add to the BSP~~                       |
+
+- `--textures` is not needed after other arguments to allow you to add multiple textures easier
+    - example: `--file map.bsp texture1.png texture2.png texture3.png`
+
+### Optimize WAD
+~~`wad_optimize`~~ - NOT IMPLEMENTED
+
+| Argument            | Required | Description                                       |
+|---------------------|:--------:|---------------------------------------------------|
+| `--file <file.wad>` |    ✓     | Source WAD file                                   |
+| `--out [file.wad]`  |          | Textures to add to the BSP                        |
+
+### MAP -> OBJ
+~~`map_obj`~~ - NOT IMPLEMENTED
+
+### FGD -> JSON
+~~`fgd_json`~~ - NOT IMPLEMENTED
+
+### Combine FGD files
+~~`fgd_combine`~~ - NOT IMPLEMENTED
+
+- Can also process `@Include` to include referenced files
 
 ## Linux tools
 
 Inside `linux` directory, there are [MIME type](https://en.wikipedia.org/wiki/Media_type#Mime.types) definitions for supported BSP and WAD files for [KDE](https://kde.org/).
 
 They recommend having only 1 `.xml` file per application but several are used sor simplicity.
-All have weight `80` (same as `application/x-doom`) but are defined by file headers.
 
 | MIME                        | Definition File     | File type      |
 |-----------------------------|---------------------|----------------|
 | `application/goldsrc-bsp30` | `goldsrc-bsp30.xml` | BSP version 30 |
 | `application/goldsrc-wad2`  | `goldsrc-wad2.xml`  | WAD2           |
 | `application/goldsrc-wad3`  | `goldsrc-wad3.xml`  | WAD3           |
+| `application/goldsrc-map`   | `goldsrc-map.xml`   | MAP            |
+| `application/goldsrc-fgd`   | `goldsrc-fgd.xml`   | MAP            |
+
+`bsp30` and `wad*` have weight `80` (same as `application/x-doom`) but are defined by file headers.
 
 ## Game Engines
 

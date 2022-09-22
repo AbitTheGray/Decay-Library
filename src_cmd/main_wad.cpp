@@ -12,13 +12,13 @@ cxxopts::Options Options_wad_add(int argc, const char** argv)
        ("f,file", "WAD file", cxxopts::value<std::string>(), "<file.wad>")
     ;
     options.add_options("Output")
-       ("textures", "Textures to add (filesystem paths)", cxxopts::value<std::vector<std::string>>(), "<texture.png>")
+       ("texture", "Textures to add (filesystem paths)", cxxopts::value<std::vector<std::string>>(), "<texture.png>")
         //TODO images
         //TODO fonts
     ;
 
     options.positional_help("-f <file.wad> <textures...");
-    options.parse_positional("textures");
+    options.parse_positional("texture");
     return options;
 }
 int Help_wad_add(int argc, const char** argv)

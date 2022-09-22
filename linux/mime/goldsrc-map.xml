@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+    <mime-type type="application/goldsrc-fgd">
+        <comment>GoldSource MAP</comment>
+        <glob pattern="*.map" weight="80"/>
+        <magic priority="90">
+            <match type="string" offset="0" value="{"/>
+        </magic>
+        <acronym>MAP</acronym>
+        <expanded-acronym>Map</expanded-acronym>
+    </mime-type>
+</mime-info>

@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+    <mime-type type="application/goldsrc-fgd">
+        <comment>GoldSource FGD</comment>
+        <glob pattern="*.fgd" weight="80"/>
+        <acronym>FGD</acronym>
+        <expanded-acronym>Forge Game Data</expanded-acronym>
+    </mime-type>
+</mime-info>
