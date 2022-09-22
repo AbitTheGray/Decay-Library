@@ -2,15 +2,28 @@
 
 #include "Decay/Common.hpp"
 
-int Exec_bsp2obj(int argc, const char** argv)
+#pragma region bsp2obj
+int Help_bsp2obj(int argc, const char** argv)
 {
     if(argc == 0)
+        std::cout << "bsp2obj ";
+    else
+        std::cout << argv[0] << ' ';
+    std::cout << "<map.bsp> [file.obj] [file.mtl] [textures_dir=`file.mtl`/../textures]" << std::endl;
+
+    std::cout << "Converts BSP to OBJ with optional material file and texture export." << std::endl;
+    std::cout << "Textures mentioned but not packed inside the BSP will contain placeholder data." << std::endl;
+    return 0;
+}
+int Exec_bsp2obj(int argc, const char** argv)
+{
+    if(argc <= 1) // Only script name
     {
         std::cerr << "No path to BSP provided" << std::endl;
         return 1;
     }
 
-    std::filesystem::path bspFilename(argv[0]);
+    std::filesystem::path bspFilename(argv[1]);
     {
         if(bspFilename.empty())
         {
@@ -33,11 +46,11 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     std::filesystem::path objFilename;
     {
-        if(argc == 1)
+        if(argc == 2)
             objFilename = std::filesystem::path(bspFilename).replace_extension(".obj");
         else
         {
-            objFilename = argv[1];
+            objFilename = argv[2];
             if(objFilename.empty())
             {
                 std::cerr << "OBJ file path is empty" << std::endl;
@@ -50,9 +63,9 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     std::filesystem::path mtlFilename;
     {
-        if(argc >= 3)
+        if(argc >= 4)
         {
-            mtlFilename = argv[2];
+            mtlFilename = argv[3];
             if(mtlFilename.empty())
             {
                 std::cerr << "MTL file path is empty" << std::endl;
@@ -67,9 +80,9 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     std::filesystem::path texturesDirectory;
     {
-        if(argc >= 4)
+        if(argc >= 5)
         {
-            texturesDirectory = argv[3];
+            texturesDirectory = argv[4];
             if(texturesDirectory.empty())
             {
                 std::cerr << "Textures directory path is empty" << std::endl;
@@ -117,8 +130,8 @@ int Exec_bsp2obj(int argc, const char** argv)
     try
     {
         tree->ExportFlatObj(
-                objFilename,
-                std::filesystem::relative(mtlFilename, objFilename.parent_path())
+            objFilename,
+            std::filesystem::relative(mtlFilename, objFilename.parent_path())
         );
     }
     catch(std::runtime_error& ex)
@@ -132,9 +145,9 @@ int Exec_bsp2obj(int argc, const char** argv)
     try
     {
         tree->ExportMtl(
-                mtlFilename,
-                std::filesystem::relative(texturesDirectory, mtlFilename.parent_path()),
-                ".png"
+            mtlFilename,
+            std::filesystem::relative(texturesDirectory, mtlFilename.parent_path()),
+            ".png"
         );
     }
     catch(std::runtime_error& ex)
@@ -148,9 +161,9 @@ int Exec_bsp2obj(int argc, const char** argv)
     try
     {
         tree->ExportTextures(
-                texturesDirectory,
-                ".png",
-                true
+            texturesDirectory,
+            ".png",
+            true
         );
     }
     catch(std::runtime_error& ex)
@@ -163,17 +176,31 @@ int Exec_bsp2obj(int argc, const char** argv)
 
     return 0;
 }
+#pragma endregion
 
-int Exec_bsp2wad(int argc, const char** argv)
+#pragma region bsp2wad
+int Help_bsp2wad(int argc, const char** argv)
 {
     if(argc == 0)
+        std::cout << "bsp2wad ";
+    else
+        std::cout << argv[0] << ' ';
+    std::cout << "<map.bsp> [map.wad] [new_map.bsp]" << std::endl;
+
+    std::cout << "Extracts textures from BSP to WAD." << std::endl;
+    std::cout << "If `new_map.bsp` is supplied, new BSP is created without those textures (only referenced, not packed). It won't reference the new WAD file." << std::endl;
+    return 0;
+}
+int Exec_bsp2wad(int argc, const char** argv)
+{
+    if(argc <= 1) // Only script name
     {
         std::cerr << "No path to BSP provided" << std::endl;
         return 1;
     }
 
     // BSP
-    std::filesystem::path bspFilename(argv[0]);
+    std::filesystem::path bspFilename(argv[1]);
     {
         if(bspFilename.empty())
         {
@@ -197,11 +224,11 @@ int Exec_bsp2wad(int argc, const char** argv)
     // WAD
     std::filesystem::path wadFilename;
     {
-        if(argc == 1)
+        if(argc == 2)
             wadFilename = std::filesystem::path(bspFilename).replace_extension(".wad");
         else
         {
-            wadFilename = argv[1];
+            wadFilename = argv[2];
 
             if(wadFilename.empty())
             {
@@ -244,9 +271,9 @@ int Exec_bsp2wad(int argc, const char** argv)
 
 
     // BSP without packed textures
-    if(argc >= 3)
+    if(argc >= 4)
     {
-        std::filesystem::path outBspFilename(argv[2]);
+        std::filesystem::path outBspFilename(argv[3]);
         {
             if(outBspFilename.empty())
             {
@@ -274,16 +301,30 @@ int Exec_bsp2wad(int argc, const char** argv)
 
     return 0;
 }
+#pragma endregion
 
-int Exec_bsp_lightmap(int argc, const char** argv)
+#pragma region bsp_lightmap
+int Help_bsp_lightmap(int argc, const char** argv)
 {
     if(argc == 0)
+        std::cout << "bsp_lightmap ";
+    else
+        std::cout << argv[0] << ' ';
+    std::cout << "<map.bsp> [lightmap.png]" << std::endl;
+
+    std::cout << "Extracts per-face lightmap and packs them into few big lightmaps." << std::endl;
+    std::cout << "Big lightmap(s) have \"holes\" (unused pixels)." << std::endl;
+    return 0;
+}
+int Exec_bsp_lightmap(int argc, const char** argv)
+{
+    if(argc <= 1) // Only script name
     {
         std::cerr << "No path to BSP provided" << std::endl;
         return 1;
     }
 
-    std::filesystem::path bspFilename(argv[0]);
+    std::filesystem::path bspFilename(argv[1]);
     {
         if(bspFilename.empty())
         {
@@ -306,13 +347,13 @@ int Exec_bsp_lightmap(int argc, const char** argv)
 
     std::filesystem::path exportLight;
     {
-        if(argc == 1)
+        if(argc == 2)
         {
             exportLight = "lightmap.png";
         }
         else
         {
-            exportLight = argv[1];
+            exportLight = argv[2];
             if(exportLight.empty())
             {
                 std::cerr << "Export lightmap path is empty" << std::endl;
@@ -368,3 +409,4 @@ int Exec_bsp_lightmap(int argc, const char** argv)
 
     return 0;
 }
+#pragma endregion

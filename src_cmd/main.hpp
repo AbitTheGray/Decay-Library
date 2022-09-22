@@ -10,6 +10,7 @@
 struct Command
 {
     int (*Exec)(int argc, const char** argv);
+    int (*HelpExec)(int argc, const char** argv);
     std::string Help_Params;
     std::string Help_Description;
 };
@@ -17,9 +18,13 @@ struct Command
 int Exec_help(int argc, const char** argv);
 
 int Exec_bsp2obj(int argc, const char** argv);
+int Help_bsp2obj(int argc, const char** argv);
 
 int Exec_bsp2wad(int argc, const char** argv);
+int Help_bsp2wad(int argc, const char** argv);
 
 int Exec_wad_add(int argc, const char** argv);
+int Help_wad_add(int argc, const char** argv);
 
 int Exec_bsp_lightmap(int argc, const char** argv);
+int Help_bsp_lightmap(int argc, const char** argv);

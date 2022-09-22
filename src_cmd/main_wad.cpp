@@ -2,20 +2,33 @@
 
 #include "Decay/Common.hpp"
 
-int Exec_wad_add(int argc, const char** argv)
+#pragma region wad_add
+int Help_wad_add(int argc, const char** argv)
 {
     if(argc == 0)
+        std::cout << "wad_add ";
+    else
+        std::cout << argv[0] << ' ';
+    std::cout << "<file.wad> <texture..." << std::endl;
+
+    std::cout << "Add texture(s) into WAD." << std::endl;
+    std::cout << "Does not parse textures/content in the WAD, only WAD header" << std::endl;
+    return 0;
+}
+int Exec_wad_add(int argc, const char** argv)
+{
+    if(argc <= 1) // Only script name
     {
         std::cerr << "No path to WAD provided" << std::endl;
         return 1;
     }
-    if(argc == 1)
+    if(argc == 2)
     {
         std::cerr << "No textures provided" << std::endl;
         return 1;
     }
 
-    std::filesystem::path wadFilename(argv[0]);
+    std::filesystem::path wadFilename(argv[1]);
     {
         if(wadFilename.empty())
         {
@@ -33,10 +46,10 @@ int Exec_wad_add(int argc, const char** argv)
 
     using namespace Decay::Wad::Wad3;
 
-    std::vector<WadFile::Texture> textures(argc-1);
-    for(int i = 1; i < argc; i++)
+    std::vector<WadFile::Texture> textures(argc - 2);
+    for(int argi = 2; argi < argc; argi++)
     {
-        std::filesystem::path tPath = argv[i];
+        std::filesystem::path tPath = argv[argi];
         if(tPath.empty())
             continue;
         if(!std::filesystem::exists(tPath))
@@ -76,3 +89,4 @@ int Exec_wad_add(int argc, const char** argv)
     std::cout << "Textures successfully added to WAD file" << std::endl;
     return 0;
 }
+#pragma endregion

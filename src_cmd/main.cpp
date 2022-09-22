@@ -2,52 +2,57 @@
 
 #include "Decay/Common.hpp"
 
-std::map<std::string, Command> Commands = {
-        {
-                "help",
-                Command{
-                        Exec_help,
-                        {},
-                        "Show this help"
-                }
-        },
-        {
-                "bsp2obj",
-                Command{
-                        Exec_bsp2obj,
-                        "<map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]",
-                        "Extract OBJ (model) from BSP (map), including packed textures"
-                }
-        },
-        {
-                "bsp2wad",
-                Command{
-                        Exec_bsp2wad,
-                        "<map.bsp> [map.wad] [new_map.bsp]",
-                        "Extracts textures from BSP to WAD"
-                }
-        },
-        {
-                "wad_add",
-                Command{
-                        Exec_wad_add,
-                        "<file.wad> <texture...",
-                        "Add textures to WAD"
-                }
-        },
-        {
-                "bsp_lightmap",
-                Command{
-                        Exec_bsp_lightmap,
-                        "<map.bsp> <lightmap.png>",
-                        "Extracts lightmap texture"
-                }
+std::unordered_map<std::string, Command> Commands = {
+    {
+        "help",
+        Command{
+            Exec_help,
+            Exec_help,
+            {},
+            "Show this help"
         }
+    },
+    {
+        "bsp2obj",
+        Command{
+            Exec_bsp2obj,
+            Help_bsp2obj,
+            "<map.bsp> <file.obj> [file.mtl] [textures_dir=`file.mtl`/../textures]",
+            "Extract OBJ (model) from BSP (map), including packed textures"
+        }
+    },
+    {
+        "bsp2wad",
+        Command{
+            Exec_bsp2wad,
+            Help_bsp2wad,
+            "<map.bsp> [map.wad] [new_map.bsp]",
+            "Extracts textures from BSP to WAD"
+        }
+    },
+    {
+        "wad_add",
+        Command{
+            Exec_wad_add,
+            Help_wad_add,
+            "<file.wad> <texture...",
+            "Add textures to WAD"
+        }
+    },
+    {
+        "bsp_lightmap",
+        Command{
+            Exec_bsp_lightmap,
+            Help_bsp_lightmap,
+            "<map.bsp> <lightmap.png>",
+            "Extracts lightmap texture"
+        }
+    }
 };
 
 int main(int argc, const char** argv)
 {
-    if(argc == 1)
+    if(argc == 1) // Only program name
         return Exec_help(0, nullptr);
 
     auto cmd_it = Commands.find(argv[1]);
@@ -58,27 +63,37 @@ int main(int argc, const char** argv)
     }
     else
     {
-        return cmd_it->second.Exec(argc-2, argv+2);
+        return cmd_it->second.Exec(argc - 1, argv + 1);
     }
 }
 
 static const char* ansi_reset = "\033[m";
-static const char* ansi_bold = "\033[1m";
+static const char* ansi_commandName = "\033[1m";
 static const char* ansi_description = "\033[36m";
 
 int Exec_help(int argc, const char** argv)
 {
-    for(auto& it : Commands)
+    if(argc < 2)
     {
-        auto& command = it.second;
-        std::cout << "\t" << ansi_bold << it.first << ansi_reset;
+        // Standard basic help
+        for(auto& it : Commands)
+        {
+            auto& command = it.second;
+            std::cout << "\t" << ansi_commandName << it.first << ansi_reset;
 
-        if(!command.Help_Params.empty())
-            std::cout << ' ' << command.Help_Params;
+            if(!command.Help_Params.empty())
+                std::cout << ' ' << command.Help_Params;
 
-        assert(!command.Help_Description.empty());
-        std::cout << "\t\t" << ansi_description << command.Help_Description << ansi_reset << std::endl;
+            assert(!command.Help_Description.empty());
+            std::cout << "\t\t" << ansi_description << command.Help_Description << ansi_reset << std::endl;
+        }
+
+        return 0;
     }
-
-    return 0;
+    else // Detailed per-command help
+    {
+        for(auto& it : Commands)
+            if(argv[1] == it.first)
+                return it.second.HelpExec(argc - 1, argv + 1);
+    }
 }
