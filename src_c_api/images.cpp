@@ -8,7 +8,7 @@ using namespace Decay::Wad::Wad3;
 
 static wad_image* LoadImages(const std::map<std::string, WadFile::Image>& images, int* length)
 {
-    assert(images.size() < std::numeric_limits<int>::max());
+    R_ASSERT(images.size() < std::numeric_limits<int>::max());
     *length = images.size();
     if(*length == 0)
         return nullptr;
@@ -32,7 +32,7 @@ static wad_image* LoadImages(const std::map<std::string, WadFile::Image>& images
         auto& wt = wadImages[i];
 
         // Copy name
-        assert(it.first.size() < 16);
+        R_ASSERT(it.first.size() < 16);
         CopyString(it.first, wt.name, 16);
 
         // Copy size

@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
         else
             printf("%s (%ux%u) + data\n", texture.name, texture.width, texture.height);
     }
+    free(textures);
     printf("\n");
 
     // Models
@@ -63,8 +64,14 @@ int main(int argc, char* argv[])
                 short* indices = malloc(sizeof(short) * indicesCount);
                 if(indicesCount != bsp_model_get_indices(model, textureIndex, indices))
                     return 1;
+
+                free(indices);
             }
+
+            free(usedTextures);
         }
+
+        free(models);
     }
 
     // Entities
@@ -83,6 +90,8 @@ int main(int argc, char* argv[])
 
             printf("classname of 1st entity: %s\n", bsp_entity_value(entities[0], "classname"));
         }
+
+        free(entities);
     }
 
     bsp_tree_free(bsp);

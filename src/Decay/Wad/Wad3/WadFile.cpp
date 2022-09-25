@@ -55,7 +55,7 @@ namespace Decay::Wad::Wad3
         /// Offset in file to WadEntry structure
         uint32_t entriesOffset;
         stream.read(reinterpret_cast<char*>(&entriesOffset), sizeof(entriesOffset));
-        assert(entriesOffset >= ((sizeof(uint32_t) * 2) + (sizeof(char) * 4)));
+        R_ASSERT(entriesOffset >= ((sizeof(uint32_t) * 2) + (sizeof(char) * 4)));
 
         stream.seekg(entriesOffset);
 
@@ -213,7 +213,7 @@ namespace Decay::Wad::Wad3
         {
             offsets[i] = out.tellp();
 
-            assert(entryData[i] != nullptr);
+            R_ASSERT(entryData[i] != nullptr);
             out.write(static_cast<const char*>(entryData[i]), entries[i].Size);
             out.flush();
         }
@@ -252,12 +252,12 @@ namespace Decay::Wad::Wad3
         Image image = {};
         in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
         in.read(reinterpret_cast<char*>(&image.Height), sizeof(image.Height));
-        assert(image.Width > 0);
-        assert(image.Height > 0);
+        R_ASSERT(image.Width > 0);
+        R_ASSERT(image.Height > 0);
 
         // Calculate data length
         std::size_t dataLength = static_cast<std::size_t>(image.Width) * image.Height;
-        assert(dataLength > 0);
+        R_ASSERT(dataLength > 0);
 
         // Read data
         image.Data.resize(dataLength);
@@ -306,15 +306,15 @@ namespace Decay::Wad::Wad3
     void WadFile::Image::WriteRgbPng(const std::filesystem::path& filename) const
     {
         std::vector<glm::u8vec3> pixels = AsRgb();
-        assert(pixels.size() == Width * Height);
-        assert(Width <= std::numeric_limits<int32_t>::max() / 3);
+        R_ASSERT(pixels.size() == Width * Height);
+        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 3);
         stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
     void WadFile::Image::WriteRgbaPng(const std::filesystem::path& filename) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();
-        assert(pixels.size() == Width * Height);
-        assert(Width <= std::numeric_limits<int32_t>::max() / 4);
+        R_ASSERT(pixels.size() == Width * Height);
+        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 4);
         stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
     }
 
@@ -529,16 +529,16 @@ namespace Decay::Wad::Wad3
             font.RowHeight = dimensions.w;
         }
         font.Width = 256;// Fonts have Width=256 ( https://developer.valvesoftware.com/wiki/WAD ) but 2 tested fonts did not have
-        assert(font.RowCount > 0);
-        assert(font.RowHeight > 0);
-        assert(font.Height >= font.RowCount * font.RowHeight);
+        R_ASSERT(font.RowCount > 0);
+        R_ASSERT(font.RowHeight > 0);
+        R_ASSERT(font.Height >= font.RowCount * font.RowHeight);
 
         // Character offsets
         in.read(reinterpret_cast<char*>(&font.Characters), sizeof(FontChar) * Font::CharacterCount);
 
         // Calculate data length
         std::size_t dataLength = static_cast<std::size_t>(font.Width) * font.Height;
-        assert(dataLength > 0);
+        R_ASSERT(dataLength > 0);
 
         // Read data
         font.Data.resize(dataLength);
@@ -587,7 +587,7 @@ namespace Decay::Wad::Wad3
             char name[Texture::MaxNameLength];
             in.read(name, Texture::MaxNameLength);
             texture.Name = Cstr2Str(name, Texture::MaxNameLength);
-            assert(texture.Name.length() > 0);
+            R_ASSERT(texture.Name.length() > 0);
 
             if(!StringCaseInsensitiveEqual(item.Name, texture.Name))
             {
@@ -597,12 +597,12 @@ namespace Decay::Wad::Wad3
 
         // Dimensions
         in.read(reinterpret_cast<char*>(&texture.Width), sizeof(Texture::Width) + sizeof(Texture::Height));
-        assert(texture.Width >= (1u << Texture::MipMapLevels));
-        assert(texture.Height >= (1u << Texture::MipMapLevels));
+        R_ASSERT(texture.Width >= (1u << Texture::MipMapLevels));
+        R_ASSERT(texture.Height >= (1u << Texture::MipMapLevels));
         if(!IsMultipleOf2(texture.Width))
-            assert(texture.Width % 16 == 0);
+            R_ASSERT(texture.Width % 16 == 0);
         if(!IsMultipleOf2(texture.Height))
-            assert(texture.Height % 16 == 0);
+            R_ASSERT(texture.Height % 16 == 0);
 
         // Offsets
         uint32_t mipMapOffsets[Texture::MipMapLevels];
@@ -622,8 +622,8 @@ namespace Decay::Wad::Wad3
             data.resize(dataLength);
             in.read(reinterpret_cast<char*>(data.data()), dataLength);
         }
-        assert(texture.Width == texture.MipMapDimensions[0].x);
-        assert(texture.Height == texture.MipMapDimensions[0].y);
+        R_ASSERT(texture.Width == texture.MipMapDimensions[0].x);
+        R_ASSERT(texture.Height == texture.MipMapDimensions[0].y);
 
         // Palette size after last MipMap level
         uint16_t paletteSize;
@@ -658,8 +658,8 @@ namespace Decay::Wad::Wad3
         if(!std::filesystem::exists(directory))
             std::filesystem::create_directory(directory);
 
-        assert(extension.size() > 1);
-        assert(extension[0] == '.');
+        R_ASSERT(extension.size() > 1);
+        R_ASSERT(extension[0] == '.');
 
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> writeFunc = ImageWriteFunction_RGBA(extension);
 
@@ -678,13 +678,13 @@ namespace Decay::Wad::Wad3
 
     void WadFile::Texture::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
     {
-        assert(level < MipMapLevels);
+        R_ASSERT(level < MipMapLevels);
 
         std::vector<glm::u8vec3> pixels = AsRgb(level);
         glm::u32vec2 dimension = MipMapDimensions[level];
 
-        assert(pixels.size() == dimension.x * dimension.y);
-        assert(dimension.x <= std::numeric_limits<int32_t>::max() / 3);
+        R_ASSERT(pixels.size() == dimension.x * dimension.y);
+        R_ASSERT(dimension.x <= std::numeric_limits<int32_t>::max() / 3);
 
         stbi_write_png(
             filename.string().c_str(),
@@ -698,13 +698,13 @@ namespace Decay::Wad::Wad3
 
     void WadFile::Texture::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
     {
-        assert(level < MipMapLevels);
+        R_ASSERT(level < MipMapLevels);
 
         std::vector<glm::u8vec4> pixels = AsRgba(level);
         glm::u32vec2 dimension = MipMapDimensions[level];
 
-        assert(pixels.size() == dimension.x * dimension.y);
-        assert(dimension.x <= std::numeric_limits<int32_t>::max() / 4);
+        R_ASSERT(pixels.size() == dimension.x * dimension.y);
+        R_ASSERT(dimension.x <= std::numeric_limits<int32_t>::max() / 4);
 
         stbi_write_png(
             filename.string().c_str(),
@@ -723,7 +723,7 @@ namespace Decay::Wad::Wad3
 
         Item item = {};
 
-        assert(!Name.empty());
+        R_ASSERT(!Name.empty());
         item.Name = Name;
 
         item.Type = ItemType::Texture;
@@ -745,8 +745,8 @@ namespace Decay::Wad::Wad3
 
             // Name
             {
-                assert(!item.Name.empty());
-                assert(item.Name.size() < MaxNameLength);
+                R_ASSERT(!item.Name.empty());
+                R_ASSERT(item.Name.size() < MaxNameLength);
                 out.write(reinterpret_cast<const char*>(item.Name.c_str()), sizeof(char) * item.Name.size());
 
                 uint8_t nullByte = '\0';
@@ -755,9 +755,9 @@ namespace Decay::Wad::Wad3
             }
 
             // Size
-            assert(Width > 0);
+            R_ASSERT(Width > 0);
             out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
-            assert(Height > 0);
+            R_ASSERT(Height > 0);
             out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
 
             // Data offsets
@@ -782,7 +782,7 @@ namespace Decay::Wad::Wad3
             // Palette
             {
                 short paletteSize = Palette.size();
-                assert(paletteSize > 0);
+                R_ASSERT(paletteSize > 0);
                 out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
                 out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
             }
@@ -798,10 +798,10 @@ namespace Decay::Wad::Wad3
         }
 
         // Name (1st char)
-        assert(((const uint8_t*)item.Data)[0] != '\0');
+        R_ASSERT(((const uint8_t*)item.Data)[0] != '\0');
 
         // Width
-        assert(
+        R_ASSERT(
             ((const uint8_t*)item.Data)[MaxNameLength + 0] != 0 ||
             ((const uint8_t*)item.Data)[MaxNameLength + 1] != 0 ||
             ((const uint8_t*)item.Data)[MaxNameLength + 2] != 0 ||
@@ -809,7 +809,7 @@ namespace Decay::Wad::Wad3
         );
 
         // Height
-        assert(
+        R_ASSERT(
             ((const uint8_t*)item.Data)[MaxNameLength + 4 + 0] != 0 ||
             ((const uint8_t*)item.Data)[MaxNameLength + 4 + 1] != 0 ||
             ((const uint8_t*)item.Data)[MaxNameLength + 4 + 2] != 0 ||
@@ -817,7 +817,7 @@ namespace Decay::Wad::Wad3
         );
 
         // Offsets
-        assert(
+        R_ASSERT(
             ((const uint8_t*) item.Data)[
                 MaxNameLength +
                 sizeof(uint32_t) * 2
@@ -828,7 +828,7 @@ namespace Decay::Wad::Wad3
         );
 
         // First data index into palette
-        assert(
+        R_ASSERT(
             ((const uint8_t*)item.Data)[
                 MaxNameLength +
                 sizeof(uint32_t) * 2 +
@@ -837,7 +837,7 @@ namespace Decay::Wad::Wad3
         );
 
         // First pixel of palette
-        assert(
+        R_ASSERT(
             ((const uint8_t*)item.Data)[
                 MaxNameLength +
                 sizeof(uint32_t) * 2 +
@@ -887,7 +887,7 @@ namespace Decay::Wad::Wad3
         for(int charIndex = 0; charIndex < WadFile::Font::CharacterCount; charIndex++)
         {
             const auto& fc = Characters[charIndex];
-            assert(fc.Width >= 0);
+            R_ASSERT(fc.Width >= 0);
             if(fc.Width == 0)
                 continue;
 
@@ -903,14 +903,14 @@ namespace Decay::Wad::Wad3
             {
                 int i = (startY + sy) * Width + startX;
                 if(sy == 0)
-                    assert(i == fc.Offset);
+                    R_ASSERT(i == fc.Offset);
 
                 for(int sx = 0; sx < fc_img.Width; sx++)
                 {
                     fc_img.Data.emplace_back(Data[i + sx]);
                 }
             }
-            assert(fc_img.Data.size() == fc_img.Width * fc_img.Height);
+            R_ASSERT(fc_img.Data.size() == fc_img.Width * fc_img.Height);
 
             fc_img.WriteRgbaPng(dir / (std::to_string(charIndex) + ".png"));
         }

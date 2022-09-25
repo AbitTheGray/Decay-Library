@@ -15,6 +15,56 @@
 
 #include <stb_image_write.h>
 
+
+#pragma region D_ASSERT / R_ASSERT
+
+#ifdef DEBUG
+/// Debug-only assert
+inline constexpr void D_ASSERT(bool condition, const std::string& msg)
+{
+    if(!condition) [[unlikely]]
+    {
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+}
+/// Debug-only assert
+inline constexpr void D_ASSERT(bool condition)
+{
+    if(!condition) [[unlikely]]
+    {
+        std::cerr << "Assertion failed" << std::endl;
+        throw std::runtime_error("Assertion failed");
+    }
+}
+#else
+/// Debug-only assert
+inline constexpr void D_ASSERT(bool condition, const std::string& msg) {}
+/// Debug-only assert
+inline constexpr void D_ASSERT(bool condition) {}
+#endif
+
+/// Always active assert
+inline constexpr void R_ASSERT(bool condition, const std::string& msg)
+{
+    if(!condition) [[unlikely]]
+    {
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg);
+    }
+}
+/// Always active assert
+inline constexpr void R_ASSERT(bool condition)
+{
+    if(!condition) [[unlikely]]
+    {
+        std::cerr << "Assertion failed" << std::endl;
+        throw std::runtime_error("Assertion failed");
+    }
+}
+
+#pragma endregion
+
 namespace Decay
 {
     class MemoryBuffer : public std::streambuf
@@ -89,6 +139,8 @@ namespace Decay
             return -1;
         }
     };
+
+#pragma region String operation/manipulation
 
     template<typename Tlen>
     [[nodiscard]] inline std::string Cstr2Str(const char* cstr, Tlen maxLength) noexcept
@@ -209,6 +261,10 @@ namespace Decay
         }
         return value;
     }
+
+#pragma endregion
+
+#pragma region Write functions by file extension
 
     /// Extension always starts with period.
     /// Supported extensions:
@@ -379,4 +435,6 @@ namespace Decay
         else
             throw std::runtime_error("Unsupported texture extension for export");
     }
+
+#pragma endregion
 }

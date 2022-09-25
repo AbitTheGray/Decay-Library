@@ -11,7 +11,7 @@ namespace Decay::Map
     /// Read vector inside round brackets.
     void ReadPlaneVector(std::istream& in, glm::i32vec3& vec)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         int c;
         IgnoreWhitespace(in);
 
@@ -25,13 +25,13 @@ namespace Decay::Map
 
         IgnoreWhitespace(in);
         std::vector<char> num0 = ReadOnlyNumber(in, true);
-        assert(!num0.empty());
+        R_ASSERT(!num0.empty());
         IgnoreWhitespace(in);
         std::vector<char> num1 = ReadOnlyNumber(in, true);
-        assert(!num1.empty());
+        R_ASSERT(!num1.empty());
         IgnoreWhitespace(in);
         std::vector<char> num2 = ReadOnlyNumber(in, true);
-        assert(!num2.empty());
+        R_ASSERT(!num2.empty());
         IgnoreWhitespace(in);
 
         c = in.peek();
@@ -48,7 +48,7 @@ namespace Decay::Map
     /// Read vector+value inside square brackets
     void ReadTextureVector(std::istream& in, glm::i32vec3& vec, int32_t& val)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         int c;
         IgnoreWhitespace(in);
 
@@ -62,16 +62,16 @@ namespace Decay::Map
 
         IgnoreWhitespace(in);
         std::vector<char> num0 = ReadOnlyNumber(in, true);
-        assert(!num0.empty());
+        R_ASSERT(!num0.empty());
         IgnoreWhitespace(in);
         std::vector<char> num1 = ReadOnlyNumber(in, true);
-        assert(!num1.empty());
+        R_ASSERT(!num1.empty());
         IgnoreWhitespace(in);
         std::vector<char> num2 = ReadOnlyNumber(in, true);
-        assert(!num2.empty());
+        R_ASSERT(!num2.empty());
         IgnoreWhitespace(in);
         std::vector<char> num3 = ReadOnlyNumber(in, true);
-        assert(!num3.empty());
+        R_ASSERT(!num3.empty());
         IgnoreWhitespace(in);
 
         c = in.peek();
@@ -112,7 +112,7 @@ namespace Decay::Map
 {
     std::istream& operator>>(std::istream& in, MapFile::Plane& plane)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
         IgnoreWhitespace(in);
 
@@ -177,7 +177,7 @@ namespace Decay::Map
         out << "\t\t";
 #endif
         // cross((p3 - p1), (p2 - p1)) != null
-        assert(glm::cross(glm::vec3(plane.PlaneVertices[2] - plane.PlaneVertices[0]), glm::vec3(plane.PlaneVertices[1] - plane.PlaneVertices[0])) != glm::vec3{});
+        R_ASSERT(glm::cross(glm::vec3(plane.PlaneVertices[2] - plane.PlaneVertices[0]), glm::vec3(plane.PlaneVertices[1] - plane.PlaneVertices[0])) != glm::vec3{});
 
         for(int i = 0; i < MapFile::Plane::PlaneVertexCount; i++)
         {
@@ -185,7 +185,7 @@ namespace Decay::Map
             out << "( " << pv.x << ' ' << pv.y << ' ' << pv.z << " ) ";
         }
 
-        assert(plane.Texture.find(' ') == std::string::npos);
+        R_ASSERT(plane.Texture.find(' ') == std::string::npos);
         out << plane.Texture << ' ';
 
         out << "[ " << plane.UAxis.x << ' ' << plane.UAxis.y << ' ' << plane.UAxis.z << ' ' << plane.UOffset << " ] ";
@@ -200,7 +200,7 @@ namespace Decay::Map
 
     std::istream& operator>>(std::istream& in, MapFile::Brush& brush)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
         IgnoreWhitespace(in);
 
@@ -228,7 +228,7 @@ namespace Decay::Map
             }
             else
             {
-                assert(in.good());
+                R_ASSERT(in.good());
                 MapFile::Plane plane;
                 in >> plane;
                 if(in.fail())
@@ -245,7 +245,7 @@ namespace Decay::Map
 #endif
         out << "{\n";
         {
-            assert(brush.Planes.size() >= 4);
+            R_ASSERT(brush.Planes.size() >= 4);
             for(const MapFile::Plane& plane : brush.Planes)
                 out << plane << '\n';
         }
@@ -258,7 +258,7 @@ namespace Decay::Map
 
     std::istream& operator>>(std::istream& in, MapFile::Entity& entity)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
         IgnoreWhitespace(in);
 
@@ -286,7 +286,7 @@ namespace Decay::Map
             }
             else if(c == '{') // Start of brush
             {
-                assert(in.good());
+                R_ASSERT(in.good());
                 MapFile::Brush brush;
                 in >> brush;
                 if(in.fail())
@@ -322,9 +322,9 @@ namespace Decay::Map
 #ifdef MAP_TAB_OFFSET
             out << '\t';
 #endif
-            assert(!kv.first.empty());
-            assert(kv.first.find('\"') == std::string::npos);
-            assert(kv.second.find('\"') == std::string::npos);
+            R_ASSERT(!kv.first.empty());
+            R_ASSERT(kv.first.find('\"') == std::string::npos);
+            R_ASSERT(kv.second.find('\"') == std::string::npos);
             out << '\"' << kv.first << "\" \"" << kv.second << "\"\n";
         }
         for(const auto& brush : entity.Brushes)
@@ -335,7 +335,7 @@ namespace Decay::Map
 
     std::istream& operator>>(std::istream& in, MapFile& mapFile)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
         while(true)
         {
@@ -348,7 +348,7 @@ namespace Decay::Map
                 return in;
             else if(c == '{')
             {
-                assert(in.good());
+                R_ASSERT(in.good());
                 MapFile::Entity entity;
                 in >> entity;
                 if(in.fail())

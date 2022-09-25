@@ -94,9 +94,9 @@ int Exec_bsp2obj(int argc, const char** argv)
     if(result.count("obj"))
     {
         objPath = result["obj"].as<std::string>();
-        if(!std::filesystem::exists(objPath) || !std::filesystem::is_regular_file(objPath))
+        if(std::filesystem::exists(objPath) && !std::filesystem::is_regular_file(objPath))
         {
-            const char* errorMsg = "`--obj` must point to a valid file (if you do not want to export as OBJ into a file, omit `--obj`)";
+            const char* errorMsg = "`--obj` must point to non-existing file or existing valid file (if you do not want to export as OBJ into a file, omit `--obj`)";
 #ifdef DEBUG
             throw std::runtime_error(errorMsg);
 #else
@@ -114,9 +114,9 @@ int Exec_bsp2obj(int argc, const char** argv)
     if(result.count("mtl"))
     {
         mtlPath = result["mtl"].as<std::string>();
-        if(!std::filesystem::exists(mtlPath) || !std::filesystem::is_regular_file(mtlPath))
+        if(std::filesystem::exists(mtlPath) && !std::filesystem::is_regular_file(mtlPath))
         {
-            const char* errorMsg = "`--mtl` must point to a valid file (if you do not want to export texture mapping for OBJ into a file, omit `--mtl`)";
+            const char* errorMsg = "`--mtl` must point to non-existing file or existing valid file (if you do not want to export texture mapping for OBJ into a file, omit `--mtl`)";
 #ifdef DEBUG
             throw std::runtime_error(errorMsg);
 #else
@@ -491,8 +491,8 @@ int Exec_bsp_lightmap(int argc, const char** argv)
         }
 
         std::string extension = exportLight.extension();
-        assert(extension.size() > 1);
-        assert(extension[0] == '.');
+        R_ASSERT(extension.size() > 1);
+        R_ASSERT(extension[0] == '.');
 
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* data)> writeFunc = Decay::ImageWriteFunction_RGB(extension);
 

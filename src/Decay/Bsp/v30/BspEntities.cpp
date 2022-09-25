@@ -138,7 +138,7 @@ namespace Decay::Bsp::v30
             IgnoreWhitespace(in);
             if(in.eof())
                 break;
-            assert(in.good());
+            R_ASSERT(in.good());
 
             c = in.get();
             if(c == EOF)
@@ -149,7 +149,7 @@ namespace Decay::Bsp::v30
             while(true)
             {
                 IgnoreWhitespace(in);
-                assert(in.good());
+                R_ASSERT(in.good());
 
                 c = in.peek();
                 if(c == '}')
@@ -167,10 +167,10 @@ namespace Decay::Bsp::v30
                     throw std::runtime_error("Unexpected character inside entity");
             }
             IgnoreWhitespace(in);
-            assert(in.good());
+            R_ASSERT(in.good());
 
             c = in.get();
-            assert(c == '}');
+            R_ASSERT(c == '}');
 
             entities.emplace_back(std::move(entity));
             entity = {};

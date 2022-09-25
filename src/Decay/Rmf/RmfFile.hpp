@@ -166,16 +166,16 @@ namespace Decay::Rmf
             static const int Dummy2_Length = 14;
             static const int Dummy3_Length = 4;
 
-            int VisGroup;
-            Color_t DisplayColor;
-            std::vector<Solid> Solids;
-            std::string Classname;
-            uint8_t Dummy[Dummy_Length];
-            int EntityFlags;
-            std::unordered_map<std::string, std::string> KeyValue;
-            uint8_t Dummy2[Dummy2_Length];
-            Vector_t Position;
-            uint8_t Dummy3[Dummy3_Length];
+            int VisGroup{};
+            Color_t DisplayColor{};
+            std::vector<Solid> Solids{};
+            std::string Classname{};
+            uint8_t Dummy[Dummy_Length]{};
+            int EntityFlags{};
+            std::unordered_map<std::string, std::string> KeyValue{};
+            uint8_t Dummy2[Dummy2_Length]{};
+            Vector_t Position{};
+            uint8_t Dummy3[Dummy3_Length]{};
 
 
             [[nodiscard]] inline bool operator==(const Entity& other) const

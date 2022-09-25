@@ -8,64 +8,64 @@ void Test_VisGroup(const RmfFile::VisGroup& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::VisGroup result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Name_str() == original.Name_str());
-    assert(result.Color == original.Color);
-    assert(result.Dummy == original.Dummy);
-    assert(result.Index == original.Index);
-    assert(result.Visible == original.Visible);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Name_str() == original.Name_str());
+    R_ASSERT(result.Color == original.Color);
+    R_ASSERT(result.Dummy == original.Dummy);
+    R_ASSERT(result.Index == original.Index);
+    R_ASSERT(result.Visible == original.Visible);
 
     for(int i = 0; i < RmfFile::VisGroup::Dummy2_Length; i++)
-        assert(result.Dummy2[i] == original.Dummy2[i]);
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_Face(const RmfFile::Face& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Face result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.TextureName_str() == original.TextureName_str());
-    assert(result.Dummy == original.Dummy);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.TextureName_str() == original.TextureName_str());
+    R_ASSERT(result.Dummy == original.Dummy);
 
-    assert(result.UAxis == original.UAxis);
-    assert(result.XShift == original.XShift);
-    assert(result.VAxis == original.VAxis);
-    assert(result.YShift == original.YShift);
+    R_ASSERT(result.UAxis == original.UAxis);
+    R_ASSERT(result.XShift == original.XShift);
+    R_ASSERT(result.VAxis == original.VAxis);
+    R_ASSERT(result.YShift == original.YShift);
 
-    assert(result.TextureRotation == original.TextureRotation);
-    assert(result.TextureScale == original.TextureScale);
+    R_ASSERT(result.TextureRotation == original.TextureRotation);
+    R_ASSERT(result.TextureScale == original.TextureScale);
 
     for(int i = 0; i < RmfFile::Face::Dummy2_Length; i++)
-        assert(result.Dummy2[i] == original.Dummy2[i]);
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
 
-    assert(result.Vertices.size() == original.Vertices.size());
+    R_ASSERT(result.Vertices.size() == original.Vertices.size());
     for(int i = 0; i < result.Vertices.size(); i++)
-        assert(result.Vertices[i] == original.Vertices[i]);
+        R_ASSERT(result.Vertices[i] == original.Vertices[i]);
 
     for(int i = 0; i < RmfFile::Face::PlaneVertices_Length; i++)
-        assert(result.PlaneVertices[i] == original.PlaneVertices[i]);
-    assert(result == original);
+        R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i]);
+    R_ASSERT(result == original);
 }
 void Test_Solid(const RmfFile::Solid& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -73,28 +73,28 @@ void Test_Solid(const RmfFile::Solid& original)
     RmfFile::Solid result = {};
     { // Type Name
         int typeNameLength = ss.get();
-        assert(std::strlen(RmfFile::Solid::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Solid::TypeName) + 1 == typeNameLength);
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.VisGroup == original.VisGroup);
-    assert(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.VisGroup == original.VisGroup);
+    R_ASSERT(result.DisplayColor == original.DisplayColor);
 
     for(int i = 0; i < RmfFile::Solid::Dummy_Length; i++)
-        assert(result.Dummy[i] == original.Dummy[i]);
+        R_ASSERT(result.Dummy[i] == original.Dummy[i]);
 
-    assert(result.Faces.size() == original.Faces.size());
+    R_ASSERT(result.Faces.size() == original.Faces.size());
     for(int i = 0; i < result.Faces.size(); i++)
-        assert(result.Faces[i] == original.Faces[i]);
+        R_ASSERT(result.Faces[i] == original.Faces[i]);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_Entity(const RmfFile::Entity& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -102,42 +102,42 @@ void Test_Entity(const RmfFile::Entity& original)
     RmfFile::Entity result = {};
     { // Type Name
         int typeNameLength = ss.get();
-        assert(std::strlen(RmfFile::Entity::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Entity::TypeName) + 1 == typeNameLength);
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.VisGroup == original.VisGroup);
-    assert(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.VisGroup == original.VisGroup);
+    R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    assert(result.Solids.size() == original.Solids.size());
+    R_ASSERT(result.Solids.size() == original.Solids.size());
     for(int i = 0; i < result.Solids.size(); i++)
-        assert(result.Solids[i] == original.Solids[i]);
+        R_ASSERT(result.Solids[i] == original.Solids[i]);
 
-    assert(result.Classname == original.Classname);
+    R_ASSERT(result.Classname == original.Classname);
 
     for(int i = 0; i < RmfFile::Entity::Dummy_Length; i++)
-        assert(result.Dummy[i] == original.Dummy[i]);
+        R_ASSERT(result.Dummy[i] == original.Dummy[i]);
 
-    assert(result.EntityFlags == original.EntityFlags);
+    R_ASSERT(result.EntityFlags == original.EntityFlags);
 
     //TODO order-independent test of KeyValue
 
     for(int i = 0; i < RmfFile::Entity::Dummy2_Length; i++)
-        assert(result.Dummy2[i] == original.Dummy2[i]);
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
 
-    assert(result.Position == original.Position);
+    R_ASSERT(result.Position == original.Position);
 
     for(int i = 0; i < RmfFile::Entity::Dummy3_Length; i++)
-        assert(result.Dummy3[i] == original.Dummy3[i]);
+        R_ASSERT(result.Dummy3[i] == original.Dummy3[i]);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_Group(const RmfFile::Group& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -145,106 +145,106 @@ void Test_Group(const RmfFile::Group& original)
     RmfFile::Group result = {};
     { // Type Name
         int typeNameLength = ss.get();
-        assert(std::strlen(RmfFile::Group::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Group::TypeName) + 1 == typeNameLength);
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.VisGroup == original.VisGroup);
-    assert(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.VisGroup == original.VisGroup);
+    R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    assert(result.Solids.size() == original.Solids.size());
+    R_ASSERT(result.Solids.size() == original.Solids.size());
     for(int i = 0; i < result.Solids.size(); i++)
-        assert(result.Solids[i] == original.Solids[i]);
+        R_ASSERT(result.Solids[i] == original.Solids[i]);
 
-    assert(result.Entities.size() == original.Entities.size());
+    R_ASSERT(result.Entities.size() == original.Entities.size());
     for(int i = 0; i < result.Entities.size(); i++)
-        assert(result.Entities[i] == original.Entities[i]);
+        R_ASSERT(result.Entities[i] == original.Entities[i]);
 
-    assert(result.Groups.size() == original.Groups.size());
+    R_ASSERT(result.Groups.size() == original.Groups.size());
     for(int i = 0; i < result.Groups.size(); i++)
-        assert(result.Groups[i] == original.Groups[i]);
+        R_ASSERT(result.Groups[i] == original.Groups[i]);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_Corner(const RmfFile::Corner& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Corner result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Position == original.Position);
-    assert(result.Index == original.Index);
-    assert(result.NameOverride_str() == original.NameOverride_str());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Position == original.Position);
+    R_ASSERT(result.Index == original.Index);
+    R_ASSERT(result.NameOverride_str() == original.NameOverride_str());
 
     //TODO order-independent test of KeyValue
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_PathType(const RmfFile::PathType& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::PathType result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result == original);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result == original);
 }
 void Test_Path(const RmfFile::Path& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Path result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Name_str() == original.Name_str());
-    assert(result.Class_str() == original.Class_str());
-    assert(result.Type == original.Type);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Name_str() == original.Name_str());
+    R_ASSERT(result.Class_str() == original.Class_str());
+    R_ASSERT(result.Type == original.Type);
 
-    assert(result.Corners.size() == original.Corners.size());
+    R_ASSERT(result.Corners.size() == original.Corners.size());
     for(int i = 0; i < result.Corners.size(); i++)
-        assert(result.Corners[i] == original.Corners[i]);
+        R_ASSERT(result.Corners[i] == original.Corners[i]);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_Camera(const RmfFile::Camera& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Camera result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.EyePosition == original.EyePosition);
-    assert(result.LookPosition == original.LookPosition);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.EyePosition == original.EyePosition);
+    R_ASSERT(result.LookPosition == original.LookPosition);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_World(const RmfFile::World& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -252,43 +252,44 @@ void Test_World(const RmfFile::World& original)
     RmfFile::World result = {};
     { // Type Name
         int typeNameLength = ss.get();
-        assert(std::strlen(RmfFile::World::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::World::TypeName) + 1 == typeNameLength);
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.VisGroup == original.VisGroup);
-    assert(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.VisGroup == original.VisGroup);
+    R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    assert(result.Solids.size() == original.Solids.size());
+    R_ASSERT(result.Solids.size() == original.Solids.size());
     for(int i = 0; i < result.Solids.size(); i++)
-        assert(result.Solids[i] == original.Solids[i]);
+        R_ASSERT(result.Solids[i] == original.Solids[i]);
 
-    assert(result.Entities.size() == original.Entities.size());
+    R_ASSERT(result.Entities.size() == original.Entities.size());
     for(int i = 0; i < result.Entities.size(); i++)
-        assert(result.Entities[i] == original.Entities[i]);
+        R_ASSERT(result.Entities[i] == original.Entities[i]);
 
-    assert(result.Groups.size() == original.Groups.size());
+    R_ASSERT(result.Groups.size() == original.Groups.size());
     for(int i = 0; i < result.Groups.size(); i++)
-        assert(result.Groups[i] == original.Groups[i]);
+        R_ASSERT(result.Groups[i] == original.Groups[i]);
 
-    assert(result.Classname == original.Classname);
+    R_ASSERT(result.Classname == original.Classname);
 
-    for(int i = 0; i < RmfFile::Entity::Dummy_Length; i++)
-        assert(result.Dummy[i] == original.Dummy[i]);
+    for(int i = 0; i < RmfFile::World::Dummy_Length; i++)
+        R_ASSERT(result.Dummy[i] == original.Dummy[i]);
 
-    assert(result.EntityFlags == original.EntityFlags);
+    R_ASSERT(result.EntityFlags == original.EntityFlags);
 
     //TODO order-independent test of KeyValue
+    R_ASSERT(result.KeyValue.size() == original.KeyValue.size());
 
-    for(int i = 0; i < RmfFile::Entity::Dummy2_Length; i++)
-        assert(result.Dummy2[i] == original.Dummy2[i]);
+    for(int i = 0; i < RmfFile::World::Dummy2_Length; i++)
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
 
-    assert(result.Paths.size() == original.Paths.size());
+    R_ASSERT(result.Paths.size() == original.Paths.size());
     for(int i = 0; i < result.Paths.size(); i++)
-        assert(result.Paths[i] == original.Paths[i]);
+        R_ASSERT(result.Paths[i] == original.Paths[i]);
 
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 
 int main()

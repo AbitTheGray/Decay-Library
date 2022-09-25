@@ -101,8 +101,8 @@ namespace Decay::Bsp::v30
                Data(width * height, InitColor),
                Used(width * height), UsedRanges()
             {
-                assert(Height / 2 - 16 >= 0);
-                assert(Width / 2 - 16 >= 0);
+                R_ASSERT(Height / 2 - 16 >= 0);
+                R_ASSERT(Width / 2 - 16 >= 0);
             }
 
         public:
@@ -136,8 +136,8 @@ namespace Decay::Bsp::v30
             void Insert(uint32_t insert_x, uint32_t insert_y, glm::uvec2 size, const glm::u8vec3* data)
             {
                 // Already checked by `CanInsert`, no need to check here (in Release)
-                assert(size.x + insert_x < Width);
-                assert(size.y + insert_y < Height);
+                R_ASSERT(size.x + insert_x < Width);
+                R_ASSERT(size.y + insert_y < Height);
 
                 // Mark range as used
                 UsedRanges.emplace_back(
@@ -197,12 +197,12 @@ namespace Decay::Bsp::v30
                 Face smartFace = ProcessFace(face);
 
                 auto& indices = smartModel->Indices[smartFace.TextureId];
-                assert(smartFace.Indices.size() % 3 == 0);
+                R_ASSERT(smartFace.Indices.size() % 3 == 0);
                 indices.reserve(smartFace.Indices.size());
                 std::copy(smartFace.Indices.begin(), smartFace.Indices.end(), back_inserter(indices));
             }
 
-            return smartModel;
+            return std::move(smartModel);
         }
 
         /// Call to add vertex while avoiding duplicates.

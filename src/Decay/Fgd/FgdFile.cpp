@@ -127,7 +127,7 @@ namespace Decay::Fgd
         }
         if(isPreviousChar_Number)
             dimension++;
-        assert(dimension <= 4);
+        R_ASSERT(dimension <= 4);
         return dimension;
     }
     void FgdFile::Add(const FgdFile& toAdd)
@@ -674,7 +674,7 @@ namespace Decay::Fgd
                 {
                     for(const auto& baseClass : option.Params)
                     {
-                        assert(!baseClass.Quoted);
+                        R_ASSERT(!baseClass.Quoted);
                         baseClasses.emplace(ToLowerAscii(baseClass.Name));
                     }
                 }
@@ -700,11 +700,11 @@ namespace Decay::Fgd
 
                 // Process the `it` class
                 AddClassAndDependencies(orderedClasses, itName, itDepend, dependencyGraph, recursionPrevention);
-                assert(recursionPrevention.empty());
+                R_ASSERT(recursionPrevention.empty());
             }
         }
-        assert(dependencyGraph.empty());
-        assert(orderedClasses.size() == Classes.size());
+        R_ASSERT(dependencyGraph.empty());
+        R_ASSERT(orderedClasses.size() == Classes.size());
         return orderedClasses;
     }
 }
@@ -863,8 +863,8 @@ GOTO_OPTION_PARAM:
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Option& option)
     {
-        assert(!option.Name.empty());
-        assert(option.Name.find(' ') == std::string::npos); //TODO Check for other than alphanumeric characters
+        R_ASSERT(!option.Name.empty());
+        R_ASSERT(option.Name.find(' ') == std::string::npos); //TODO Check for other than alphanumeric characters
         out << option.Name;
         if(StringCaseInsensitiveEqual(option.Name, "halfgridsnap")) // `halfgridsnap` is exception and does not have `()` after it.
         {
@@ -1081,7 +1081,7 @@ GOTO_OPTION_PARAM:
             IgnoreWhitespace(in);
 
             c = in.peek();
-            assert(c == '[');
+            R_ASSERT(c == '[');
             in.ignore(); // Skip '['
 
             while(true)
@@ -1110,8 +1110,8 @@ GOTO_OPTION_PARAM:
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Property& property)
     {
-        assert(!property.Codename.empty());
-        assert(!property.Type.empty());
+        R_ASSERT(!property.Codename.empty());
+        R_ASSERT(!property.Type.empty());
         out << property.Codename << '(' << property.Type << ')';
         if(property.ReadOnly)
             out << " readonly";
@@ -1409,7 +1409,7 @@ GOTO_OPTION_PARAM:
             IgnoreWhitespace(in);
 
             c = in.peek();
-            assert(c == '[');
+            R_ASSERT(c == '[');
             in.ignore();
 
             while(true)
@@ -1417,7 +1417,7 @@ GOTO_OPTION_PARAM:
                 IgnoreWhitespace(in);
 
                 c = in.peek();
-                assert(in.good() || in.eof());
+                R_ASSERT(in.good() || in.eof());
                 if(in.bad() || in.fail())
                     throw std::runtime_error("Failed reading FGD class from stream");
                 if(c == ']')
@@ -1443,7 +1443,7 @@ GOTO_OPTION_PARAM:
                         else
                         {
                             in.clear(in.rdstate() & ~std::istream::failbit);
-                            assert(in.good() || in.eof());
+                            R_ASSERT(in.good() || in.eof());
                         }
                     }
 
@@ -1459,7 +1459,7 @@ GOTO_OPTION_PARAM:
                         else
                         {
                             in.clear(in.rdstate() & ~std::istream::failbit);
-                            assert(in.good() || in.eof());
+                            R_ASSERT(in.good() || in.eof());
                         }
                     }
 
@@ -1472,8 +1472,8 @@ GOTO_OPTION_PARAM:
     std::ostream& operator<<(std::ostream& out, const FgdFile::Class& clss)
     {
         { // Header
-            assert(!clss.Type.empty());
-            assert(clss.Type.find(' ') == std::string::npos);
+            R_ASSERT(!clss.Type.empty());
+            R_ASSERT(clss.Type.find(' ') == std::string::npos);
             out << '@' << clss.Type;
             if(!clss.Options.empty())
             {
@@ -1481,8 +1481,8 @@ GOTO_OPTION_PARAM:
                     out << ' ' << option;
             }
 
-            assert(!clss.Codename.empty());
-            assert(clss.Codename.find(' ') == std::string::npos);
+            R_ASSERT(!clss.Codename.empty());
+            R_ASSERT(clss.Codename.find(' ') == std::string::npos);
             out << " = " << clss.Codename;
 
             if(!clss.Description.empty())
@@ -1746,7 +1746,7 @@ GOTO_OPTION_PARAM:
                 }
 
                 c = in.peek();
-                assert(c == ')');
+                R_ASSERT(c == ')');
                 in.ignore();
 
                 int min, max;

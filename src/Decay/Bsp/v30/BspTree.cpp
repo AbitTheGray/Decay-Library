@@ -17,9 +17,9 @@ namespace Decay::Bsp::v30
         // Use it as filler
         if(Light.UsedRanges.empty())
             std::fill(
-                    Light.Data.begin(),
-                    Light.Data.end(),
-                    Bsp->GetRawLighting()[Bsp->GetLightingCount() / 2]
+                Light.Data.begin(),
+                Light.Data.end(),
+                Bsp->GetRawLighting()[Bsp->GetLightingCount() / 2]
             );
 #endif
 
@@ -36,10 +36,10 @@ namespace Decay::Bsp::v30
             return {};
 
         // Texture info
-        assert(face.TextureMapping < Bsp->GetTextureMappingCount());
+        R_ASSERT(face.TextureMapping < Bsp->GetTextureMappingCount());
         const BspFile::TextureMapping& textureMapping = Bsp->GetRawTextureMapping()[face.TextureMapping];
         auto textureIndex = textureMapping.Texture;
-        assert(textureIndex < Textures.size());
+        R_ASSERT(textureIndex < Textures.size());
 
         const Wad::Wad3::WadFile::Texture& texture = Textures[textureIndex];
 
@@ -63,25 +63,25 @@ namespace Decay::Bsp::v30
 
 
         // Get vertex indices from: Face -> Surface Edge -> Edge (-> Vertex)
-        assert(face.SurfaceEdgeCount >= 3); // To at least for a triangle
+        R_ASSERT(face.SurfaceEdgeCount >= 3); // To at least for a triangle
         std::vector<uint16_t> faceIndices(face.SurfaceEdgeCount);
         for(
-                std::size_t sei = face.FirstSurfaceEdge, seii = 0;
-                seii < face.SurfaceEdgeCount;
-                sei++, seii++
-                )
+            std::size_t sei = face.FirstSurfaceEdge, seii = 0;
+            seii < face.SurfaceEdgeCount;
+            sei++, seii++
+        )
         {
-            assert(sei < Bsp->GetSurfaceEdgeCount());
+            R_ASSERT(sei < Bsp->GetSurfaceEdgeCount());
             const BspFile::SurfaceEdges& surfaceEdge = Bsp->GetRawSurfaceEdges()[sei];
 
             if(surfaceEdge >= 0)
             {
-                assert(surfaceEdge < Bsp->GetEdgeCount());
+                R_ASSERT(surfaceEdge < Bsp->GetEdgeCount());
                 faceIndices[seii] = Bsp->GetRawEdges()[surfaceEdge].First;
             }
             else
             {
-                assert(-surfaceEdge < Bsp->GetEdgeCount());
+                R_ASSERT(-surfaceEdge < Bsp->GetEdgeCount());
                 faceIndices[seii] = Bsp->GetRawEdges()[-surfaceEdge].Second; // IdTech2 used ~ (swap bits) instead of - (swap sign)
             }
         }
@@ -93,7 +93,7 @@ namespace Decay::Bsp::v30
         float minT = 0, maxT = 0;
         glm::ivec2 lightmapSize;
 
-        assert(face.LightmapOffset >= -1);
+        R_ASSERT(face.LightmapOffset >= -1);
         if(face.LightmapOffset != -1)
         {
             // Get UV bounds
@@ -126,24 +126,24 @@ namespace Decay::Bsp::v30
             }
 
             lightmapSize = glm::ivec2(
-                    ceilf(maxS / 16.0f) - floorf(minS / 16.0f) + 1,
-                    ceilf(maxT / 16.0f) - floorf(minT / 16.0f) + 1
+                ceilf(maxS / 16.0f) - floorf(minS / 16.0f) + 1,
+                ceilf(maxT / 16.0f) - floorf(minT / 16.0f) + 1
             );
-            assert(lightmapSize.x > 0);
-            assert(lightmapSize.y > 0);
+            R_ASSERT(lightmapSize.x > 0);
+            R_ASSERT(lightmapSize.y > 0);
             /*
-            assert(lightmapSize.x <= 16);
-            assert(lightmapSize.y <= 16);
+            R_ASSERT(lightmapSize.x <= 16);
+            R_ASSERT(lightmapSize.y <= 16);
              */
             int lightmapLength = lightmapSize.x * lightmapSize.y;
             if(face.LightmapOffset + lightmapLength * 3 > Bsp->GetLightingCount() * 3)
                 throw std::runtime_error("Indexing outside of Lightmap");
 
             AddLight(
-                    lightmapSize,
-                    reinterpret_cast<const glm::u8vec3*>(reinterpret_cast<const uint8_t*>(Bsp->GetRawLighting()) + face.LightmapOffset),
-                    uvStart,
-                    uvEnd
+                lightmapSize,
+                reinterpret_cast<const glm::u8vec3*>(reinterpret_cast<const uint8_t*>(Bsp->GetRawLighting()) + face.LightmapOffset),
+                uvStart,
+                uvEnd
             );
             uvSize = uvEnd - uvStart;
         }
@@ -164,20 +164,20 @@ namespace Decay::Bsp::v30
             );
 #else
             glm::vec2 mainUV = glm::vec2(
-                    textureMapping.GetTexelU(mainVertex, texture.Size),
-                    textureMapping.GetTexelV(mainVertex, texture.Size)
+                textureMapping.GetTexelU(mainVertex, texture.Size),
+                textureMapping.GetTexelV(mainVertex, texture.Size)
             );
 #endif
             glm::vec2 mainLightUV = uvStart + glm::vec2(
-                    (textureMapping.GetTexelS(mainVertex) - minS) / lightmapSize.s * uvSize.s,
-                    (textureMapping.GetTexelT(mainVertex) - minT) / lightmapSize.t * uvSize.t
+                (textureMapping.GetTexelS(mainVertex) - minS) / lightmapSize.s * uvSize.s,
+                (textureMapping.GetTexelT(mainVertex) - minT) / lightmapSize.t * uvSize.t
             );
             uint16_t mainIndex = AddVertex(
-                    Vertex {
-                            mainVertex,
-                            mainUV,
-                            mainLightUV
-                    }
+                Vertex {
+                    mainVertex,
+                    mainUV,
+                    mainLightUV
+                }
             );
 
             // Second index
@@ -189,24 +189,24 @@ namespace Decay::Bsp::v30
             );
 #else
             glm::vec2 secondUV = glm::vec2(
-                    textureMapping.GetTexelU(secondVertex, texture.Size),
-                    textureMapping.GetTexelV(secondVertex, texture.Size)
+                textureMapping.GetTexelU(secondVertex, texture.Size),
+                textureMapping.GetTexelV(secondVertex, texture.Size)
             );
 #endif
             glm::vec2 secondLightUV = glm::vec2(
-                    (textureMapping.GetTexelS(secondVertex) - minS) / lightmapSize.s * uvSize.s,
-                    (textureMapping.GetTexelT(secondVertex) - minT) / lightmapSize.t * uvSize.t
+                (textureMapping.GetTexelS(secondVertex) - minS) / lightmapSize.s * uvSize.s,
+                (textureMapping.GetTexelT(secondVertex) - minT) / lightmapSize.t * uvSize.t
             );
             uint16_t secondIndex = AddVertex(
-                    Vertex {
-                            secondVertex,
-                            secondUV,
-                            secondLightUV
-                    }
+                Vertex {
+                    secondVertex,
+                    secondUV,
+                    secondLightUV
+                }
             );
 
             // Other indices
-            assert(face.SurfaceEdgeCount >= 3);
+            R_ASSERT(face.SurfaceEdgeCount >= 3);
             for(std::size_t ii = 2; ii < face.SurfaceEdgeCount; ii++)
             {
                 auto thirdVertex = Bsp->GetRawVertices()[faceIndices[ii]];
@@ -217,20 +217,20 @@ namespace Decay::Bsp::v30
                 );
 #else
                 glm::vec2 thirdUV = glm::vec2(
-                        textureMapping.GetTexelU(thirdVertex, texture.Size),
-                        textureMapping.GetTexelV(thirdVertex, texture.Size)
+                    textureMapping.GetTexelU(thirdVertex, texture.Size),
+                    textureMapping.GetTexelV(thirdVertex, texture.Size)
                 );
 #endif
                 glm::vec2 thirdLightUV = glm::vec2(
-                        (textureMapping.GetTexelS(thirdVertex) - minS) / lightmapSize.s * uvSize.s,
-                        (textureMapping.GetTexelT(thirdVertex) - minT) / lightmapSize.t * uvSize.t
+                    (textureMapping.GetTexelS(thirdVertex) - minS) / lightmapSize.s * uvSize.s,
+                    (textureMapping.GetTexelT(thirdVertex) - minT) / lightmapSize.t * uvSize.t
                 );
                 uint16_t thirdIndex = AddVertex(
-                        Vertex {
-                                thirdVertex,
-                                thirdUV,
-                                thirdLightUV
-                        }
+                    Vertex {
+                        thirdVertex,
+                        thirdUV,
+                        thirdLightUV
+                    }
                 );
 
                 // Add triangle to indices
@@ -243,7 +243,7 @@ namespace Decay::Bsp::v30
             }
         }
 
-        assert(smartFace.Indices.size() % 3 == 0);
+        R_ASSERT(smartFace.Indices.size() % 3 == 0);
 
         return smartFace;
     }
@@ -304,7 +304,7 @@ namespace Decay::Bsp::v30
                 bool prevPolygon = false;
 #endif
 
-                assert(indices.size() % 3 == 0);
+                R_ASSERT(indices.size() % 3 == 0);
                 for(std::size_t ii = 0; ii < indices.size(); ii += 3)
                 {
                     // +1 because OBJ starts at 1 instead of 0
@@ -312,9 +312,9 @@ namespace Decay::Bsp::v30
                     uint16_t i1 = indices[ii + 1] + 1;
                     uint16_t i2 = indices[ii + 2] + 1;
 
-                    assert(i0 <= Vertices.size());
-                    assert(i1 <= Vertices.size());
-                    assert(i2 <= Vertices.size());
+                    R_ASSERT(i0 <= Vertices.size());
+                    R_ASSERT(i1 <= Vertices.size());
+                    R_ASSERT(i2 <= Vertices.size());
 
 #ifdef BSP_OBJ_POLYGONS
                     if(prevPolygon)
@@ -375,8 +375,8 @@ namespace Decay::Bsp::v30
         for(auto& texture : Textures)
         {
             auto imgPath = texturePath == "." ?
-                           std::filesystem::path(texture.Name + textureExtension) :
-                           texturePath / (texture.Name + textureExtension);
+               std::filesystem::path(texture.Name + textureExtension) :
+               texturePath / (texture.Name + textureExtension);
 
             out << "newmtl texture_" << texture.Name << std::endl;
             out << "Ka 1.0 1.0 1.0" << std::endl;
@@ -401,8 +401,8 @@ namespace Decay::Bsp::v30
         else
             std::filesystem::create_directory(directory);
 
-        assert(textureExtension.size() > 1);
-        assert(textureExtension[0] == '.');
+        R_ASSERT(textureExtension.size() > 1);
+        R_ASSERT(textureExtension[0] == '.');
 
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = ImageWriteFunction_RGBA(textureExtension);
 
@@ -419,17 +419,17 @@ namespace Decay::Bsp::v30
                 // Crete dummy data
                 rgba.resize(texture.Width * texture.Height);
                 std::fill(
-                        rgba.begin(),
-                        rgba.end(),
-                        glm::u8vec4(0xBFu, 0xBFu, 0xBFu, 0xFFu)
+                    rgba.begin(),
+                    rgba.end(),
+                    glm::u8vec4(0xBFu, 0xBFu, 0xBFu, 0xFFu)
                 );
             }
 
             writeFunc(
-                    (directory / (texture.Name + textureExtension)).string().c_str(),
-                    texture.Width,
-                    texture.Height,
-                    rgba.data()
+                (directory / (texture.Name + textureExtension)).string().c_str(),
+                texture.Width,
+                texture.Height,
+                rgba.data()
             );
         }
     }
@@ -450,12 +450,12 @@ namespace Decay::Bsp::v30
                         Light.Insert(x, y, size, data);
 
                         out_start = {
-                                x * w1,
-                                y * h1
+                            x * w1,
+                            y * h1
                         };
                         out_end = {
-                                static_cast<float>(x + size.x) * w1,
-                                static_cast<float>(y + size.y) * h1
+                            static_cast<float>(x + size.x) * w1,
+                            static_cast<float>(y + size.y) * h1
                         };
                         return; // Successfully added
                     }
@@ -493,41 +493,41 @@ namespace Decay::Bsp::v30
             // Use to top-left corner instead of top quarter.
             for(int64_t oldIndex = dataSize_old, newIndex = dataSize / 2 - w; oldIndex > 0; oldIndex -= w, newIndex -= Light.Width)
             {
-                assert(newIndex >= 0);
+                R_ASSERT(newIndex >= 0);
 
                 int64_t oldIndex_new = oldIndex + w;
-                assert(oldIndex_new <= dataSize);
+                R_ASSERT(oldIndex_new <= dataSize);
 
                 // Data
                 std::move(
-                        data_ptr + oldIndex,
-                        data_ptr + oldIndex_new,
-                        data_ptr + newIndex
+                    data_ptr + oldIndex,
+                    data_ptr + oldIndex_new,
+                    data_ptr + newIndex
                 );
                 std::fill(
-                        data_ptr + oldIndex,
-                        data_ptr + oldIndex_new,
-                        rgb
+                    data_ptr + oldIndex,
+                    data_ptr + oldIndex_new,
+                    rgb
                 );
 
                 // Used
                 std::move(
-                        used_ptr + oldIndex,
-                        used_ptr + oldIndex_new,
-                        used_ptr + newIndex
+                    used_ptr + oldIndex,
+                    used_ptr + oldIndex_new,
+                    used_ptr + newIndex
                 );
                 std::fill(
-                        used_ptr + oldIndex,
-                        used_ptr + oldIndex_new,
-                        false
+                    used_ptr + oldIndex,
+                    used_ptr + oldIndex_new,
+                    false
                 );
             }
 
             // Fill new area (lower half)
             std::fill(
-                    Light.Data.begin() + (dataSize / 2),
-                    Light.Data.end(),
-                    rgb
+                Light.Data.begin() + (dataSize / 2),
+                Light.Data.end(),
+                rgb
             );
         }
 
@@ -542,8 +542,8 @@ namespace Decay::Bsp::v30
         {
             //TODO Optimize
             // Check few pixels (left, right, middle) before checking whole row?
-            assert(Light.Height / 2 - 16 >= 0);
-            assert(Light.Width / 2 - 16 >= 0);
+            R_ASSERT(Light.Height / 2 - 16 >= 0);
+            R_ASSERT(Light.Width / 2 - 16 >= 0);
             for(uint32_t y = Light.Height / 2 - 16; y < Light.Height - size.y; y++)
             {
                 for(uint32_t x = Light.Width / 2 - 16; x < Light.Width - size.x; x++)
@@ -553,12 +553,12 @@ namespace Decay::Bsp::v30
                         Light.Insert(x, y, size, data);
 
                         out_start = {
-                                x * w1,
-                                y * h1
+                            x * w1,
+                            y * h1
                         };
                         out_end = {
-                                static_cast<float>(x + size.x) * w1,
-                                static_cast<float>(y + size.y) * h1
+                            static_cast<float>(x + size.x) * w1,
+                            static_cast<float>(y + size.y) * h1
                         };
                         return; // Successfully added
                     }

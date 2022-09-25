@@ -6,7 +6,7 @@ void Test_OptionParam(const FgdFile::OptionParam& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -16,17 +16,17 @@ void Test_OptionParam(const FgdFile::OptionParam& original)
 
     FgdFile::OptionParam result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Name == original.Name);
-    assert(result.Quoted == original.Quoted);
-    assert(result == original);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Name == original.Name);
+    R_ASSERT(result.Quoted == original.Quoted);
+    R_ASSERT(result == original);
 }
 
 void Test_Option(const FgdFile::Option& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -36,14 +36,14 @@ void Test_Option(const FgdFile::Option& original)
 
     FgdFile::Option result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Name == original.Name);
-    assert(result.Params.size() == original.Params.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Name == original.Name);
+    R_ASSERT(result.Params.size() == original.Params.size());
     for(int i = 0; i < result.Params.size(); i++)
     {
-        assert(result.Params[i] == original.Params[i]);
+        R_ASSERT(result.Params[i] == original.Params[i]);
     }
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 
 void Test_PropertyFlagOrChoice(const FgdFile::PropertyFlagOrChoice& original)
@@ -51,7 +51,7 @@ void Test_PropertyFlagOrChoice(const FgdFile::PropertyFlagOrChoice& original)
     {
         std::stringstream ss;
         original.Write(ss, true);
-        assert(ss.good());
+        R_ASSERT(ss.good());
 
 #ifdef DEBUG
         std::cout << ss.str() << std::endl;
@@ -61,11 +61,11 @@ void Test_PropertyFlagOrChoice(const FgdFile::PropertyFlagOrChoice& original)
 
         FgdFile::PropertyFlagOrChoice result = {};
         ss >> result;
-        assert(ss.good() || ss.eof());
-        assert(result.Index == original.Index);
-        assert(result.DisplayName == original.DisplayName);
-        assert(result.Default == original.Default);
-        assert(result == original);
+        R_ASSERT(ss.good() || ss.eof());
+        R_ASSERT(result.Index == original.Index);
+        R_ASSERT(result.DisplayName == original.DisplayName);
+        R_ASSERT(result.Default == original.Default);
+        R_ASSERT(result == original);
     }
     {
         std::stringstream ss;
@@ -79,11 +79,11 @@ void Test_PropertyFlagOrChoice(const FgdFile::PropertyFlagOrChoice& original)
 
         FgdFile::PropertyFlagOrChoice result;
         ss >> result;
-        assert(ss.good() || ss.eof());
-        assert(result.Index == original.Index);
-        assert(result.DisplayName == original.DisplayName);
-        assert(result.Default == false);
-        //assert(result == original); // Cannot check as `original` may differ in `Default`
+        R_ASSERT(ss.good() || ss.eof());
+        R_ASSERT(result.Index == original.Index);
+        R_ASSERT(result.DisplayName == original.DisplayName);
+        R_ASSERT(result.Default == false);
+        //R_ASSERT(result == original); // Cannot check as `original` may differ in `Default`
     }
 }
 
@@ -91,7 +91,7 @@ void Test_Property(const FgdFile::Property& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -101,26 +101,26 @@ void Test_Property(const FgdFile::Property& original)
 
     FgdFile::Property result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Codename == original.Codename);
-    assert(result.Type == original.Type);
-    assert(result.ReadOnly == original.ReadOnly);
-    assert(result.DisplayName == original.DisplayName);
-    assert(result.DefaultValue == original.DefaultValue);
-    assert(result.Description == original.Description);
-    assert(result.FlagsOrChoices.size() == original.FlagsOrChoices.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Codename == original.Codename);
+    R_ASSERT(result.Type == original.Type);
+    R_ASSERT(result.ReadOnly == original.ReadOnly);
+    R_ASSERT(result.DisplayName == original.DisplayName);
+    R_ASSERT(result.DefaultValue == original.DefaultValue);
+    R_ASSERT(result.Description == original.Description);
+    R_ASSERT(result.FlagsOrChoices.size() == original.FlagsOrChoices.size());
     for(int i = 0; i < result.FlagsOrChoices.size(); i++)
     {
-        assert(result.FlagsOrChoices[i] == original.FlagsOrChoices[i]);
+        R_ASSERT(result.FlagsOrChoices[i] == original.FlagsOrChoices[i]);
     }
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 
 void Test_InputOutputType(const FgdFile::InputOutputType& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -130,15 +130,15 @@ void Test_InputOutputType(const FgdFile::InputOutputType& original)
 
     FgdFile::InputOutputType result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result == original);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result == original);
 }
 
 void Test_InputOutput(const FgdFile::InputOutput& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -148,19 +148,19 @@ void Test_InputOutput(const FgdFile::InputOutput& original)
 
     FgdFile::InputOutput result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Type == original.Type);
-    assert(result.Name == original.Name);
-    assert(result.ParamType == original.ParamType);
-    assert(result.Description == original.Description);
-    assert(result == original);
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Type == original.Type);
+    R_ASSERT(result.Name == original.Name);
+    R_ASSERT(result.ParamType == original.ParamType);
+    R_ASSERT(result.Description == original.Description);
+    R_ASSERT(result == original);
 }
 
 void Test_Class(const FgdFile::Class& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -170,33 +170,33 @@ void Test_Class(const FgdFile::Class& original)
 
     FgdFile::Class result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Type == original.Type);
-    assert(result.Options.size() == original.Options.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Type == original.Type);
+    R_ASSERT(result.Options.size() == original.Options.size());
     for(int i = 0; i < result.Options.size(); i++)
     {
-        assert(result.Options[i] == original.Options[i]);
+        R_ASSERT(result.Options[i] == original.Options[i]);
     }
-    assert(result.Codename == original.Codename);
-    assert(result.Description == original.Description);
-    assert(result.Properties.size() == original.Properties.size());
+    R_ASSERT(result.Codename == original.Codename);
+    R_ASSERT(result.Description == original.Description);
+    R_ASSERT(result.Properties.size() == original.Properties.size());
     for(int i = 0; i < result.Properties.size(); i++)
     {
-        assert(result.Properties[i] == original.Properties[i]);
+        R_ASSERT(result.Properties[i] == original.Properties[i]);
     }
-    assert(result.IO.size() == original.IO.size());
+    R_ASSERT(result.IO.size() == original.IO.size());
     for(int i = 0; i < result.IO.size(); i++)
     {
-        assert(result.IO[i] == original.IO[i]);
+        R_ASSERT(result.IO[i] == original.IO[i]);
     }
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 
 void Test_AutoVisGroup_Child(const FgdFile::AutoVisGroup_Child& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -206,23 +206,23 @@ void Test_AutoVisGroup_Child(const FgdFile::AutoVisGroup_Child& original)
 
     FgdFile::AutoVisGroup_Child result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.DisplayName == original.DisplayName);
-    assert(result.EntityClasses.size() == original.EntityClasses.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.DisplayName == original.DisplayName);
+    R_ASSERT(result.EntityClasses.size() == original.EntityClasses.size());
     auto it0 = result.EntityClasses.begin();
     auto it1 = original.EntityClasses.begin();
     for(int i = 0; i < result.EntityClasses.size(); i++, it0++, it1++)
     {
-        assert(*it0 == *it1);
+        R_ASSERT(*it0 == *it1);
     }
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 
 void Test_AutoVisGroup(const FgdFile::AutoVisGroup& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -232,14 +232,14 @@ void Test_AutoVisGroup(const FgdFile::AutoVisGroup& original)
 
     FgdFile::AutoVisGroup result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.DisplayName == original.DisplayName);
-    assert(result.Child.size() == original.Child.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.DisplayName == original.DisplayName);
+    R_ASSERT(result.Child.size() == original.Child.size());
     for(int i = 0; i < result.Child.size(); i++)
     {
-        assert(result.Child[i] == original.Child[i]);
+        R_ASSERT(result.Child[i] == original.Child[i]);
     }
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 
 int main()

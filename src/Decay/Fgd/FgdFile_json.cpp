@@ -191,7 +191,7 @@ namespace Decay::Fgd
                 if(orderClassesByDependency)
                 {
                     std::vector<std::string> orderedClasses = OrderClassesByDependency();
-                    assert(orderedClasses.size() == Classes.size());
+                    R_ASSERT(orderedClasses.size() == Classes.size());
                     for(const auto& clssName : orderedClasses)
                     {
                         bool found = false;
@@ -207,7 +207,7 @@ namespace Decay::Fgd
                                 break;
                             }
                         }
-                        assert(found);
+                        R_ASSERT(found);
                     }
                 }
                 else

@@ -38,7 +38,7 @@ namespace Decay
             if(c == EOF) // End of File
             {
                 in.setstate(std::ios_base::eofbit);
-                assert(!in.fail());
+                R_ASSERT(!in.fail());
                 return ignoredChars;
             }
             else if(IsWhitespace(static_cast<char>(c))) // Whitespace

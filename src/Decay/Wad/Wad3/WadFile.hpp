@@ -280,7 +280,7 @@ namespace Decay::Wad::Wad3
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
             {
-                assert(level < MipMapLevels);
+                R_ASSERT(level < MipMapLevels);
 
                 std::vector<glm::u8vec3> pixels(MipMapData[level].size());
                 for(std::size_t i = 0; i < MipMapData[level].size(); i++)
@@ -289,7 +289,7 @@ namespace Decay::Wad::Wad3
             }
             [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba(std::size_t level = 0) const
             {
-                assert(level < MipMapLevels);
+                R_ASSERT(level < MipMapLevels);
 
                 bool paletteTransparent = Palette[255] == glm::u8vec3(0x00, 0x00, 0xFF);
 

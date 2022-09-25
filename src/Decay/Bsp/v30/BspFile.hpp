@@ -43,8 +43,8 @@ namespace Decay::Bsp::v30
         static const std::size_t LumpType_Size = static_cast<uint8_t>(LumpType::Models) + 1;
 
     public:
-        std::array<void*, LumpType_Size> m_Data = {};
-        std::array<uint32_t, LumpType_Size> m_DataLength = {};
+        std::array<void*, LumpType_Size> m_Data{};
+        std::array<uint32_t, LumpType_Size> m_DataLength{};
         static std::array<std::size_t, LumpType_Size> s_DataMaxLength;
         static std::array<std::size_t, LumpType_Size> s_DataElementSize;
 
@@ -117,10 +117,10 @@ namespace Decay::Bsp::v30
 
             [[nodiscard]] inline bool IsPacked() const
             {
-                assert(MipMaps[0] == 0 || MipMaps[0] >= sizeof(Texture));
-                assert(MipMaps[1] == 0 || MipMaps[1] > sizeof(Texture));
-                assert(MipMaps[2] == 0 || MipMaps[2] > sizeof(Texture));
-                assert(MipMaps[3] == 0 || MipMaps[3] > sizeof(Texture));
+                R_ASSERT(MipMaps[0] == 0 || MipMaps[0] >= sizeof(Texture));
+                R_ASSERT(MipMaps[1] == 0 || MipMaps[1] > sizeof(Texture));
+                R_ASSERT(MipMaps[2] == 0 || MipMaps[2] > sizeof(Texture));
+                R_ASSERT(MipMaps[3] == 0 || MipMaps[3] > sizeof(Texture));
 
                 return MipMaps[0] && MipMaps[1] && MipMaps[2] && MipMaps[3];
             }
@@ -252,11 +252,12 @@ namespace Decay::Bsp::v30
             int32_t FirstFaceIndex, FaceCount;
         };
 
-#define LUMP_ENTRY(fun_vec, fun_count, fun_raw, type, lumpType) \
-        [[nodiscard]] std::vector<type> fun_vec() const\
+#define LUMP_ENTRY(a_fun_vec, a_fun_count, a_fun_raw, a_type, a_lumpType) \
+        [[deprecated("This implementation converts data into a vector (=allocates new memory), use *_raw() + *_count() instead")]]\
+        [[nodiscard]] inline std::vector<a_type> a_fun_vec() const  \
         {\
-            std::size_t index = static_cast<std::size_t>(LumpType::lumpType);\
-            std::vector<type> rtn(m_DataLength[index]);\
+            std::size_t index = static_cast<std::size_t>(LumpType::a_lumpType);\
+            std::vector<a_type> rtn(m_DataLength[index]);\
             std::copy(\
                 static_cast<char*>(m_Data[index]),\
                 static_cast<char*>(m_Data[index]) + m_DataLength[index],\
@@ -264,17 +265,17 @@ namespace Decay::Bsp::v30
             );\
             return rtn;\
         }\
-        [[nodiscard]] std::size_t fun_count() const noexcept\
+        [[nodiscard]] inline std::size_t a_fun_count() const noexcept\
         {\
-            return m_DataLength[static_cast<uint8_t>(LumpType::lumpType)] / sizeof(type);\
+            return m_DataLength[static_cast<uint8_t>(LumpType::a_lumpType)] / sizeof(a_type);\
         }\
-        [[nodiscard]] const type* fun_raw() const noexcept\
+        [[nodiscard]] inline const a_type* a_fun_raw() const noexcept\
         {\
-            return static_cast<const type*>(m_Data[static_cast<uint8_t>(LumpType::lumpType)]);\
+            return static_cast<const a_type*>(m_Data[static_cast<uint8_t>(LumpType::a_lumpType)]);\
         }\
-        [[nodiscard]] type* fun_raw() noexcept\
+        [[nodiscard]] inline a_type* a_fun_raw() noexcept\
         {\
-            return static_cast<type*>(m_Data[static_cast<uint8_t>(LumpType::lumpType)]);\
+            return static_cast<a_type*>(m_Data[static_cast<uint8_t>(LumpType::a_lumpType)]);\
         }
 
         LUMP_ENTRY(GetEntityChars, GetEntityCharCount, GetRawEntityChars, char, Entities);
@@ -321,7 +322,7 @@ namespace Decay::Bsp::v30
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
             {
-                assert(level < MipMapLevels);
+                R_ASSERT(level < MipMapLevels);
 
                 if(MipMapData[level].empty())
                     throw std::runtime_error("Texture does not contain data");
@@ -334,7 +335,7 @@ namespace Decay::Bsp::v30
 
             [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba(std::size_t level = 0) const
             {
-                assert(level < MipMapLevels);
+                R_ASSERT(level < MipMapLevels);
 
                 if(MipMapData[level].empty())
                     throw std::runtime_error("Texture does not contain data");

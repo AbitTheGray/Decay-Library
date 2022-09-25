@@ -16,7 +16,7 @@ namespace Decay::Rmf
     /// Read length-prefixed string
     inline std::string ReadNString(std::istream& in, int maxLength = 0 /* no limit */)
     {
-        assert(maxLength >= 0);
+        R_ASSERT(maxLength >= 0);
 
         uint8_t length = 0;
         in.read(reinterpret_cast<char*>(&length), sizeof(length));
@@ -28,12 +28,12 @@ namespace Decay::Rmf
         {
             std::string rtn = std::string(length - 1, ' ');
             in.read(rtn.data(), length - 1);
-            assert(in.get() == '\0');
+            R_ASSERT(in.get() == '\0');
             return rtn;
         }
         else if(length == 1) // 1 = only null-termination
         {
-            assert(in.get() == '\0');
+            R_ASSERT(in.get() == '\0');
             return std::string{};
         }
         else // length == 0
@@ -44,7 +44,7 @@ namespace Decay::Rmf
     /// Write length-prefixed string
     inline void WriteNString(std::ostream& out, const std::string& text)
     {
-        assert(text.size() <= std::numeric_limits<uint8_t>::max());
+        R_ASSERT(text.size() <= std::numeric_limits<uint8_t>::max());
         uint8_t length = text.size() + 1;
         out.write(reinterpret_cast<const char*>(&length), sizeof(length));
 
@@ -70,11 +70,11 @@ namespace Decay::Rmf
 {
     std::istream& operator>>(std::istream& in, RmfFile::VisGroup& visGroup)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
         in.read(reinterpret_cast<char*>(&visGroup), sizeof(RmfFile::VisGroup));
 
-        assert(IsNullTerminated(visGroup.Name, RmfFile::VisGroup::Name_Length));
+        R_ASSERT(IsNullTerminated(visGroup.Name, RmfFile::VisGroup::Name_Length));
 
         return in;
     }
@@ -87,20 +87,20 @@ namespace Decay::Rmf
 
     std::istream& operator>>(std::istream& in, RmfFile::Face& face)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
         in.read(reinterpret_cast<char*>(&face), offsetof(RmfFile::Face, Vertices));
 
         // Vertices
         int verticesCount = 0;
         in.read(reinterpret_cast<char*>(&verticesCount), sizeof(verticesCount));
-        assert(in.good());
+        R_ASSERT(in.good());
         face.Vertices.resize(verticesCount);
         in.read(reinterpret_cast<char*>(face.Vertices.data()), sizeof(RmfFile::Vector_t) * verticesCount);
 
         in.read(reinterpret_cast<char*>(face.PlaneVertices), sizeof(RmfFile::Vector_t) * RmfFile::Face::PlaneVertices_Length);
 
-        assert(IsNullTerminated(face.TextureName, RmfFile::Face::TextureName_Length));
+        R_ASSERT(IsNullTerminated(face.TextureName, RmfFile::Face::TextureName_Length));
 
         return in;
     }
@@ -109,7 +109,7 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&face), offsetof(RmfFile::Face, Vertices));
 
         // Vertices
-        assert(face.Vertices.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(face.Vertices.size() <= std::numeric_limits<int>::max());
         int verticesCount = face.Vertices.size();
         out.write(reinterpret_cast<const char*>(&verticesCount), sizeof(verticesCount));
         out.write(reinterpret_cast<const char*>(face.Vertices.data()), sizeof(RmfFile::Vector_t) * verticesCount);
@@ -121,16 +121,16 @@ namespace Decay::Rmf
 
     std::istream& operator>>(std::istream& in, RmfFile::Solid& solid)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         in.read(reinterpret_cast<char*>(&solid.VisGroup), sizeof(solid.VisGroup));
         in.read(reinterpret_cast<char*>(&solid.DisplayColor), sizeof(solid.DisplayColor));
-        in.read(reinterpret_cast<char*>(&solid.Dummy), solid.Dummy_Length);
+        in.read(reinterpret_cast<char*>(solid.Dummy), solid.Dummy_Length);
 
         // Faces
         int faceCount = 0;
         in.read(reinterpret_cast<char*>(&faceCount), sizeof(faceCount));
-        assert(in.good());
-        assert(faceCount >= 4);
+        R_ASSERT(in.good());
+        R_ASSERT(faceCount >= 4);
         solid.Faces.resize(faceCount);
         for(int i = 0; i < faceCount; i++)
             in >> solid.Faces[i];
@@ -143,10 +143,10 @@ namespace Decay::Rmf
 
         out.write(reinterpret_cast<const char*>(&solid.VisGroup), sizeof(solid.VisGroup));
         out.write(reinterpret_cast<const char*>(&solid.DisplayColor), sizeof(solid.DisplayColor));
-        out.write(reinterpret_cast<const char*>(&solid.Dummy), sizeof(solid.Dummy_Length));
+        out.write(reinterpret_cast<const char*>(solid.Dummy), sizeof(solid.Dummy_Length));
 
         // Faces
-        assert(solid.Faces.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(solid.Faces.size() <= std::numeric_limits<int>::max());
         int faceCount = solid.Faces.size();
         out.write(reinterpret_cast<const char*>(&faceCount), sizeof(faceCount));
         for(int i = 0; i < faceCount; i++)
@@ -157,7 +157,7 @@ namespace Decay::Rmf
 
     std::istream& operator>>(std::istream& in, RmfFile::Entity& entity)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         in.read(reinterpret_cast<char*>(&entity.VisGroup), sizeof(entity.VisGroup));
         in.read(reinterpret_cast<char*>(&entity.DisplayColor), sizeof(entity.DisplayColor));
 
@@ -165,17 +165,17 @@ namespace Decay::Rmf
         {
             int solidCount = 0;
             in.read(reinterpret_cast<char*>(&solidCount), sizeof(solidCount));
-            assert(in.good());
+            R_ASSERT(in.good());
 
             entity.Solids.reserve(solidCount);
             for(int i = 0; i < solidCount; i++)
             {
                 std::string type = ReadNString(in, 20);
-                assert(type == RmfFile::Solid::TypeName);
+                R_ASSERT(type == RmfFile::Solid::TypeName);
 
                 RmfFile::Solid solid{};
                 in >> solid;
-                assert(in.good());
+                R_ASSERT(in.good());
 
                 entity.Solids.emplace_back(solid);
             }
@@ -183,7 +183,7 @@ namespace Decay::Rmf
 
         entity.Classname = ReadNString(in, entity.Classname_MaxLength);
 
-        in.read(reinterpret_cast<char*>(&entity.Dummy), entity.Dummy_Length);
+        in.read(reinterpret_cast<char*>(entity.Dummy), entity.Dummy_Length);
         in.read(reinterpret_cast<char*>(&entity.EntityFlags), sizeof(entity.EntityFlags));
 
         // Read KeyValue
@@ -195,9 +195,9 @@ namespace Decay::Rmf
                 entity.KeyValue[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
         }
 
-        in.read(reinterpret_cast<char*>(&entity.Dummy2), entity.Dummy2_Length);
+        in.read(reinterpret_cast<char*>(entity.Dummy2), entity.Dummy2_Length);
         in.read(reinterpret_cast<char*>(&entity.Position), sizeof(entity.Position));
-        in.read(reinterpret_cast<char*>(&entity.Dummy3), entity.Dummy3_Length);
+        in.read(reinterpret_cast<char*>(entity.Dummy3), entity.Dummy3_Length);
 
         return in;
     }
@@ -209,40 +209,40 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&entity.DisplayColor), sizeof(RmfFile::Entity::DisplayColor));
 
         // Solids
-        assert(entity.Solids.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(entity.Solids.size() <= std::numeric_limits<int>::max());
         int solidCount = entity.Solids.size();
         out.write(reinterpret_cast<const char*>(&solidCount), sizeof(solidCount));
         for(int i = 0; i < solidCount; i++)
             out << entity.Solids[i];
 
-        assert(entity.Classname.size() < RmfFile::Entity::Classname_MaxLength); // < and not <= because there needs to be space for '\0'
+        R_ASSERT(entity.Classname.size() < RmfFile::Entity::Classname_MaxLength); // < and not <= because there needs to be space for '\0'
         WriteNString(out, entity.Classname);
 
-        out.write(reinterpret_cast<const char*>(&entity.Dummy), RmfFile::Entity::Dummy_Length);
+        out.write(reinterpret_cast<const char*>(entity.Dummy), RmfFile::Entity::Dummy_Length);
         out.write(reinterpret_cast<const char*>(&entity.EntityFlags), sizeof(RmfFile::Entity::EntityFlags));
 
         // Key-Values
-        assert(entity.KeyValue.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(entity.KeyValue.size() <= std::numeric_limits<int>::max());
         int pairs = entity.KeyValue.size();
         out.write(reinterpret_cast<const char*>(&pairs), sizeof(pairs));
         for(const auto& kv : entity.KeyValue)
         {
-            assert(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
-            assert(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
+            R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
+            R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
             WriteNString(out, kv.first);
             WriteNString(out, kv.second);
         }
 
-        out.write(reinterpret_cast<const char*>(&entity.Dummy2), RmfFile::Entity::Dummy2_Length);
+        out.write(reinterpret_cast<const char*>(entity.Dummy2), RmfFile::Entity::Dummy2_Length);
         out.write(reinterpret_cast<const char*>(&entity.Position), sizeof(RmfFile::Entity::Position));
-        out.write(reinterpret_cast<const char*>(&entity.Dummy3), RmfFile::Entity::Dummy3_Length);
+        out.write(reinterpret_cast<const char*>(entity.Dummy3), RmfFile::Entity::Dummy3_Length);
 
         return out;
     }
 
     std::istream& operator>>(std::istream& in, RmfFile::Group& group)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         in.read(reinterpret_cast<char*>(&group.VisGroup), sizeof(group.VisGroup));
         in.read(reinterpret_cast<char*>(&group.DisplayColor), sizeof(group.DisplayColor));
 
@@ -250,7 +250,7 @@ namespace Decay::Rmf
         {
             int objectCount = 0;
             in.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
-            assert(in.good());
+            R_ASSERT(in.good());
 
             group.Solids.reserve(objectCount);
             group.Entities.reserve(objectCount);
@@ -262,7 +262,7 @@ namespace Decay::Rmf
                 {
                     RmfFile::Solid solid{};
                     in >> solid;
-                    assert(in.good());
+                    R_ASSERT(in.good());
 
                     group.Solids.emplace_back(solid);
                 }
@@ -270,7 +270,7 @@ namespace Decay::Rmf
                 {
                     RmfFile::Entity entity{};
                     in >> entity;
-                    assert(in.good());
+                    R_ASSERT(in.good());
 
                     group.Entities.emplace_back(entity);
                 }
@@ -278,7 +278,7 @@ namespace Decay::Rmf
                 {
                     RmfFile::Group subGroup{};
                     in >> subGroup;
-                    assert(in.good());
+                    R_ASSERT(in.good());
 
                     group.Groups.emplace_back(subGroup);
                 }
@@ -310,12 +310,12 @@ namespace Decay::Rmf
 
     std::istream& operator>>(std::istream& in, RmfFile::Corner& corner)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         in.read(reinterpret_cast<char*>(&corner.Position), sizeof(corner.Position));
         in.read(reinterpret_cast<char*>(&corner.Index), sizeof(corner.Index));
 
-        in.read(reinterpret_cast<char*>(&corner.NameOverride), corner.NameOverride_Length);
-        assert(IsNullTerminated(corner.NameOverride, corner.NameOverride_Length));
+        in.read(reinterpret_cast<char*>(corner.NameOverride), corner.NameOverride_Length);
+        R_ASSERT(IsNullTerminated(corner.NameOverride, corner.NameOverride_Length));
 
         // Read KeyValue
         {
@@ -332,16 +332,16 @@ namespace Decay::Rmf
     {
         out.write(reinterpret_cast<const char*>(&corner.Position), sizeof(RmfFile::Corner::Position));
         out.write(reinterpret_cast<const char*>(&corner.Index), sizeof(RmfFile::Corner::Index));
-        out.write(reinterpret_cast<const char*>(&corner.NameOverride), RmfFile::Corner::NameOverride_Length);
+        out.write(reinterpret_cast<const char*>(corner.NameOverride), RmfFile::Corner::NameOverride_Length);
 
         // Key-Values
-        assert(corner.KeyValue.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(corner.KeyValue.size() <= std::numeric_limits<int>::max());
         int keyValueCount = corner.KeyValue.size();
         out.write(reinterpret_cast<const char*>(&keyValueCount), sizeof(keyValueCount));
         for(const auto& kv : corner.KeyValue)
         {
-            assert(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
-            assert(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
+            R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
+            R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
             WriteNString(out, kv.first);
             WriteNString(out, kv.second);
         }
@@ -366,14 +366,14 @@ namespace Decay::Rmf
 
     std::istream& operator>>(std::istream& in, RmfFile::Path& path)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
 
-        in.read(reinterpret_cast<char*>(&path.Name), path.Name_Length);
-        assert(IsNullTerminated(path.Name, path.Name_Length));
+        in.read(reinterpret_cast<char*>(path.Name), path.Name_Length);
+        R_ASSERT(IsNullTerminated(path.Name, path.Name_Length));
 
-        in.read(reinterpret_cast<char*>(&path.Class), path.Class_Length);
-        assert(IsNullTerminated(path.Class, path.Class_Length));
-        assert(path.Class_str() == "path_corner" || path.Class_str() == "path_track");
+        in.read(reinterpret_cast<char*>(path.Class), path.Class_Length);
+        R_ASSERT(IsNullTerminated(path.Class, path.Class_Length));
+        R_ASSERT(path.Class_str() == "path_corner" || path.Class_str() == "path_track");
 
         in >> path.Type;
 
@@ -381,7 +381,7 @@ namespace Decay::Rmf
         {
             int cornerCount = 0;
             in.read(reinterpret_cast<char*>(&cornerCount), sizeof(cornerCount));
-            assert(in.good());
+            R_ASSERT(in.good());
             path.Corners.reserve(cornerCount);
 
             for(int i = 0; i < cornerCount; i++)
@@ -398,7 +398,7 @@ namespace Decay::Rmf
     std::ostream& operator<<(std::ostream& out, const RmfFile::Path& path)
     {
         out.write(path.Name, RmfFile::Path::Name_Length);
-        assert(path.Class_str() == "path_corner" || path.Class_str() == "path_track");
+        R_ASSERT(path.Class_str() == "path_corner" || path.Class_str() == "path_track");
         out.write(path.Class, RmfFile::Path::Class_Length);
         out << path.Type;
 
@@ -427,7 +427,7 @@ namespace Decay::Rmf
 
     std::istream& operator>>(std::istream& in, RmfFile::World& world)
     {
-        assert(in.good());
+        R_ASSERT(in.good());
         in.read(reinterpret_cast<char*>(&world.VisGroup), sizeof(world.VisGroup));
         in.read(reinterpret_cast<char*>(&world.DisplayColor), sizeof(world.DisplayColor));
 
@@ -435,7 +435,7 @@ namespace Decay::Rmf
         {
             int objectCount = 0;
             in.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
-            assert(in.good());
+            R_ASSERT(in.good());
 
             world.Solids.reserve(objectCount);
             world.Entities.reserve(objectCount);
@@ -447,7 +447,7 @@ namespace Decay::Rmf
                 {
                     RmfFile::Solid solid{};
                     in >> solid;
-                    assert(in.good());
+                    R_ASSERT(in.good());
 
                     world.Solids.emplace_back(solid);
                 }
@@ -455,7 +455,7 @@ namespace Decay::Rmf
                 {
                     RmfFile::Entity entity{};
                     in >> entity;
-                    assert(in.good());
+                    R_ASSERT(in.good());
 
                     world.Entities.emplace_back(entity);
                 }
@@ -463,7 +463,7 @@ namespace Decay::Rmf
                 {
                     RmfFile::Group subGroup{};
                     in >> subGroup;
-                    assert(in.good());
+                    R_ASSERT(in.good());
 
                     world.Groups.emplace_back(subGroup);
                 }
@@ -474,9 +474,9 @@ namespace Decay::Rmf
         }
 
         world.Classname = ReadNString(in, RmfFile::Entity::Classname_MaxLength);
-        assert(world.Classname == "worldspawn");
+        R_ASSERT(world.Classname == "worldspawn");
 
-        in.read(reinterpret_cast<char*>(&world.Dummy), world.Dummy_Length);
+        in.read(reinterpret_cast<char*>(world.Dummy), world.Dummy_Length);
         in.read(reinterpret_cast<char*>(&world.EntityFlags), sizeof(world.EntityFlags));
 
         // Read KeyValue
@@ -488,13 +488,13 @@ namespace Decay::Rmf
                 world.KeyValue[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
         }
 
-        in.read(reinterpret_cast<char*>(&world.Dummy2), world.Dummy2_Length);
+        in.read(reinterpret_cast<char*>(world.Dummy2), world.Dummy2_Length);
 
         // Paths
         {
             int pathCount = 0;
             in.read(reinterpret_cast<char*>(&pathCount), sizeof(pathCount));
-            assert(in.good());
+            R_ASSERT(in.good());
             world.Paths.reserve(pathCount);
 
             for(int i = 0; i < pathCount; i++)
@@ -524,26 +524,26 @@ namespace Decay::Rmf
         for(const auto& subGroup : world.Groups)
             out << subGroup;
 
-        assert(world.Classname == "worldspawn");
+        R_ASSERT(world.Classname == "worldspawn");
         WriteNString(out, world.Classname);
-        out.write(reinterpret_cast<const char*>(&world.Dummy), RmfFile::World::Dummy_Length);
+        out.write(reinterpret_cast<const char*>(world.Dummy), RmfFile::World::Dummy_Length);
         out.write(reinterpret_cast<const char*>(&world.EntityFlags), sizeof(RmfFile::World::EntityFlags));
 
         // Key-Values
-        assert(world.KeyValue.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(world.KeyValue.size() <= std::numeric_limits<int>::max());
         int pairs = world.KeyValue.size();
         out.write(reinterpret_cast<const char*>(&pairs), sizeof(pairs));
         for(const auto& kv : world.KeyValue)
         {
-            assert(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
-            assert(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
+            R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
+            R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
             WriteNString(out, kv.first);
             WriteNString(out, kv.second);
         }
 
-        out.write(reinterpret_cast<const char*>(&world.Dummy2), RmfFile::World::Dummy2_Length);
+        out.write(reinterpret_cast<const char*>(world.Dummy2), RmfFile::World::Dummy2_Length);
 
-        assert(world.Paths.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(world.Paths.size() <= std::numeric_limits<int>::max());
         int pathCount = world.Paths.size();
         out.write(reinterpret_cast<const char*>(&pathCount), sizeof(pathCount));
         for(const auto& path : world.Paths)
@@ -557,15 +557,15 @@ namespace Decay::Rmf
         // Magic header
         {
             uint8_t magic1[rmf.Magic1.size()];
-            in.read(reinterpret_cast<char*>(&magic1), rmf.Magic1.size());
-            assert(in.good());
+            in.read(reinterpret_cast<char*>(magic1), rmf.Magic1.size());
+            R_ASSERT(in.good());
             for(int i = 0; i < rmf.Magic1.size(); i++)
                 if(magic1[i] != rmf.Magic1[i])
                     throw std::runtime_error("Failed to read first magic number of RMF file");
 
             uint8_t magic2[rmf.Magic2.size()];
-            in.read(reinterpret_cast<char*>(&magic2), rmf.Magic2.size());
-            assert(in.good());
+            in.read(reinterpret_cast<char*>(magic2), rmf.Magic2.size());
+            R_ASSERT(in.good());
             for(int i = 0; i < rmf.Magic2.size(); i++)
                 if(magic2[i] != rmf.Magic2[i])
                     throw std::runtime_error("Failed to read second magic number of RMF file");
@@ -575,12 +575,12 @@ namespace Decay::Rmf
         {
             int visGroupCount = 0;
             in.read(reinterpret_cast<char*>(&visGroupCount), sizeof(visGroupCount));
-            assert(in.good());
+            R_ASSERT(in.good());
             for(int i = 0; i < visGroupCount; i++)
             {
                 RmfFile::VisGroup visGroup = {};
                 in >> visGroup;
-                assert(in.good());
+                R_ASSERT(in.good());
                 rmf.VisGroups.emplace_back(visGroup);
             }
         }
@@ -588,17 +588,17 @@ namespace Decay::Rmf
         // World Info
         {
             std::string worldInfoType = ReadNString(in, 20);
-            assert(in.good());
-            assert(worldInfoType == RmfFile::World::TypeName);
+            R_ASSERT(in.good());
+            R_ASSERT(worldInfoType == RmfFile::World::TypeName);
             in >> rmf.WorldInfo;
-            assert(in.good());
+            R_ASSERT(in.good());
         }
 
         // Doc Info
         {
             uint8_t docInfo[rmf.DocInfo.size()];
-            in.read(reinterpret_cast<char*>(&docInfo), rmf.DocInfo.size());
-            assert(in.good());
+            in.read(reinterpret_cast<char*>(docInfo), rmf.DocInfo.size());
+            R_ASSERT(in.good());
             for(int i = 0; i < rmf.DocInfo.size(); i++)
                 if(docInfo[i] != rmf.DocInfo[i])
                     throw std::runtime_error("Failed to read DOCINFO of RMF file");
@@ -610,12 +610,12 @@ namespace Decay::Rmf
 
             int cameraCount = 0;
             in.read(reinterpret_cast<char*>(&cameraCount), sizeof(cameraCount));
-            assert(in.good());
+            R_ASSERT(in.good());
             for(int i = 0; i < cameraCount; i++)
             {
                 RmfFile::Camera camera = {};
                 in >> camera;
-                assert(in.good());
+                R_ASSERT(in.good());
                 rmf.Cameras.emplace_back(camera);
             }
         }
@@ -627,7 +627,7 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(rmf.Magic1.data()), rmf.Magic1.size());
         out.write(reinterpret_cast<const char*>(rmf.Magic2.data()), rmf.Magic2.size());
 
-        assert(rmf.VisGroups.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(rmf.VisGroups.size() <= std::numeric_limits<int>::max());
         int visGroupCount = rmf.VisGroups.size();
         out.write(reinterpret_cast<const char*>(&visGroupCount), sizeof(visGroupCount));
         for(const auto& path : rmf.VisGroups)
@@ -641,9 +641,9 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&cameraDataVersion), sizeof(cameraDataVersion));
         out.write(reinterpret_cast<const char*>(&rmf.ActiveCamera), sizeof(rmf.ActiveCamera));
 
-        assert(rmf.Cameras.size() <= std::numeric_limits<int>::max());
+        R_ASSERT(rmf.Cameras.size() <= std::numeric_limits<int>::max());
         int cameraCount = rmf.Cameras.size();
-        assert(rmf.ActiveCamera == -1 || rmf.ActiveCamera < rmf.Cameras.size());
+        R_ASSERT(rmf.ActiveCamera == -1 || rmf.ActiveCamera < rmf.Cameras.size());
         out.write(reinterpret_cast<const char*>(&cameraCount), sizeof(cameraCount));
         for(const auto& camera : rmf.Cameras)
             out << camera;

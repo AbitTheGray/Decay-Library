@@ -6,7 +6,7 @@ void Test_Plane(const MapFile::Plane& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -16,25 +16,25 @@ void Test_Plane(const MapFile::Plane& original)
 
     MapFile::Plane result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
+    R_ASSERT(ss.good() || ss.eof());
     for(int i = 0; i < MapFile::Plane::PlaneVertexCount; i++)
     {
-        assert(result.PlaneVertices[i] == original.PlaneVertices[i]);
+        R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i]);
     }
-    assert(result.Texture == original.Texture);
-    assert(result.UAxis == original.UAxis);
-    assert(result.UOffset == original.UOffset);
-    assert(result.VAxis == original.VAxis);
-    assert(result.VOffset == original.VOffset);
-    assert(result.Rotation == original.Rotation);
-    assert(result.Scale == original.Scale);
-    assert(result == original);
+    R_ASSERT(result.Texture == original.Texture);
+    R_ASSERT(result.UAxis == original.UAxis);
+    R_ASSERT(result.UOffset == original.UOffset);
+    R_ASSERT(result.VAxis == original.VAxis);
+    R_ASSERT(result.VOffset == original.VOffset);
+    R_ASSERT(result.Rotation == original.Rotation);
+    R_ASSERT(result.Scale == original.Scale);
+    R_ASSERT(result == original);
 }
 void Test_Brush(const MapFile::Brush& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -44,19 +44,19 @@ void Test_Brush(const MapFile::Brush& original)
 
     MapFile::Brush result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Planes.size() == original.Planes.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Planes.size() == original.Planes.size());
     for(int i = 0; i < result.Planes.size(); i++)
     {
-        assert(result.Planes[i] == original.Planes[i]);
+        R_ASSERT(result.Planes[i] == original.Planes[i]);
     }
-    assert(result == original);
+    R_ASSERT(result == original);
 }
 void Test_Entity(const MapFile::Entity& original)
 {
     std::stringstream ss;
     ss << original;
-    assert(ss.good());
+    R_ASSERT(ss.good());
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -66,19 +66,19 @@ void Test_Entity(const MapFile::Entity& original)
 
     MapFile::Entity result = {};
     ss >> result;
-    assert(ss.good() || ss.eof());
-    assert(result.Values.size() == original.Values.size());
+    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(result.Values.size() == original.Values.size());
     for(const auto& originalKv : original.Values)
     {
-        assert(result.Values.contains(originalKv.first));
-        assert(result.Values[originalKv.first] == originalKv.second);
+        R_ASSERT(result.Values.contains(originalKv.first));
+        R_ASSERT(result.Values[originalKv.first] == originalKv.second);
     }
-    assert(result.Brushes.size() == original.Brushes.size());
+    R_ASSERT(result.Brushes.size() == original.Brushes.size());
     for(int i = 0; i < result.Brushes.size(); i++)
     {
-        assert(result.Brushes[i] == original.Brushes[i]);
+        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
     }
-    //assert(result == original); //TODO
+    //R_ASSERT(result == original); //TODO
 }
 
 int main()
