@@ -10,10 +10,7 @@ namespace Decay::Bsp::v30
         Textures(Bsp->GetTextures()),
         Vertices(),
         Models(Bsp->GetModelCount()),
-        Entities(ParseEntities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount())),
-        Entities_Model(),
-        Entities_Name(),
-        Entities_Type()
+        Entities(Bsp->GetRawEntityChars(), Bsp->GetEntityCharCount())
     {
 #ifndef DEBUG
         // First texture
@@ -32,42 +29,7 @@ namespace Decay::Bsp::v30
             const BspFile::Model& model = Bsp->GetRawModels()[mi];
             Models[mi] = ProcessModel(model);
         }
-
-        // Process entities into fast-access maps
-        for(const Entity& ent : Entities)
-        {
-            auto classname = ent.find("classname");
-            auto name = ent.find("targetname");
-            auto model = ent.find("model");
-
-            if(classname != ent.end())
-                Entities_Type[classname->second].emplace_back(ent);
-
-            if(name != ent.end())
-                Entities_Name[name->second].emplace_back(ent);
-
-            if(model != ent.end())
-            {
-                if(model->second.size() > 1 && model->second[0] == '*')
-                {
-                    try
-                    {
-                        int value = std::stoi(model->second.data() + 1);
-                        Entities_Model.emplace(value, ent);
-                    }
-                    catch(std::invalid_argument& ex)
-                    {
-                        std::cerr << "Model '" << (model->second.data() + 1) << "' could not be parsed - No Conversion" << std::endl;
-                    }
-                    catch(std::out_of_range& ex)
-                    {
-                        std::cerr << "Model '" << (model->second.data() + 1) << "' could not be parsed - Out of Range" << std::endl;
-                    }
-                }
-            }
-        }
     }
-
     BspTree::Face BspTree::ProcessFace(const BspFile::Face& face)
     {
         if(face.SurfaceEdgeCount == 0)
@@ -285,7 +247,6 @@ namespace Decay::Bsp::v30
 
         return smartFace;
     }
-
     void BspTree::ExportFlatObj(const std::filesystem::path& filename, const std::filesystem::path& mtlFilename) const
     {
         std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
@@ -396,7 +357,6 @@ namespace Decay::Bsp::v30
             out.flush();
         }
     }
-
     void BspTree::ExportMtl(const std::filesystem::path& filename, const std::filesystem::path& texturePath, const std::string& textureExtension) const
     {
         std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::trunc);
@@ -431,7 +391,6 @@ namespace Decay::Bsp::v30
             out.flush();
         }
     }
-
     void BspTree::ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension, bool dummyForMissing) const
     {
         if(std::filesystem::exists(directory))
@@ -474,128 +433,6 @@ namespace Decay::Bsp::v30
             );
         }
     }
-
-    std::vector<std::map<std::string, std::string>> BspTree::ParseEntities(const char* raw, std::size_t len)
-    {
-        std::vector<std::map<std::string, std::string>> entities = {};
-        std::map<std::string, std::string> entity = {};
-
-        const char* keyStart = nullptr;
-        const char* keyEnd = nullptr;
-
-        const char* valueStart = nullptr;
-
-        for(std::size_t i = 0; i < len; i++)
-        {
-            char c = raw[i];
-            switch(c)
-            {
-                case '\0':
-                    [[unlikely]]
-                {
-                    break;
-                }
-
-                    // Start of entity
-                case '{':
-                {
-                    if(!entity.empty())
-                    {
-                        if(keyStart == nullptr || (keyEnd != nullptr && valueStart == nullptr))
-                            std::cerr << "Non-empty entity at start of new entity" << std::endl;
-                    }
-                    break;
-                }
-
-                    // End of entity
-                case '}':
-                {
-                    if(entity.empty())
-                    {
-                        std::cerr << "Empty entity after its end" << std::endl;
-                        break;
-                    }
-
-                    entities.emplace_back(entity);
-                    entity.clear();
-                    break;
-                }
-
-                    // Key/Value encasement characters
-                case '"':
-                {
-                    if(keyStart == nullptr)
-                        keyStart = raw + i + 1;
-                    else if(keyEnd == nullptr)
-                        keyEnd = raw + i;
-                    else if(valueStart == nullptr)
-                        valueStart = raw + i + 1;
-                    else // valueEnd
-                    {
-                        entity.emplace(
-                                std::string(keyStart, keyEnd),
-                                std::string(valueStart, raw + i)
-                        );
-
-                        keyStart = nullptr;
-                        keyEnd = nullptr;
-                        valueStart = nullptr;
-                    }
-                }
-
-                    // White character, valid anywhere
-                case ' ':
-                    break;
-
-                    // New line
-                case '\n':
-                {
-                    if(keyStart != nullptr)
-                    {
-                        std::cerr << "Unexpected new-line character" << std::endl;
-                        break;
-                    }
-                    break;
-                }
-
-                    // Special characters
-                case '\t':
-                case '\b':
-                    [[unlikely]]
-                {
-                    std::cerr << "Unsupported " << (int)c << " character" << std::endl;
-                    break;
-                }
-
-                    // Content of entity
-                default:
-                    [[likely]]
-                {
-                    if(keyStart == nullptr)
-                            [[unlikely]]
-                    {
-                        std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in key" << std::endl;
-                        break;
-                    }
-                    if(keyEnd != nullptr && valueStart == nullptr)
-                            [[unlikely]]
-                    {
-                        std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in value" << std::endl;
-                        break;
-                    }
-                    break;
-                }
-            }
-        }
-
-        if(keyStart != nullptr)
-            std::cerr << "Incomplete key-value pair after entity processing" << std::endl;
-        if(!entity.empty())
-            std::cerr << "Non-empty entity after entity processing" << std::endl;
-
-        return entities;
-    }
-
     void BspTree::AddLight(glm::uvec2 size, const glm::u8vec3* data, glm::vec2& out_start, glm::vec2& out_end)
     {
         // Insert into texture

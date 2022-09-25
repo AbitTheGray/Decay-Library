@@ -9,7 +9,7 @@ int bsp_tree_entities(const bsp30_tree* bspTree, const bsp30_entity** entities)
     if(entities != nullptr)
     {
         for(std::size_t i = 0; i < bspTree->Entities.size(); i++)
-            entities[i] = bspTree->Entities.data() + i;
+            entities[i] = &bspTree->Entities[i];
     }
 
     return bspTree->Entities.size();

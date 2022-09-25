@@ -270,6 +270,10 @@ namespace Decay::Bsp::v30
         }\
         [[nodiscard]] const type* fun_raw() const noexcept\
         {\
+            return static_cast<const type*>(m_Data[static_cast<uint8_t>(LumpType::lumpType)]);\
+        }\
+        [[nodiscard]] type* fun_raw() noexcept\
+        {\
             return static_cast<type*>(m_Data[static_cast<uint8_t>(LumpType::lumpType)]);\
         }
 

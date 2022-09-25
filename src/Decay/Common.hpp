@@ -26,17 +26,8 @@ namespace Decay
             this->setg(m_Begin, m_Begin, m_End);
             this->setp(m_Begin, m_End);
         }
-        MemoryBuffer(void* begin, char* end)
-         : MemoryBuffer(reinterpret_cast<char*>(begin), reinterpret_cast<char*>(end))
-        {
-        }
-
         MemoryBuffer(char* begin, std::size_t size)
          : MemoryBuffer(begin, begin + size)
-        {
-        }
-        MemoryBuffer(void* begin, std::size_t size)
-         : MemoryBuffer(reinterpret_cast<char*>(begin), size)
         {
         }
 
@@ -74,7 +65,6 @@ namespace Decay
 
             return seekpos(offset, mode);
         }
-
         pos_type seekpos(pos_type offset, std::ios_base::openmode mode) override
         {
             if(offset < 0 || offset > m_Size)

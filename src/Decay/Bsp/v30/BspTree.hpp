@@ -1,11 +1,9 @@
 #pragma once
 
 #include <functional>
-#ifdef DECAY_JSON_LIB
-#   include "nlohmann/json.hpp"
-#endif
 
 #include "Decay/Bsp/v30/BspFile.hpp"
+#include "Decay/Bsp/v30/BspEntities.hpp"
 
 namespace Decay::Bsp::v30
 {
@@ -18,12 +16,7 @@ namespace Decay::Bsp::v30
         const std::shared_ptr<BspFile> Bsp;
         const std::vector<Wad::Wad3::WadFile::Texture> Textures;
 
-        typedef std::map<std::string, std::string> Entity;
-
-        const std::vector<Entity> Entities;
-        std::map<int, Entity> Entities_Model;
-        std::map<std::string, std::vector<Entity>> Entities_Name;
-        std::map<std::string, std::vector<Entity>> Entities_Type;
+        const BspEntities Entities;
 
     public:
         struct Vertex
@@ -260,17 +253,6 @@ namespace Decay::Bsp::v30
         void ExportTextures(const std::filesystem::path& directory, const std::string& textureExtension = ".png", bool dummyForMissing = false) const;
 
     public:
-        [[deprecated("Not fully implemented, use nlohmann::json variant instead")]]
-        void ExportEntitiesJson(const std::filesystem::path& filename) const;
-#ifdef DECAY_JSON_LIB
-        [[nodiscard]] nlohmann::json ExportEntitiesJson() const;
-#endif
-
-    public:
-        /// Parse raw entities string into vector of entities.
-        static std::vector<std::map<std::string, std::string>> ParseEntities(const char* raw, size_t len);
-
-    public:
         inline static float GetLightStyle_Char(char c)
         {
             if(c <= 'a')
@@ -288,7 +270,7 @@ namespace Decay::Bsp::v30
 
             return GetLightStyle_Char(sequence[(time_ms / 10) % sequence.length()]);
         }
-        static float GetLightStyle(uint8_t style, uint64_t time_ms)
+        static float GetLightStyle(uint8_t style, uint64_t time_ms) noexcept
         {
             switch(style)
             {

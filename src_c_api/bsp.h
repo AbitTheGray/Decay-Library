@@ -11,7 +11,7 @@ typedef Decay::Bsp::v30::BspTree bsp30_tree;
 typedef Decay::Bsp::v30::BspTree::Vertex bsp30_vertex;
 typedef Decay::Bsp::v30::BspTree::Model bsp30_model;
 
-typedef Decay::Bsp::v30::BspTree::Entity bsp30_entity;
+typedef Decay::Bsp::v30::BspEntities::Entity bsp30_entity;
 
 typedef glm::vec3 bsp_vec3;
 typedef glm::u8vec3 bsp_u8vec3;

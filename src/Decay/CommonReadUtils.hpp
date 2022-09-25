@@ -15,6 +15,7 @@ namespace Decay
 #else
         switch(c)
         {
+            case '\0':
             case ' ':
             case '\t':
             case '\r':

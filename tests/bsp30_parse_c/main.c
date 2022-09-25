@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
     {
         int verticesCount = 0;
         bsp30_vertex* vertices = bsp_vertices(bsp, &verticesCount);
+        printf("Vertices: %d\n", verticesCount);
     }
 
 
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
         else
         {
             if(entityCount != bsp_tree_entities(bsp, entities))
-                return 0;
+                return 1;
 
             printf("classname of 1st entity: %s\n", bsp_entity_value(entities[0], "classname"));
         }

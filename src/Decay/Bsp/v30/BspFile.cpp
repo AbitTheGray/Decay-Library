@@ -320,8 +320,8 @@ namespace Decay::Bsp::v30
         m_DataLength[static_cast<uint8_t>(LumpType::Textures)] = dataLength;
 
         MemoryBuffer dataBuffer = MemoryBuffer(
-                data,
-                dataLength
+            reinterpret_cast<char*>(data),
+            dataLength
         );
         std::ostream out(&dataBuffer);
 

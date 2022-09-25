@@ -1,8 +1,8 @@
-#include "BspTree.hpp"
+#include "BspEntities.hpp"
 
 namespace Decay::Bsp::v30
 {
-    void BspTree::ExportEntitiesJson(const std::filesystem::path& filename) const
+    void BspEntities::ExportEntitiesJson(const std::filesystem::path& filename) const
     {
         std::fstream out = std::fstream(filename, std::ios_base::out);
         out << "{" << std::endl;
@@ -29,11 +29,8 @@ namespace Decay::Bsp::v30
         out << "  ]" << std::endl;
         out << "}" << std::endl;
     }
-}
 #ifdef DECAY_JSON_LIB
-namespace Decay::Bsp::v30
-{
-    nlohmann::json BspTree::ExportEntitiesJson() const
+    nlohmann::json BspEntities::ExportEntitiesJson() const
     {
         using namespace nlohmann;
         json j = {};
@@ -52,5 +49,5 @@ namespace Decay::Bsp::v30
         }
         return j;
     }
-}
 #endif
+}

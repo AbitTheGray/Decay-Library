@@ -588,13 +588,11 @@ namespace Decay::Wad::Wad3
             in.read(name, Texture::MaxNameLength);
             texture.Name = Cstr2Str(name, Texture::MaxNameLength);
             assert(texture.Name.length() > 0);
-#ifdef DEBUG
-            if(item.Name != texture.Name)
+
+            if(!StringCaseInsensitiveEqual(item.Name, texture.Name))
             {
-                std::cerr << "Item and texture names do not match: " << item.Name << " != " << texture.Name << std::endl;
-                assert(StringCaseInsensitiveEqual(item.Name, texture.Name));
+                std::cerr << "WARNING: Item and texture names do not match: " << item.Name << " != " << texture.Name << std::endl;
             }
-#endif
         }
 
         // Dimensions
