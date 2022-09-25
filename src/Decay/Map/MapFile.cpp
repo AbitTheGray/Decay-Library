@@ -5,7 +5,7 @@
 // Uncomment to output more human-friendly `*.map` files
 #define MAP_TAB_OFFSET
 
-// Parting utils
+// Parsing utils
 namespace Decay::Map
 {
     /// Read vector inside round brackets.

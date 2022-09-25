@@ -54,7 +54,8 @@ namespace Decay::Wad::Wad3
             /// Must be null-terminated.
             char Name[EntryNameLength];
 
-            [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, EntryNameLength); }
+            [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, EntryNameLength); }
+            inline void Name_str(const std::string& val) { Str2Cstr(val, Name, EntryNameLength); }
         };
 
         static std::vector<WadEntry> ReadWadEntries(std::istream& stream);

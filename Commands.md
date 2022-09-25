@@ -74,13 +74,13 @@ Display information how to use the command-line utility.
 ~~`map_obj`~~ - NOT IMPLEMENTED
 
 ### MAP -> RMF
-~~`map2rmf`~~
+~~`map2rmf`~~ - NOT IMPLEMENTED
 
 - use `rmf2map` for conversion in the opposite direction
 - This conversion won't loose any data and will decrease file size (because of conversion from text file to binary file)
 
 ### RMF -> MAP
-~~`rmf2map`~~
+~~`rmf2map`~~ - NOT IMPLEMENTED
 
 - use `map2rmf` for conversion in the opposite direction
 - There is no advantage in this conversion - you loose part of the information (which is not needed for compilation), not gain anything and file size will increase 

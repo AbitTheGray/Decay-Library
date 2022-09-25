@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+    <mime-type type="application/goldsrc-rmf">
+        <comment>GoldSource Rich Map Format</comment>
+        <glob pattern="*.rmf" weight="80"/>
+        <magic priority="90">
+            <match type="little32" offset="0" value="1074580685"/>
+            <match type="string" offset="4" value="RMF"/>
+        </magic>
+        <acronym>RMF</acronym>
+        <expanded-acronym>Rich Map Format</expanded-acronym>
+    </mime-type>
+</mime-info>

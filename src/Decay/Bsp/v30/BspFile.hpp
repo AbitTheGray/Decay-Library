@@ -112,7 +112,8 @@ namespace Decay::Bsp::v30
             /// MipMap offset relative to start of this struct.
             uint32_t MipMaps[MipTextureLevels];
 
-            [[nodiscard]] inline std::string GetName() const { return Cstr2Str(Name, MaxTextureName); }
+            [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, MaxTextureName); }
+            inline void Name_str(const std::string& val) { Str2Cstr(val, Name, MaxTextureName); }
 
             [[nodiscard]] inline bool IsPacked() const
             {

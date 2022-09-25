@@ -30,4 +30,7 @@ int main(int argc, const char* argv[])
         std::fstream out = std::fstream(argv[1] + std::string("_out"), std::ios_base::out);
         out << map;
     }
+
+    std::fstream in2 = std::fstream(argv[1], std::ios_base::in);
+    MapFile map2(in2);
 }

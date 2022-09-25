@@ -5,7 +5,7 @@ This format was used by `IdTech 2` and `GoldSrc` engines but the latter usually 
 
 Map itself consists of 1 or more entities.
 
-The `classname`=`worldspawn` must always be present (can be twice inside same entity) and **should** be the first entity in the file.
+The `classname`=`worldspawn` must always be present (can be twice inside same entity - because of how [RMF](RMF.md) is storing `classname`) and **should** be the first entity in the file.
 This `worldspawn` entity contains brushes of all "non-entity" objects in the map.
 
 ## Entity

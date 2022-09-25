@@ -101,7 +101,7 @@ namespace Decay
     };
 
     template<typename Tlen>
-    [[nodiscard]] inline std::string Cstr2Str(const char* cstr, Tlen maxLength)
+    [[nodiscard]] inline std::string Cstr2Str(const char* cstr, Tlen maxLength) noexcept
     {
         static_assert(std::is_integral<Tlen>::value, "maxLength must be numeric");
 
@@ -109,6 +109,18 @@ namespace Decay
             if(cstr[i] == '\0')
                 return std::string(cstr, i);
         return std::string();
+    }
+    template<typename Tlen>
+    inline void Str2Cstr(const std::string& str, char* cstr, Tlen maxLength) noexcept
+    {
+        static_assert(std::is_integral<Tlen>::value, "maxLength must be numeric");
+
+        int i = 0;
+        for(; i < str.size() && i < maxLength - 1; i++)
+            cstr[i] = str[i];
+        cstr[i] = '\0';
+        for(; i < maxLength; i++)
+            cstr[i] = '\0';
     }
 
     /// Checks whenever provided character is UTF-8 character (works for both first and any following characters).

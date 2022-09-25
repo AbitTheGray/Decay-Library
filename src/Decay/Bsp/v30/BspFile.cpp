@@ -54,7 +54,7 @@ namespace Decay::Bsp::v30
 
         std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
 
-        // Magic Number
+        // Magic1 Number
         {
             uint32_t magicNumber;
             in.read(reinterpret_cast<char*>(&magicNumber), sizeof(magicNumber));
@@ -229,7 +229,7 @@ namespace Decay::Bsp::v30
             in.read(reinterpret_cast<char*>(&texture), sizeof(Texture));
 
             Wad::Wad3::WadFile::Texture wadTexture = {
-                texture.GetName(),
+                texture.Name_str(),
                 texture.Width,
                 texture.Height
             };
@@ -401,7 +401,7 @@ namespace Decay::Bsp::v30
 
         std::ofstream out(filename.string(), std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 
-        // Magic number
+        // Magic1 number
         typeof(Magic) magic = Magic;
         out.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
 

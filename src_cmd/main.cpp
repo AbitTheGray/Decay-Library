@@ -87,5 +87,8 @@ int Exec_help(int argc, const char** argv)
         for(auto& it : Commands)
             if(argv[1] == it.first)
                 return it.second.HelpExec(argc - 1, argv + 1);
+
+        std::cerr << "Failed to find requested command - are you using latest version?" << std::endl;
+        return 1;
     }
 }

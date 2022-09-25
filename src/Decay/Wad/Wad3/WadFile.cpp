@@ -24,7 +24,7 @@ namespace Decay::Wad::Wad3
 {
     std::vector<WadFile::WadEntry> WadFile::ReadWadEntries(std::istream& stream)
     {
-        // Magic Number
+        // Magic1 Number
         {
             char magicNumber[4];
             stream.read(reinterpret_cast<char*>(&magicNumber), sizeof(char) * 4);
@@ -103,7 +103,7 @@ namespace Decay::Wad::Wad3
                 data = dataRaw;
             }
 
-            m_Items.emplace_back(Item{entry.GetName(), static_cast<ItemType>(entry.Type), dataLength, data});
+            m_Items.emplace_back(Item{ entry.Name_str(), static_cast<ItemType>(entry.Type), dataLength, data});
         }
     }
 

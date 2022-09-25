@@ -46,9 +46,17 @@ add_subdirectory(fgd_json)
 add_subdirectory(fgd_class_order)
 
 #--------------------------------
-# MAP (GoldSrc/Quake, Map Development File)
+# MAP (GoldSrc/IdTech2, Map Development File)
 #--------------------------------
 
 add_subdirectory(map_out_and_in)
 
 add_subdirectory(map_testfile)
+
+#--------------------------------
+# RMF (GoldSrc, Map Development File)
+#--------------------------------
+
+add_subdirectory(rmf_out_and_in)
+
+add_subdirectory(rmf_testfile)
