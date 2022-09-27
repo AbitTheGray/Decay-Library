@@ -180,15 +180,9 @@ void Test_Class(const FgdFile::Class& original)
     R_ASSERT(result.Codename == original.Codename);
     R_ASSERT(result.Description == original.Description);
     R_ASSERT(result.Properties.size() == original.Properties.size());
-    for(int i = 0; i < result.Properties.size(); i++)
-    {
-        R_ASSERT(result.Properties[i] == original.Properties[i]);
-    }
+    //TODO order-independent Properties comparison
     R_ASSERT(result.IO.size() == original.IO.size());
-    for(int i = 0; i < result.IO.size(); i++)
-    {
-        R_ASSERT(result.IO[i] == original.IO[i]);
-    }
+    //TODO order-independent IO comparison
     R_ASSERT(result == original);
 }
 
@@ -383,39 +377,39 @@ int main()
         Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD" });
         Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD",
                      {
-                         { "abcd", "string", false }
+                         { "abcd", { "abcd", "string", false } }
                      }
                    });
         Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD",
                      {
-                         { "abcd", "string", false },
-                         { "abcd2", "integer", false }
-                     }
-                   });
-        Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD",
-                     {},
-                     {
-                         { FgdFile::InputOutputType::Input, "abcd", "void" },
-                         { FgdFile::InputOutputType::Input, "abcd", "integer", "aaBBccDD" }
+                         { "abcd", { "abcd", "string", false } },
+                         { "abcd2", { "abcd2", "integer", false } }
                      }
                    });
         Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD",
                      {},
                      {
-                         { FgdFile::InputOutputType::Input, "abcd", "void" },
-                         { FgdFile::InputOutputType::Input, "abcd2", "integer", "aaBBccDD" },
-                         { FgdFile::InputOutputType::Output, "abcd3", "integer", "aaBBccDD" }
+                         { "abcd", { FgdFile::InputOutputType::Input, "abcd", "void" } },
+                         { "abcd2", { FgdFile::InputOutputType::Input, "abcd2", "integer", "aaBBccDD" } }
+                     }
+                   });
+        Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD",
+                     {},
+                     {
+                         { "abcd", { FgdFile::InputOutputType::Input, "abcd", "void" } },
+                         { "abcd2", { FgdFile::InputOutputType::Input, "abcd2", "integer", "aaBBccDD" } },
+                         { "abcd3", { FgdFile::InputOutputType::Output, "abcd3", "integer", "aaBBccDD" } }
                      }
                    });
         Test_Class({ "BaseClass", {}, "abcd", "aaBBccDD",
                      {
-                         { "abcd", "string", false },
-                         { "abcd2", "integer", false }
+                         { "abcd", { "abcd", "string", false } },
+                         { "abcd2", { "abcd2", "integer", false } }
                      },
                      {
-                         { FgdFile::InputOutputType::Input, "abcd", "void" },
-                         { FgdFile::InputOutputType::Input, "abcd2", "integer", "aaBBccDD" },
-                         { FgdFile::InputOutputType::Output, "abcd3", "integer", "aaBBccDD" }
+                         { "abcd", { FgdFile::InputOutputType::Input, "abcd", "void" } },
+                         { "abcd2", { FgdFile::InputOutputType::Input, "abcd2", "integer", "aaBBccDD" } },
+                         { "abcd3", { FgdFile::InputOutputType::Output, "abcd3", "integer", "aaBBccDD" } }
                      }
                    });
 

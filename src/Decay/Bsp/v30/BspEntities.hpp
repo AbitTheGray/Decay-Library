@@ -11,6 +11,9 @@ namespace Decay::Bsp::v30
     class BspEntities
     {
     public:
+        explicit BspEntities()
+        {
+        }
         explicit BspEntities(std::istream& in)
           : Entities(ParseEntities(in))
         {
@@ -32,6 +35,9 @@ namespace Decay::Bsp::v30
 
             ProcessIntoFastAccess();
         }
+        explicit BspEntities(BspFile& bsp) : BspEntities(bsp.GetRawEntityChars(), bsp.GetEntityCharCount())
+        {
+        }
 
     public:
         typedef std::map<std::string, std::string> Entity;
@@ -50,14 +56,15 @@ namespace Decay::Bsp::v30
 
     public:
         [[deprecated("Not fully implemented, use nlohmann::json variant instead")]]
-        void ExportEntitiesJson(const std::filesystem::path& filename) const;
+        void ExportJson(const std::filesystem::path& filename) const;
 #ifdef DECAY_JSON_LIB
-        [[nodiscard]] nlohmann::json ExportEntitiesJson() const;
+        [[nodiscard]] nlohmann::json AsJson() const;
 #endif
 
     public:
         /// Parse raw entities string into vector of entities.
-        //static std::vector<std::map<std::string, std::string>> ParseEntities(const char* raw, size_t len);
         static std::vector<std::map<std::string, std::string>> ParseEntities(std::istream& in);
     };
+
+    std::ostream& operator<<(std::ostream& out, const BspEntities&);
 }

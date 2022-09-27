@@ -4,128 +4,6 @@
 
 namespace Decay::Bsp::v30
 {
-    /*
-    std::vector<std::map<std::string, std::string>> BspEntities::ParseEntities(const char* raw, std::size_t len)
-    {
-        std::vector<std::map<std::string, std::string>> entities = {};
-        std::map<std::string, std::string> entity = {};
-
-        const char* keyStart = nullptr;
-        const char* keyEnd = nullptr;
-
-        const char* valueStart = nullptr;
-
-        for(std::size_t i = 0; i < len; i++)
-        {
-            char c = raw[i];
-            switch(c)
-            {
-                case '\0':
-                    [[unlikely]]
-                {
-                    break;
-                }
-
-                    // Start of entity
-                case '{':
-                {
-                    if(!entity.empty())
-                    {
-                        if(keyStart == nullptr || (keyEnd != nullptr && valueStart == nullptr))
-                            std::cerr << "Non-empty entity at start of new entity" << std::endl;
-                    }
-                    break;
-                }
-
-                    // End of entity
-                case '}':
-                {
-                    if(entity.empty())
-                    {
-                        std::cerr << "Empty entity after its end" << std::endl;
-                        break;
-                    }
-
-                    entities.emplace_back(entity);
-                    entity.clear();
-                    break;
-                }
-
-                    // Key/Value encasement characters
-                case '"':
-                {
-                    if(keyStart == nullptr)
-                        keyStart = raw + i + 1;
-                    else if(keyEnd == nullptr)
-                        keyEnd = raw + i;
-                    else if(valueStart == nullptr)
-                        valueStart = raw + i + 1;
-                    else // valueEnd
-                    {
-                        entity.emplace(
-                            std::string(keyStart, keyEnd),
-                            std::string(valueStart, raw + i)
-                        );
-
-                        keyStart = nullptr;
-                        keyEnd = nullptr;
-                        valueStart = nullptr;
-                    }
-                }
-
-                    // White character, valid anywhere
-                case ' ':
-                    break;
-
-                    // New line
-                case '\n':
-                {
-                    if(keyStart != nullptr)
-                    {
-                        std::cerr << "Unexpected new-line character" << std::endl;
-                        break;
-                    }
-                    break;
-                }
-
-                    // Special characters
-                case '\t':
-                case '\b':
-                    [[unlikely]]
-                {
-                    std::cerr << "Unsupported " << (int)c << " character" << std::endl;
-                    break;
-                }
-
-                    // Content of entity
-                default:
-                    [[likely]]
-                {
-                    if(keyStart == nullptr)
-                        [[unlikely]]
-                    {
-                        std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in key" << std::endl;
-                        break;
-                    }
-                    if(keyEnd != nullptr && valueStart == nullptr)
-                        [[unlikely]]
-                    {
-                        std::cerr << "Unexpected character '" << c << "' (" << (int)c << ") in value" << std::endl;
-                        break;
-                    }
-                    break;
-                }
-            }
-        }
-
-        if(keyStart != nullptr)
-            std::cerr << "Incomplete key-value pair after entity processing" << std::endl;
-        if(!entity.empty())
-            std::cerr << "Non-empty entity after entity processing" << std::endl;
-
-        return entities;
-    }
-    */
     std::vector<std::map<std::string, std::string>> BspEntities::ParseEntities(std::istream& in)
     {
         std::vector<std::map<std::string, std::string>> entities = {};
@@ -220,5 +98,22 @@ namespace Decay::Bsp::v30
                 }
             }
         }
+    }
+    std::ostream& operator<<(std::ostream& out, const BspEntities& entities)
+    {
+        for(int i = 0; i < entities.size(); i++)
+        {
+            const auto& entity = entities[i];
+
+            out << "{\n";
+            for(const auto& kv : entity)
+            {
+                out << "\"" << kv.first << "\" \"" << kv.second << "\"\n";
+            }
+            out << "}\n";
+        }
+        out << '\0';
+
+        return out;
     }
 }

@@ -1,7 +1,5 @@
 #include "main.hpp"
 
-#include "Decay/Common.hpp"
-
 std::unordered_map<std::string, Command> Commands = {
     {
         "help",
@@ -41,6 +39,14 @@ std::unordered_map<std::string, Command> Commands = {
             Exec_bsp_lightmap,
             Help_bsp_lightmap,
             "Extracts lightmap texture"
+        }
+    },
+    {
+        "bsp_entity",
+        Command{
+            Exec_bsp_entity,
+            Help_bsp_entity,
+            "Manipulate BSP entities"
         }
     }
 };

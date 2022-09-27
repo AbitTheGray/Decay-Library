@@ -1,7 +1,11 @@
 #include "main.hpp"
 
-#include "Decay/Common.hpp"
 #include "cxxopts.hpp"
+
+#include "Decay/Bsp/v30/BspFile.hpp"
+#include "Decay/Bsp/v30/BspTree.hpp"
+
+#include "Decay/Fgd/FgdFile.hpp"
 
 #pragma region bsp2obj
 cxxopts::Options Options_bsp2obj(int argc, const char** argv)
@@ -498,6 +502,234 @@ int Exec_bsp_lightmap(int argc, const char** argv)
 
         writeFunc(exportLight.c_str(), bspTree->Light.Width, bspTree->Light.Height, bspTree->Light.Data.data());
 #pragma endregion
+    }
+#pragma endregion
+
+    return 0;
+}
+#pragma endregion
+
+#pragma region bsp_entity
+cxxopts::Options Options_bsp_entity(int argc, const char** argv)
+{
+    cxxopts::Options options(argc == 0 ? "bsp_entity" : argv[0], "Manipulate BSP Entities");
+
+    options.add_options("Input")
+       ("f,file", "BSP file (the map)", cxxopts::value<std::string>(), "<map.bsp>")
+    ;
+    options.add_options("Manipulate")
+       ("add", "", cxxopts::value<std::string>(), "<entities.kv>")
+       ("add_json", "", cxxopts::value<std::string>(), "<entities.json>")
+       ("replace", "", cxxopts::value<std::string>(), "<entities.kv>")
+       ("replace_json", "", cxxopts::value<std::string>(), "<entities.json>")
+    ;
+    options.add_options("Output")
+       ("validate", "Use FGD file to validate entities", cxxopts::value<std::string>(), "<gamemode.fgd>")
+       ("o,outbsp", "Output BSP file (after changes, requires `--file`)", cxxopts::value<std::string>(), "<map.bsp>")
+       ("extract", "Extract entities as key-value file", cxxopts::value<std::string>(), "<map_entities.kv>")
+       ("extract_json", "Extract entities as JSON file", cxxopts::value<std::string>(), "<map_entities.json>")
+    ;
+
+    return options;
+}
+int Help_bsp_entity(int argc, const char** argv)
+{
+    std::cout << Options_bsp_entity(argc, argv).help({"Input", "Manipulate", "Output"}) << std::endl;
+    return 0;
+}
+int Exec_bsp_entity(int argc, const char** argv)
+{
+    auto options = Options_bsp_entity(argc, argv);
+    auto result = options.parse(argc, argv);
+
+    using namespace Decay::Bsp::v30;
+    BspEntities entities{};
+
+#pragma region --file
+    if(!result.count("file"))
+    {
+        const char* errorMsg = "You need to specify input file, use `--file path/to/map.bsp`";
+#ifdef DEBUG
+        throw std::runtime_error(errorMsg);
+#else
+        std::cerr << errorMsg << std::endl;
+#endif
+        return 1;
+    }
+    if(result.count("file"))
+    {
+        std::filesystem::path bspPath = result["file"].as<std::string>();
+        if(!std::filesystem::exists(bspPath) || !std::filesystem::is_regular_file(bspPath))
+        {
+            const char* errorMsg = "`--file` must point to a valid file";
+#ifdef DEBUG
+            throw std::runtime_error(errorMsg);
+#else
+            std::cerr << errorMsg << std::endl;
+#endif
+            return 1;
+        }
+        if(bspPath.extension() != ".bsp")
+            std::cerr << "WARNING: BSP file path should have `.bsp` extension" << std::endl;
+        try
+        {
+            std::shared_ptr<BspFile> bsp = std::make_shared<BspFile>(bspPath);
+            R_ASSERT(bsp != nullptr);
+            entities = BspEntities(*bsp);
+        }
+        catch(std::runtime_error& ex)
+        {
+            const char* errorMsg = "Failed to read/parse BSP file - ";
+#ifdef DEBUG
+            throw std::runtime_error(errorMsg + std::string(ex.what()));
+#else
+            std::cerr << errorMsg << ex.what() << std::endl;
+#endif
+            return 1;
+        }
+    }
+#pragma endregion
+
+#pragma region --replace (+json)
+    if(result.count("replace"))
+    {
+        //TODO
+    }
+    if(result.count("replace_json"))
+    {
+        //TODO
+    }
+#pragma endregion
+
+#pragma region --add (+json)
+    if(result.count("add"))
+    {
+        //TODO
+    }
+    if(result.count("add_json"))
+    {
+        //TODO
+    }
+#pragma endregion
+
+#pragma region --validate (FGD)
+    if(result.count("validate"))
+    {
+        std::filesystem::path validatePath = result["validate"].as<std::string>();
+        if(!std::filesystem::exists(validatePath) || !std::filesystem::is_regular_file(validatePath))
+        {
+            const char* errorMsg = "`--validate` must point to a valid file";
+#ifdef DEBUG
+            throw std::runtime_error(errorMsg);
+#else
+            std::cerr << errorMsg << std::endl;
+#endif
+            return 1;
+        }
+        if(validatePath.extension() != ".fgd")
+            std::cerr << "WARNING: FGD file to validate entities should have `.fgd` extension" << std::endl;
+
+        using namespace Decay::Fgd;
+        std::fstream in(validatePath, std::ios_base::in);
+        FgdFile fgd(in);
+        fgd.ProcessClassDependency();
+
+        for(int i = 0; i < entities.size(); i++)
+        {
+            const auto& entity = entities[i];
+
+            auto it_classname = entity.find("classname");
+            if(it_classname == entity.end())
+                throw std::runtime_error("Entity at index " + std::to_string(i) + " does not have a classname");
+            const std::string& classname = it_classname->second;
+
+            auto it_fgdClass = fgd.Classes.find(classname);
+            if(it_fgdClass == fgd.Classes.end())
+                throw std::runtime_error("Entity class " + classname + " was not found in FGD");
+            const auto& fgdClass = it_fgdClass->second;
+
+            //TODO For Source variant, don't forget to add IO to those checks as well
+
+            // Does the entity have additional properties?
+            // Does the entity have correct types on properties?
+            for(const auto& property : entity)
+            {
+                const auto it_fgdProperty = fgdClass.Properties.find(property.first);
+                if(it_fgdProperty == fgdClass.Properties.end())
+                    throw std::runtime_error("Property " + property.first + " of entity " + classname + " was not found in provided FGD");
+                const auto& fgdProperty = it_fgdProperty->second;
+
+                if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "choices"))
+                    continue; // We don't care about type inside choices
+                const auto valueType = FgdFile::GuessTypeFromString(property.second);
+                if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "flags") && valueType != FgdFile::ValueType::Integer)
+                    throw std::runtime_error("Property of type `flags` can only have integer value");
+                if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "integer") && valueType != FgdFile::ValueType::Integer)
+                    throw std::runtime_error("Property of type `integer` can only have integer value");
+                if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "float") && valueType != FgdFile::ValueType::Float)
+                    throw std::runtime_error("Property of type `float` can only have integer or floating-point value");
+            }
+
+            // Does the entity miss some properties?
+            for(const auto& kv_fgdProperty : fgdClass.Properties)
+            {
+                const auto it_property = entity.find(kv_fgdProperty.first);
+                if(it_property == entity.end())
+                    throw std::runtime_error("Entity " + classname + " (at index " + std::to_string(i) + ") is missing " + kv_fgdProperty.first + " property");
+            }
+        }
+    }
+#pragma endregion
+
+#pragma region --extract (+json)
+#   pragma region --extract
+    if(result.count("extract"))
+    {
+        std::filesystem::path extractPath = result["extract"].as<std::string>();
+        if(std::filesystem::exists(extractPath) && !std::filesystem::is_regular_file(extractPath))
+        {
+            const char* errorMsg = "`--extract` must not exist or be a valid file";
+#ifdef DEBUG
+            throw std::runtime_error(errorMsg);
+#else
+            std::cerr << errorMsg << std::endl;
+#endif
+            return 1;
+        }
+        if(extractPath.extension() != ".kv")
+            std::cerr << "WARNING: Entity KV file should have `.kv` extension" << std::endl;
+
+        std::fstream out(extractPath, std::ios_base::out | std::ios_base::binary);
+        out << entities; //THINK check empty
+    }
+#   pragma endregion
+#   pragma region --extract_json
+    if(result.count("extract_json"))
+    {
+        std::filesystem::path extractJsonPath = result["extract_json"].as<std::string>();
+        if(std::filesystem::exists(extractJsonPath) && !std::filesystem::is_regular_file(extractJsonPath))
+        {
+            const char* errorMsg = "`--extract_json` must not exist or be a valid file";
+#ifdef DEBUG
+            throw std::runtime_error(errorMsg);
+#else
+            std::cerr << errorMsg << std::endl;
+#endif
+            return 1;
+        }
+        if(extractJsonPath.extension() != ".json")
+            std::cerr << "WARNING: Entity JSON (--extract_json) file should have `.json` extension" << std::endl;
+
+        std::fstream out(extractJsonPath, std::ios_base::out);
+        out << entities.AsJson().dump(4); //THINK check empty
+    }
+#   pragma endregion
+#pragma endregion
+
+#pragma region --outbsp
+    if(result.count("outbsp"))
+    {
+        //TODO
     }
 #pragma endregion
 

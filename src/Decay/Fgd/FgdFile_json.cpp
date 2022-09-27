@@ -52,8 +52,10 @@ namespace nlohmann
         {
             json& jProperties = j["properties"];
             jProperties = json::array();
-            for(const auto& cl : clss.Properties)
+            for(const auto& kv_cl : clss.Properties)
             {
+                const auto& cl = kv_cl.second;
+
                 json jProp = {};
                 jProp["codename"] = cl.Codename;
                 jProp["type"] = cl.Type;
@@ -94,8 +96,10 @@ namespace nlohmann
         {
             json& jProperties = j["inputs"];
             jProperties = json::array();
-            for(const auto& io : clss.IO)
+            for(const auto& kv_io : clss.IO)
             {
+                const auto& io = kv_io.second;
+
                 if(io.Type != FgdFile::InputOutputType::Input)
                     continue;
 
@@ -112,8 +116,10 @@ namespace nlohmann
         {
             json& jProperties = j["outputs"];
             jProperties = json::array();
-            for(const auto& io : clss.IO)
+            for(const auto& kv_io : clss.IO)
             {
+                const auto& io = kv_io.second;
+
                 if(io.Type != FgdFile::InputOutputType::Output)
                     continue;
 

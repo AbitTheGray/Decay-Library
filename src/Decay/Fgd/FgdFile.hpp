@@ -203,8 +203,8 @@ namespace Decay::Fgd
             // :
             std::string Description{};
             // [
-            std::vector<Property> Properties{};
-            std::vector<InputOutput> IO{};
+            std::unordered_map<std::string, Property> Properties{};
+            std::unordered_map<std::string, InputOutput> IO{};
             // ]
 
             inline static bool HasType(const std::vector<InputOutput>& ios, InputOutputType type) noexcept
@@ -214,6 +214,17 @@ namespace Decay::Fgd
 #else
                 for(const InputOutput& io : ios) // NOLINT(readability-use-anyofallof)
                     if(io.Type == type)
+                        return true;
+                return false;
+#endif
+            }
+            inline static bool HasType(const std::unordered_map<std::string, InputOutput>& ios, InputOutputType type) noexcept
+            {
+#ifdef FGD_INPUT_OUTPUT_STD_ANY_OF
+                return std::any_of(ios.begin(), ios.end(), [&type](const std::pair<std::string, InputOutput>& kv_io){ return kv_io.second.Type == type; });
+#else
+                for(const auto& kv_io : ios) // NOLINT(readability-use-anyofallof)
+                    if(kv_io.second.Type == type)
                         return true;
                 return false;
 #endif
@@ -237,15 +248,11 @@ namespace Decay::Fgd
 
                 if(Properties.size() != other.Properties.size())
                     return false;
-                for(int i = 0; i < Properties.size(); i++)
-                    if(Properties[i] != other.Properties[i])
-                        return false;
+                //TODO order-independent `Properties` check
 
                 if(IO.size() != other.IO.size())
                     return false;
-                for(int i = 0; i < IO.size(); i++)
-                    if(IO[i] != other.IO[i])
-                        return false;
+                //TODO order-independent `IO` check
 
                 return true;
             }
@@ -343,6 +350,8 @@ namespace Decay::Fgd
         /// Throws exception if a recursive dependency is found.
         /// Tries to use Alphabetical sorting when possible.
         std::vector<std::string> OrderClassesByDependency() const;
+        /// Goes through all base classes and add their properties and IO to the class implementing them, removes `base(...)` option.
+        decltype(Classes) ProcessClassDependency() const;
 
 #ifdef DECAY_JSON_LIB
         [[nodiscard]] nlohmann::json ExportAsJson(bool orderClassesByDependency = true) const;

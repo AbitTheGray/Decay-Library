@@ -33,6 +33,15 @@ add_test(
 )
 set_tests_properties(Test_CMD_help_bsp2wad PROPERTIES LABELS "cmd;cmd_help;GoldSrc;bsp;bsp30")
 
+# bsp_entity
+add_test(
+        NAME Test_CMD_help_bsp_entity
+        COMMAND DecayLib_Command
+        help
+        bsp_entity
+)
+set_tests_properties(Test_CMD_help_bsp_entity PROPERTIES LABELS "cmd;cmd_help;GoldSrc;bsp;bsp30")
+
 # wad_add
 add_test(
     NAME Test_CMD_help_wad_add

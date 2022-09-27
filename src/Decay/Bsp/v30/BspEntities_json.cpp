@@ -2,7 +2,7 @@
 
 namespace Decay::Bsp::v30
 {
-    void BspEntities::ExportEntitiesJson(const std::filesystem::path& filename) const
+    void BspEntities::ExportJson(const std::filesystem::path& filename) const
     {
         std::fstream out = std::fstream(filename, std::ios_base::out);
         out << "{" << std::endl;
@@ -30,12 +30,12 @@ namespace Decay::Bsp::v30
         out << "}" << std::endl;
     }
 #ifdef DECAY_JSON_LIB
-    nlohmann::json BspEntities::ExportEntitiesJson() const
+    nlohmann::json BspEntities::AsJson() const
     {
         using namespace nlohmann;
         json j = {};
         {
-            json& jEntities = j["jEntities"];
+            json& jEntities = j["entities"];
             jEntities = json::array();
             for(const auto& entity : Entities)
             {

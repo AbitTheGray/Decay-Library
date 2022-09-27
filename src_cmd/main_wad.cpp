@@ -3,6 +3,8 @@
 #include "Decay/Common.hpp"
 #include "cxxopts.hpp"
 
+#include "Decay/Wad/Wad3/WadFile.hpp"
+
 #pragma region wad_add
 cxxopts::Options Options_wad_add(int argc, const char** argv)
 {

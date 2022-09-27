@@ -73,6 +73,66 @@ namespace Decay::Fgd
 
         recursionPrevention.resize(recursionPrevention.size() - 1); //OPTIMIZE Remove last but keep original capacity
     }
+    void ProcessDependency(
+        const decltype(FgdFile::Classes)& classes,
+        FgdFile::Class& targetClass,
+        const FgdFile::Class& baseClass
+    )
+    {
+        // Copy properties
+        for(const auto& baseProperty : baseClass.Properties)
+        {
+            if(targetClass.Properties.contains(baseProperty.first))
+            {
+                std::cerr << "Class '" << baseClass.Codename << "' already contains property '" << baseProperty.first << '\'' << std::endl;
+                continue;
+            }
+
+            targetClass.Properties[baseProperty.first] = baseProperty.second;
+        }
+
+        // Copy IO
+        for(const auto& baseIO : baseClass.IO)
+        {
+            if(targetClass.IO.contains(baseIO.first))
+            {
+                std::cerr << "Class '" << baseClass.Codename << "' already contains IO '" << baseIO.first << '\'' << std::endl;
+                continue;
+            }
+
+            targetClass.IO[baseIO.first] = baseIO.second;
+        }
+
+        // Copy options
+        for(const FgdFile::Option& baseOption : baseClass.Options)
+        {
+            if(StringCaseInsensitiveEqual(baseOption.Name, "base"))
+                continue; // Skipped for now
+
+            targetClass.Options.emplace_back(baseOption);
+        }
+
+        // Process base classes of `baseClass`
+        for(const FgdFile::Option& baseOption : baseClass.Options)
+        {
+            if(StringCaseInsensitiveEqual(baseOption.Name, "base"))
+            {
+                for(const FgdFile::OptionParam& baseOptionParam : baseOption.Params)
+                {
+                    R_ASSERT(!baseOptionParam.Quoted, "Base class name cannot be inside quoted string");
+
+                    const auto it_baseBaseClass = classes.find(baseOptionParam.Name);//TODO case-insensitive
+                    if(it_baseBaseClass == classes.end())
+                    {
+                        std::cerr << "Not found base class '" << baseOptionParam.Name << "', ignoring for now" << std::endl;
+                        continue;
+                    }
+
+                    ProcessDependency(classes, targetClass, it_baseBaseClass->second);
+                }
+            }
+        }
+    }
 }
 
 namespace Decay::Fgd
@@ -230,22 +290,24 @@ namespace Decay::Fgd
                 auto& existingClass = Classes[toAddClass.first];
 
                 // Properties
-                for(const Property& toAddProperty : toAddClass.second.Properties)
+                for(const auto& kv_toAddProperty : toAddClass.second.Properties)
                 {
                     Property* existingProperty = nullptr;
                     for(auto& prop : existingClass.Properties)
                     {
-                        if(prop.Codename == toAddProperty.Codename)
+                        if(prop.second.Codename == kv_toAddProperty.second.Codename)
                         {
-                            existingProperty = &prop;
+                            existingProperty = &prop.second;
                             break;
                         }
                     }
                     if(existingProperty == nullptr)
                     {
-                        existingClass.Properties.emplace_back(toAddProperty);
+                        existingClass.Properties[kv_toAddProperty.first] = kv_toAddProperty.second;
                         continue;
                     }
+
+                    const auto& toAddProperty = kv_toAddProperty.second;
 
                     // Combine property
                     existingProperty->Type = toAddProperty.Type;
@@ -288,27 +350,27 @@ namespace Decay::Fgd
                 // Input / Output
                 if(!toAddClass.second.IO.empty())
                 {
-                    for(const InputOutput& toAddIO : toAddClass.second.IO)
+                    for(const auto& toAddIO : toAddClass.second.IO)
                     {
                         InputOutput* existingIO = nullptr;
                         for(auto& io : existingClass.IO)
                         {
-                            if(io.Type == toAddIO.Type && io.Name == toAddIO.Name)
+                            if(io.second.Type == toAddIO.second.Type && io.second.Name == toAddIO.second.Name)
                             {
-                                existingIO = &io;
+                                existingIO = &io.second;
                                 break;
                             }
                         }
                         if(existingIO == nullptr)
                         {
-                            existingClass.IO.emplace_back(toAddIO);
+                            existingClass.IO[toAddIO.first] = toAddIO.second;
                             continue;
                         }
 
                         // Combine IO
-                        existingIO->ParamType = toAddIO.ParamType;
-                        if(!toAddIO.Description.empty())
-                            existingIO->Description = toAddIO.Description;
+                        existingIO->ParamType = toAddIO.second.ParamType;
+                        if(!toAddIO.second.Description.empty())
+                            existingIO->Description = toAddIO.second.Description;
                     }
                 }
             }
@@ -378,42 +440,48 @@ namespace Decay::Fgd
                 // Process properties
                 {
                     auto& foundClassProperties = foundClass->second.Properties;
-                    for(const auto& prop : clss.second.Properties)
+                    for(const auto& it_prop : clss.second.Properties)
                     {
-                        auto foundProperty = std::find_if(foundClassProperties.begin(), foundClassProperties.end(), [&prop](const FgdFile::Property& existing) { return existing.Codename == prop.Codename; });//THINK case-insensitive search?
-                        if(foundProperty == foundClassProperties.end()) // Not Found
-                            continue;
+                        const auto& prop = it_prop.second;
 
-                        bool isSame = prop.Type == foundProperty->Type;
-                        isSame &= prop.ReadOnly == foundProperty->ReadOnly;
-                        isSame &= (ignoreDescription || prop.Description == foundProperty->Description);
-                        isSame &= (ignorePropertyDisplayName || prop.DisplayName == foundProperty->DisplayName);
-                        isSame &= prop.DefaultValue == foundProperty->DefaultValue;
-                        isSame &= prop.FlagsOrChoices.size() == foundProperty->FlagsOrChoices.size();
+                        auto it_foundProperty = foundClassProperties.find(it_prop.first);
+                        if(it_foundProperty == foundClassProperties.end()) // Not Found
+                            continue;
+                        auto& foundProperty = it_foundProperty->second;
+
+                        bool isSame = prop.Type == foundProperty.Type;
+                        isSame &= prop.ReadOnly == foundProperty.ReadOnly;
+                        isSame &= (ignoreDescription || prop.Description == foundProperty.Description);
+                        isSame &= (ignorePropertyDisplayName || prop.DisplayName == foundProperty.DisplayName);
+                        isSame &= prop.DefaultValue == foundProperty.DefaultValue;
+                        isSame &= prop.FlagsOrChoices.size() == foundProperty.FlagsOrChoices.size();
                         if(!prop.FlagsOrChoices.empty())
                             for(int i = 0; i < prop.FlagsOrChoices.size(); i++)
-                                isSame &= prop.FlagsOrChoices[i] == foundProperty->FlagsOrChoices[i];
+                                isSame &= prop.FlagsOrChoices[i] == foundProperty.FlagsOrChoices[i];
 
                         if(isSame)
-                            foundClassProperties.erase(foundProperty);
+                            foundClassProperties.erase(it_foundProperty);
                     }
                 }
 
                 // Process IO
                 {
                     auto& foundClassIO = foundClass->second.IO;
-                    for(const auto& io : clss.second.IO)
+                    for(const auto& it_io : clss.second.IO)
                     {
-                        auto foundIO = std::find_if(foundClassIO.begin(), foundClassIO.end(), [&io](const FgdFile::InputOutput& existing) { return existing.Name == io.Name; });//THINK case-insensitive search?
-                        if(foundIO == foundClassIO.end()) // Not Found
-                            continue;
+                        const auto& io = it_io.second;
 
-                        bool isSame = io.Type == foundIO->Type;
-                        isSame &= io.ParamType == foundIO->ParamType;
-                        isSame &= (ignoreDescription || io.Description == foundIO->Description);
+                        auto it_foundIO = foundClassIO.find(it_io.first);
+                        if(it_foundIO == foundClassIO.end()) // Not Found
+                            continue;
+                        auto& foundIO = it_foundIO->second;
+
+                        bool isSame = io.Type == foundIO.Type;
+                        isSame &= io.ParamType == foundIO.ParamType;
+                        isSame &= (ignoreDescription || io.Description == foundIO.Description);
 
                         if(isSame)
-                            foundClassIO.erase(foundIO);
+                            foundClassIO.erase(it_foundIO);
                     }
                 }
 
@@ -563,22 +631,24 @@ namespace Decay::Fgd
                 auto& existingClass = Classes[toAddClass.first];
 
                 // Properties
-                for(const Property& toAddProperty : toAddClass.second.Properties)
+                for(const auto& kv_toAddProperty : toAddClass.second.Properties)
                 {
                     Property* existingProperty = nullptr;
                     for(auto& prop : existingClass.Properties)
                     {
-                        if(prop.Codename == toAddProperty.Codename)
+                        if(prop.second.Codename == kv_toAddProperty.second.Codename)
                         {
-                            existingProperty = &prop;
+                            existingProperty = &prop.second;
                             break;
                         }
                     }
                     if(existingProperty == nullptr)
                     {
-                        existingClass.Properties.emplace_back(toAddProperty);
+                        existingClass.Properties[kv_toAddProperty.first] = kv_toAddProperty.second;
                         continue;
                     }
+
+                    const auto& toAddProperty = kv_toAddProperty.second;
 
                     // Combine property
                     if(existingProperty->DisplayName.empty())
@@ -618,26 +688,26 @@ namespace Decay::Fgd
                 // Input / Output
                 if(!toAddClass.second.IO.empty())
                 {
-                    for(const InputOutput& toAddIO : toAddClass.second.IO)
+                    for(const auto& kv_toAddIO : toAddClass.second.IO)
                     {
                         InputOutput* existingIO = nullptr;
                         for(auto& io : existingClass.IO)
                         {
-                            if(io.Type == toAddIO.Type && io.Name == toAddIO.Name)
+                            if(io.second.Type == kv_toAddIO.second.Type && io.second.Name == kv_toAddIO.second.Name)
                             {
-                                existingIO = &io;
+                                existingIO = &io.second;
                                 break;
                             }
                         }
                         if(existingIO == nullptr)
                         {
-                            existingClass.IO.emplace_back(toAddIO);
+                            existingClass.IO[kv_toAddIO.first] = kv_toAddIO.second;
                             continue;
                         }
 
                         // Combine IO
                         if(existingIO->Description.empty())
-                            existingIO->Description = toAddIO.Description;
+                            existingIO->Description = kv_toAddIO.second.Description;
                     }
                 }
             }
@@ -706,6 +776,47 @@ namespace Decay::Fgd
         R_ASSERT(dependencyGraph.empty());
         R_ASSERT(orderedClasses.size() == Classes.size());
         return orderedClasses;
+    }
+    decltype(FgdFile::Classes) FgdFile::ProcessClassDependency() const
+    {
+        auto orderedClasses = OrderClassesByDependency();
+        decltype(Classes) processedClasses{};
+
+        // Process dependencies
+        // Discard base classes
+        for(int i = 0; i < orderedClasses.size(); i++)
+        {
+            const auto& className = orderedClasses[i];
+            auto it_clss = Classes.find(className);
+            R_ASSERT(it_clss != Classes.end());
+            Class& clss = processedClasses[className];
+            clss = it_clss->second; // Copy
+
+            if(StringCaseInsensitiveEqual(clss.Type, "BaseClass"))
+                continue; // Base classes are skipped, there is no need for them anymore
+
+            for(const Option& option : clss.Options)
+            {
+                if(StringCaseInsensitiveEqual(option.Name, "base"))
+                {
+                    for(const OptionParam& optionParam : option.Params)
+                    {
+                        R_ASSERT(!optionParam.Quoted, "Base class name cannot be inside quoted string");
+
+                        const auto it_baseClass = Classes.find(optionParam.Name);//TODO case-insensitive
+                        if(it_baseClass == Classes.end())
+                        {
+                            std::cerr << "Not found base class '" << optionParam.Name << "', ignoring for now" << std::endl;
+                            continue;
+                        }
+
+                        ProcessDependency(Classes, clss, it_baseClass->second);
+                    }
+                }
+            }
+        }
+
+        return processedClasses;
     }
 }
 
@@ -1437,7 +1548,7 @@ GOTO_OPTION_PARAM:
                         in >> io;
                         if(in.good())
                         {
-                            clss.IO.emplace_back(io);
+                            clss.IO[io.Name] = io;
                             continue;
                         }
                         else
@@ -1453,7 +1564,7 @@ GOTO_OPTION_PARAM:
                         in >> property;
                         if(in.good())
                         {
-                            clss.Properties.emplace_back(property);
+                            clss.Properties[property.Codename] = property;
                             continue;
                         }
                         else
@@ -1501,7 +1612,7 @@ GOTO_OPTION_PARAM:
         // Properties
         for(const auto& property : clss.Properties)
         {
-            out << '\t' << property << '\n';
+            out << '\t' << property.second << '\n';
         }
         bool hadPrevious = !clss.Properties.empty();
 
@@ -1512,8 +1623,8 @@ GOTO_OPTION_PARAM:
                 out << '\n';
 
             for(const auto& io: clss.IO)
-                if(io.Type == FgdFile::InputOutputType::Input)
-                    out << '\t' << io << '\n';
+                if(io.second.Type == FgdFile::InputOutputType::Input)
+                    out << '\t' << io.second << '\n';
         }
 
         // Output
@@ -1523,8 +1634,8 @@ GOTO_OPTION_PARAM:
                 out << '\n';
 
             for(const auto& io: clss.IO)
-                if(io.Type == FgdFile::InputOutputType::Output)
-                    out << '\t' << io << '\n';
+                if(io.second.Type == FgdFile::InputOutputType::Output)
+                    out << '\t' << io.second << '\n';
         }
 
         out << ']';

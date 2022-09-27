@@ -1,11 +1,6 @@
 #pragma once
 
-#include "Decay/Bsp/v30/BspFile.hpp"
-#include "Decay/Bsp/v30/BspTree.hpp"
-
-#include "Decay/Wad/Wad3/WadFile.hpp"
-
-#include <cstring>
+#include "Decay/Common.hpp"
 
 struct Command
 {
@@ -27,3 +22,6 @@ int Help_wad_add(int argc, const char** argv);
 
 int Exec_bsp_lightmap(int argc, const char** argv);
 int Help_bsp_lightmap(int argc, const char** argv);
+
+int Exec_bsp_entity(int argc, const char** argv);
+int Help_bsp_entity(int argc, const char** argv);
