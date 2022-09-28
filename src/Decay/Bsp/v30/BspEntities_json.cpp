@@ -49,5 +49,24 @@ namespace Decay::Bsp::v30
         }
         return j;
     }
+    BspEntities::BspEntities(const nlohmann::json& j)
+    {
+        const auto& jEntities = j.find("entities");
+        if(jEntities != j.end())
+        {
+            if(jEntities->type() != nlohmann::detail::value_t::array && jEntities->type() != nlohmann::detail::value_t::null)
+                throw std::runtime_error("BSP Entities must be a JSON array");
+
+            for(const nlohmann::json& jEnt : *jEntities)
+            {
+                Entity ent;
+                {
+                    for(nlohmann::json::const_iterator it = jEnt.begin(); it != jEnt.end(); ++it)
+                        ent[it.key()] = it.value();
+                }
+                emplace(ent);
+            }
+        }
+    }
 #endif
 }

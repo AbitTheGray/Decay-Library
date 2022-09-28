@@ -38,11 +38,14 @@ namespace Decay::Bsp::v30
         explicit BspEntities(BspFile& bsp) : BspEntities(bsp.GetRawEntityChars(), bsp.GetEntityCharCount())
         {
         }
+#ifdef DECAY_JSON_LIB
+        explicit BspEntities(const nlohmann::json&);
+#endif
 
     public:
         typedef std::map<std::string, std::string> Entity;
     private:
-        std::vector<Entity> Entities{};
+        std::vector<Entity> Entities{}; //TODO Remove copies in `Entities_*` variables
         std::map<int, Entity> Entities_Model{};
         std::map<std::string, std::vector<Entity>> Entities_Name{};
         std::map<std::string, std::vector<Entity>> Entities_Type{};
@@ -53,6 +56,7 @@ namespace Decay::Bsp::v30
         [[nodiscard]] inline std::size_t size() const noexcept { return Entities.size(); }
         [[nodiscard]] inline const Entity& operator[](std::size_t index) const noexcept { return Entities[index]; }
         [[nodiscard]] inline       Entity& operator[](std::size_t index)       noexcept { return Entities[index]; }
+        void emplace(const Entity&);
 
     public:
         [[deprecated("Not fully implemented, use nlohmann::json variant instead")]]

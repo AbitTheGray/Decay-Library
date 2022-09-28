@@ -1,1 +1,39 @@
  
+@PointClass = worldspawn
+[
+	MaxRange(integer)
+	mapversion(integer)
+	wad(string)
+]
+
+@PointClass = info_player_start
+[
+	origin(vector)
+	angles(angle)
+]
+@PointClass base(info_player_start) = info_player_deathmatch
+[
+]
+
+@PointClass = light
+[
+	_light(color255)
+	origin(vector)
+]
+
+@SolidClass = func_buyzone
+[
+	team(integer)
+	model(studio)
+]
+@SolidClass = func_breakable
+[
+	health(float)
+	material(string)
+	model(studio)
+	spawnflags(flags) =
+	[
+		1 : "Explode"
+	]
+	rendercolor(color255)
+]

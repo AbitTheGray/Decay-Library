@@ -518,10 +518,10 @@ cxxopts::Options Options_bsp_entity(int argc, const char** argv)
        ("f,file", "BSP file (the map)", cxxopts::value<std::string>(), "<map.bsp>")
     ;
     options.add_options("Manipulate")
-       ("add", "", cxxopts::value<std::string>(), "<entities.kv>")
-       ("add_json", "", cxxopts::value<std::string>(), "<entities.json>")
-       ("replace", "", cxxopts::value<std::string>(), "<entities.kv>")
-       ("replace_json", "", cxxopts::value<std::string>(), "<entities.json>")
+       ("replace", "Replace cached (--file) entities by entities from KeyValue file", cxxopts::value<std::string>(), "<entities.kv>")
+       ("replace_json", "Replace cached (--file) entities by entities from JSON file", cxxopts::value<std::string>(), "<entities.json>")
+       ("add", "Add entities from KeyValue file to currently cached entities", cxxopts::value<std::vector<std::string>>(), "<entities.kv>")
+       ("add_json", "Add entities from JSON file to currently cached entities", cxxopts::value<std::vector<std::string>>(), "<entities.json>")
     ;
     options.add_options("Output")
        ("validate", "Use FGD file to validate entities", cxxopts::value<std::string>(), "<gamemode.fgd>")
@@ -593,23 +593,45 @@ int Exec_bsp_entity(int argc, const char** argv)
 #pragma region --replace (+json)
     if(result.count("replace"))
     {
-        //TODO
+        std::fstream in(result["replace"].as<std::string>(), std::ios_base::in);
+        entities = BspEntities(in);
     }
+#ifdef DECAY_JSON_LIB
     if(result.count("replace_json"))
     {
-        //TODO
+        std::fstream in(result["replace"].as<std::string>(), std::ios_base::in);
+        nlohmann::json inJson = nlohmann::json::parse(in);;
+        entities = BspEntities(inJson);
     }
+#endif
 #pragma endregion
 
 #pragma region --add (+json)
     if(result.count("add"))
     {
-        //TODO
+        for(const std::string& addPath : result["add"].as<std::vector<std::string>>())
+        {
+            std::fstream in(result["add"].as<std::string>(), std::ios_base::in);
+            BspEntities newEntities(in);
+
+            for(int i = 0; i < newEntities.size(); i++)
+                entities.emplace(newEntities[i]);
+        }
     }
+#ifdef DECAY_JSON_LIB
     if(result.count("add_json"))
     {
-        //TODO
+        for(const std::string& addPath : result["add_json"].as<std::vector<std::string>>())
+        {
+            std::fstream in(result["add_json"].as<std::string>(), std::ios_base::in);
+            nlohmann::json inJson = nlohmann::json::parse(in);;
+            BspEntities newEntities(inJson);
+
+            for(int i = 0; i < newEntities.size(); i++)
+                entities.emplace(newEntities[i]);
+        }
     }
+#endif
 #pragma endregion
 
 #pragma region --validate (FGD)
@@ -632,7 +654,7 @@ int Exec_bsp_entity(int argc, const char** argv)
         using namespace Decay::Fgd;
         std::fstream in(validatePath, std::ios_base::in);
         FgdFile fgd(in);
-        fgd.ProcessClassDependency();
+        fgd.Classes = fgd.ProcessClassDependency();
 
         for(int i = 0; i < entities.size(); i++)
         {
@@ -640,12 +662,18 @@ int Exec_bsp_entity(int argc, const char** argv)
 
             auto it_classname = entity.find("classname");
             if(it_classname == entity.end())
-                throw std::runtime_error("Entity at index " + std::to_string(i) + " does not have a classname");
+            {
+                std::cerr << "Entity at index " << i << " does not have a classname" << std::endl;
+                continue;
+            }
             const std::string& classname = it_classname->second;
 
             auto it_fgdClass = fgd.Classes.find(classname);
             if(it_fgdClass == fgd.Classes.end())
-                throw std::runtime_error("Entity class " + classname + " was not found in FGD");
+            {
+                std::cerr << "Entity class " << classname << " (at index " << i << ") was not found in FGD" << std::endl;
+                continue;
+            }
             const auto& fgdClass = it_fgdClass->second;
 
             //TODO For Source variant, don't forget to add IO to those checks as well
@@ -654,20 +682,35 @@ int Exec_bsp_entity(int argc, const char** argv)
             // Does the entity have correct types on properties?
             for(const auto& property : entity)
             {
+                if(property.first == "classname")
+                    continue;
+
                 const auto it_fgdProperty = fgdClass.Properties.find(property.first);
                 if(it_fgdProperty == fgdClass.Properties.end())
-                    throw std::runtime_error("Property " + property.first + " of entity " + classname + " was not found in provided FGD");
+                {
+                    std::cerr << "Property " << property.first << " of entity " << classname << " (at index " << i << ") was not found in provided FGD" << std::endl;
+                    continue;
+                }
                 const auto& fgdProperty = it_fgdProperty->second;
 
                 if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "choices"))
                     continue; // We don't care about type inside choices
                 const auto valueType = FgdFile::GuessTypeFromString(property.second);
                 if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "flags") && valueType != FgdFile::ValueType::Integer)
-                    throw std::runtime_error("Property of type `flags` can only have integer value");
+                {
+                    std::cerr << "Property " << property.first << " of entity " << classname << " (at index " << i << ") has type `flags` which can only have integer value" << std::endl;
+                    continue;
+                }
                 if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "integer") && valueType != FgdFile::ValueType::Integer)
-                    throw std::runtime_error("Property of type `integer` can only have integer value");
-                if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "float") && valueType != FgdFile::ValueType::Float)
-                    throw std::runtime_error("Property of type `float` can only have integer or floating-point value");
+                {
+                    std::cerr << "Property " << property.first << " of entity " << classname << " (at index " << i << ") has type `integer` which can only have integer value" << std::endl;
+                    continue;
+                }
+                if(Decay::StringCaseInsensitiveEqual(fgdProperty.Type, "float") && valueType != FgdFile::ValueType::Float && valueType != FgdFile::ValueType::Integer)
+                {
+                    std::cerr << "Property " << property.first << " of entity " << classname << " (at index " << i << ") has type `float` which can only have integer or floating-point value" << std::endl;
+                    continue;
+                }
             }
 
             // Does the entity miss some properties?
@@ -675,14 +718,16 @@ int Exec_bsp_entity(int argc, const char** argv)
             {
                 const auto it_property = entity.find(kv_fgdProperty.first);
                 if(it_property == entity.end())
-                    throw std::runtime_error("Entity " + classname + " (at index " + std::to_string(i) + ") is missing " + kv_fgdProperty.first + " property");
+                {
+                    std::cerr << "Entity " << classname << " (at index " << i << ") is missing " << kv_fgdProperty.first << " property" << std::endl;
+                    continue;
+                }
             }
         }
     }
 #pragma endregion
 
 #pragma region --extract (+json)
-#   pragma region --extract
     if(result.count("extract"))
     {
         std::filesystem::path extractPath = result["extract"].as<std::string>();
@@ -702,8 +747,7 @@ int Exec_bsp_entity(int argc, const char** argv)
         std::fstream out(extractPath, std::ios_base::out | std::ios_base::binary);
         out << entities; //THINK check empty
     }
-#   pragma endregion
-#   pragma region --extract_json
+#ifdef DECAY_JSON_LIB
     if(result.count("extract_json"))
     {
         std::filesystem::path extractJsonPath = result["extract_json"].as<std::string>();
@@ -723,7 +767,7 @@ int Exec_bsp_entity(int argc, const char** argv)
         std::fstream out(extractJsonPath, std::ios_base::out);
         out << entities.AsJson().dump(4); //THINK check empty
     }
-#   pragma endregion
+#endif
 #pragma endregion
 
 #pragma region --outbsp

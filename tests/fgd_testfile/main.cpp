@@ -27,11 +27,11 @@ int main(int argc, const char* argv[])
         R_ASSERT(clss.Options[0].Params[0].Quoted == false);
         R_ASSERT(clss.Description == "Player spawn point. You should have some for each team (except for deathmatch maps).");
         R_ASSERT(clss.Properties.size() == 1);
-        R_ASSERT(clss.Properties[0].Codename == "team");
-        R_ASSERT(clss.Properties[0].Type == "choices");
-        R_ASSERT(clss.Properties[0].DisplayName == "Player team (default is deathmatch)");
-        R_ASSERT(clss.Properties[0].DefaultValue == "0");
-        R_ASSERT(clss.Properties[0].FlagsOrChoices.size() == 3);
+        R_ASSERT(clss.Properties["team"].Codename == "team");
+        R_ASSERT(clss.Properties["team"].Type == "choices");
+        R_ASSERT(clss.Properties["team"].DisplayName == "Player team (default is deathmatch)");
+        R_ASSERT(clss.Properties["team"].DefaultValue == "0");
+        R_ASSERT(clss.Properties["team"].FlagsOrChoices.size() == 3);
     }
     else if(std::string("base.fgd") == argv[1])
     {

@@ -34,7 +34,7 @@ Display information how to use the command-line utility.
 | `--lightmap <lightmap.png>` |          |          | Where to save generated lightmap |
 
 ## BSP Entity
-~~`bsp_entity`~~ - NOT IMPLEMENTED
+`bsp_entity`
 
 | Argument                         | Required | Multiple | Description                                                                                    |
 |----------------------------------|:--------:|:--------:|------------------------------------------------------------------------------------------------|
@@ -46,11 +46,13 @@ Display information how to use the command-line utility.
 | `--validate <gamemode.fgd>`      |          |          | Validate map's entities against FGD and print additional/missing values (into standard output) |
 | `--extract <entities>`           |          |          | Extract entity info from the map                                                               |
 | `--extract_json <entities.json>` |          |          | Extract entity info from the map as JSON                                                       |
-| `--outbsp <map.bsp>`             |          |          | Save changed entities into, requires `--file`                                                  |
+| ~~`--outbsp <map.bsp>`~~         |          |          | ~~Save changed entities into, requires `--file`~~                                              |
 
 - Make sure you reference same entities (use correct model IDs) when using `--add` and `--replace` (or their JSON variants)
 - Arguments are processed in order `--file` -> `--replace` -> `--add` -> `--validate` -> `--extract`
-- Either `--outbsp` or `--extract` are required to save the data
+- Either `--outbsp` or `--extract` is required to save the data
+- JSON variants require [nlohmann's JSON](https://github.com/nlohmann/json) library (see option `DECAY_JSON_LIB` inside [CMakeLists.txt](CMakeLists.txt))
+- Using `--replace` and `--replace_json` at the same time will cause "undefined behaviour"
 
 ## Add texture to WAD
 `wad_add`

@@ -69,15 +69,14 @@ namespace Decay::Bsp::v30
         for(const Entity& ent : Entities)
         {
             auto classname = ent.find("classname");
-            auto name = ent.find("targetname");
-            auto model = ent.find("model");
-
             if(classname != ent.end())
                 Entities_Type[classname->second].emplace_back(ent);
 
+            auto name = ent.find("targetname");
             if(name != ent.end())
                 Entities_Name[name->second].emplace_back(ent);
 
+            auto model = ent.find("model");
             if(model != ent.end())
             {
                 if(model->second.size() > 1 && model->second[0] == '*')
@@ -115,5 +114,38 @@ namespace Decay::Bsp::v30
         out << '\0';
 
         return out;
+    }
+    void BspEntities::emplace(const Entity& entity)
+    {
+        Entities.emplace_back(entity);
+
+        auto classname = entity.find("classname");
+        if(classname != entity.end())
+            Entities_Type[classname->second].emplace_back(entity);
+
+        auto name = entity.find("targetname");
+        if(name != entity.end())
+            Entities_Name[name->second].emplace_back(entity);
+
+        auto model = entity.find("model");
+        if(model != entity.end())
+        {
+            if(model->second.size() > 1 && model->second[0] == '*')
+            {
+                try
+                {
+                    int value = std::stoi(model->second.data() + 1);
+                    Entities_Model.emplace(value, entity);
+                }
+                catch(std::invalid_argument& ex)
+                {
+                    std::cerr << "Model '" << (model->second.data() + 1) << "' could not be parsed - No Conversion" << std::endl;
+                }
+                catch(std::out_of_range& ex)
+                {
+                    std::cerr << "Model '" << (model->second.data() + 1) << "' could not be parsed - Out of Range" << std::endl;
+                }
+            }
+        }
     }
 }
