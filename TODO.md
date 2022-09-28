@@ -4,6 +4,7 @@
   -[ ] Add messages into `R_ASSERT` and `D_ASSERT`
   -[ ] Look for places where `R_ASSERT` can simplify the code (instead of `if` + `throw`)
   -[ ] Replace `R_ASSERT` by `D_ASSERT` where it is only for comfort and not really needed
+  -[ ] Add utility function to implement TODOs for "order-independent comparison" for `std::map` (and equivalent)
 - BSP
   -[ ] Fix JSON export (without nlohmann's JSON library) to correctly escape `\` (required for `"wad"`)
 - FGD
@@ -18,7 +19,8 @@
   -[ ] Utility functions to simplify entity manipulation / polygon conversion
   -[ ] Document in [MAP.md](docs/GoldSrc/MAP.md) how to convert brush into polygons
   -[ ] Cleanup entity properties using [FGD file](docs/Source/FGD.md)
+  -[ ] Conversion between `Map::MapFile` and `Rmf::RmfFile` (both directions)
 - Commands
   -[ ] WIP - Rework implementation
   -[ ] Add FGD commands
-  -[ ] Add MAP commands
+  -[ ] Add `map2rmf` and `rmf2map` commands
