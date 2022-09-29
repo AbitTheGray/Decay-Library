@@ -5,6 +5,8 @@
 
 Display information how to use the command-line utility.
 
+Use other command after `help` (for example `help bsp2obj`) to show help for the specific command.
+
 ## BSP -> OBJ
 `bsp2obj`
 
@@ -64,19 +66,26 @@ Display information how to use the command-line utility.
 | ~~`--font <font.png>`~~   |          |    ✓     | ~~16x16 font characters image to add to the BSP~~ |
 | ~~`--image <image.png>`~~ |          |    ✓     | ~~Image to add to the BSP~~                       |
 
-- `--textures` is not needed after other arguments to allow you to add multiple textures easier
-    - example: `--file map.bsp texture1.png texture2.png texture3.png`
+- `--textures` is not needed after other arguments (=at the end) to allow you to add multiple textures easier
+  - `--file map.bsp texture1.png texture2.png texture3.png`
+  - `--file map.bsp --font font1.png texture1.png texture2.png texture3.png`
 
 ## Optimize WAD
 ~~`wad_optimize`~~ - NOT IMPLEMENTED
 
-| Argument            | Required | Multiple | Description                |
-|---------------------|:--------:|:--------:|----------------------------|
-| `--file <file.wad>` |    ✓     |          | Source WAD file            |
-| `--out [file.wad]`  |          |          | Textures to add to the BSP |
+| Argument            | Required | Multiple | Description     |
+|---------------------|:--------:|:--------:|-----------------|
+| `--file <file.wad>` |    ✓     |          | Source WAD file |
+| `--out <file.wad>`  |          |          | Output WAD file |
 
 ## MAP -> OBJ
 ~~`map_obj`~~ - NOT IMPLEMENTED
+
+| Argument            | Required | Multiple | Description                                      |
+|---------------------|:--------:|:--------:|--------------------------------------------------|
+| `--file <file.map>` |    ✓     |          | Source MAP file                                  |
+| `--obj <map.obj>`   |          |          | Path where to save Wavefront OBJ file            |
+| `--mtl <map.mtl>`   |          |          | Path where to save Wavefront OBJ file's material |
 
 ### MAP -> RMF
 `map2rmf`
@@ -84,7 +93,7 @@ Display information how to use the command-line utility.
 | Argument            | Required | Multiple | Description     |
 |---------------------|:--------:|:--------:|-----------------|
 | `--file <file.map>` |    ✓     |          | Source MAP file |
-| `--rmf [file.rmf]`  |    ✓     |          | Output RMF file |
+| `--rmf <file.rmf>`  |    ✓     |          | Output RMF file |
 
 - Use `rmf2map` for conversion in the opposite direction
 - This conversion won't lose any data and will decrease file size (because of conversion from text file to binary file)
@@ -95,7 +104,7 @@ Display information how to use the command-line utility.
 | Argument            | Required | Multiple | Description                                      |
 |---------------------|:--------:|:--------:|--------------------------------------------------|
 | `--file <file.rmf>` |    ✓     |          | Source RMF file                                  |
-| `--map [file.map]`  |    ✓     |          | Output MAP file                                  |
+| `--map <file.map>`  |    ✓     |          | Output MAP file                                  |
 | `--goldsrc`         |          |          | Force GoldSrc variant of MAP (currently default) |
 | `--idtech2`         |          |          | Force IdTech2 variant of MAP                     |
 
@@ -103,10 +112,34 @@ Display information how to use the command-line utility.
 - There is no advantage in this conversion - you loose part of the information (which is not needed for compilation), not gain anything and file size will increase (binary -> text)
 - Using both `--goldsrc` and `--idtech2` is not valid
 
-## FGD -> JSON
-~~`fgd_json`~~ - NOT IMPLEMENTED
+## FGD operations
+~~`fgd`~~ - NOT IMPLEMENTED
 
-## Combine FGD files
-~~`fgd_combine`~~ - NOT IMPLEMENTED
+| Argument                    | Required | Multiple | Description                                            |
+|-----------------------------|:--------:|:--------:|--------------------------------------------------------|
+| `--file <file.fgd>`         |    ✓     |          | Source FGD file                                        |
+| `--add <file.fgd>`          |          |    ✓     | Add other FGD into current one (new priority)          |
+| `--include <file.fgd>`      |          |    ✓     | Add other FGD into current one (old priority)          |
+| `--subtract <file.fgd>`     |          |    ✓     | Subtract other FGD from current one                    |
+| `--includes`                |          |          | Process `@Include`s                                    |
+| `--include_dir <directory>` |          |          | Working directory for `@Include`s, implies `--include` |
+| `--process_base`            |          |          | Process `base(...)` and discard `@BaseClass` classes   |
+| `--json <file.fgd>`         |          |          | Output as JSON file                                    |
 
-- Can also process `@Include` to include referenced files
+- Can process `@Include` to include referenced files
+  - No need to use `--includes` when you use `--include_dir`
+
+## WAD Find
+~~`wad_find`~~ - NOT IMPLEMENTED
+
+| Argument                   | Required | Multiple | Description                        |
+|----------------------------|:--------:|:--------:|------------------------------------|
+| `--dir <game_directory>`   |          |          | Directory to search                |
+| `--item <item_name>`       |          |          | Name of WAD item to search for     |
+| `--texture <texture_name>` |          |          | Same as `--item` but only textures |
+| `--image <image_name>`     |          |          | Same as `--item` but only image    |
+| `--font <font_name>`       |          |          | Same as `--item` but only font     |
+
+- If you do not specify `--dir`, current working directory will be used
+- You can search only for 1 item at a time
+  - = cannot combine `--item`, `--texture`, `--image` or `--font`
