@@ -789,11 +789,7 @@ namespace Decay::Fgd
             const auto& className = orderedClasses[i];
             auto it_clss = Classes.find(className);
             R_ASSERT(it_clss != Classes.end());
-            Class& clss = processedClasses[className];
-            clss = it_clss->second; // Copy
-
-            if(StringCaseInsensitiveEqual(clss.Type, "BaseClass"))
-                continue; // Base classes are skipped, there is no need for them anymore
+            Class clss = it_clss->second; // Copy
 
             for(const Option& option : clss.Options)
             {
@@ -813,6 +809,11 @@ namespace Decay::Fgd
                         ProcessDependency(Classes, clss, it_baseClass->second);
                     }
                 }
+            }
+
+            if(!StringCaseInsensitiveEqual(clss.Type, "BaseClass")) // Base classes are skipped, there is no need for them anymore
+            {
+                processedClasses[className] = clss;
             }
         }
 

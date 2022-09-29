@@ -98,7 +98,37 @@ int main()
         }
     );
 
-    auto classDependency = fgd.OrderClassesByDependency();
-    for(const auto& cd : classDependency)
-        std::cout << cd << std::endl;
+    auto orderedClasses = fgd.OrderClassesByDependency();
+    R_ASSERT(orderedClasses.size() == 7);
+    /*
+    R_ASSERT(orderedClasses[0] == "a1");
+    R_ASSERT(orderedClasses[1] == "a2");
+    R_ASSERT(orderedClasses[2] == "a3"); // a1
+    R_ASSERT(orderedClasses[3] == "b1"); // a1
+    R_ASSERT(orderedClasses[4] == "b2"); // a2
+    R_ASSERT(orderedClasses[5] == "b3"); // a3 (+a1)
+    R_ASSERT(orderedClasses[6] == "b4"); // a1, a3
+    */
+    auto it_a1 = std::find(orderedClasses.begin(), orderedClasses.end(), "a1");
+    auto it_a2 = std::find(orderedClasses.begin(), orderedClasses.end(), "a2");
+    auto it_a3 = std::find(orderedClasses.begin(), orderedClasses.end(), "a3");
+    auto it_b1 = std::find(orderedClasses.begin(), orderedClasses.end(), "b1");
+    auto it_b2 = std::find(orderedClasses.begin(), orderedClasses.end(), "b2");
+    auto it_b3 = std::find(orderedClasses.begin(), orderedClasses.end(), "b3");
+    auto it_b4 = std::find(orderedClasses.begin(), orderedClasses.end(), "b4");
+    R_ASSERT(it_a1 != orderedClasses.end());
+    R_ASSERT(it_a2 != orderedClasses.end());
+    R_ASSERT(it_a3 != orderedClasses.end());
+    R_ASSERT(it_b1 != orderedClasses.end());
+    R_ASSERT(it_b2 != orderedClasses.end());
+    R_ASSERT(it_b3 != orderedClasses.end());
+    R_ASSERT(it_b4 != orderedClasses.end());
+
+    R_ASSERT(it_a1 < it_a3);
+    R_ASSERT(it_a1 < it_b1);
+    R_ASSERT(it_a2 < it_b2);
+    R_ASSERT(it_a1 < it_b3);
+    R_ASSERT(it_a3 < it_b3);
+    R_ASSERT(it_a1 < it_b4);
+    R_ASSERT(it_a3 < it_b4);
 }

@@ -13,7 +13,6 @@
   -[ ] `Fgd::FgdFile::Add(...)`, `Fgd::FgdFile::Subtract(...)` and `Fgd::FgdFile::Include(...)` should look at base classes
     - Verify whenever it is needed
     - Maybe also `Fgd::FgdFile::ProcessIncludes(...)`
-  -[ ] Implement and test `Fgd::FgdFile::ProcessClassDependency(...)`
 - MAP
   -[ ] Conversion of `Map::MapFile`'s brush into polygon-based (or triangulated) object (including texture coordinates).
   -[ ] Utility functions to simplify entity manipulation / polygon conversion

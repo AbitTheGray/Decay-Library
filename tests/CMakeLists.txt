@@ -44,6 +44,7 @@ add_subdirectory(fgd_testfile)
 add_subdirectory(fgd_json)
 
 add_subdirectory(fgd_class_order)
+add_subdirectory(fgd_class_dependency)
 
 #--------------------------------
 # MAP (GoldSrc/IdTech2, Map Development File)

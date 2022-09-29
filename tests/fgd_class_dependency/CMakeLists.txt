@@ -1,0 +1,6 @@
+add_executable(Test_Fgd_Class_Dependency main.cpp)
+
+target_link_libraries(Test_Fgd_Class_Dependency DecayLib)
+
+add_test(NAME Test_Fgd_Class_Dependency COMMAND Test_Fgd_Class_Dependency)
+set_tests_properties(Test_Fgd_Class_Dependency PROPERTIES LABELS "GoldSrc;Source;fgd")
