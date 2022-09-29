@@ -505,7 +505,7 @@ namespace Decay::Rmf
             std::vector<Entity> Entities{};
             std::vector<Group> Groups{};
 
-            std::string Classname{}; ///< Entity.Classname
+            std::string Classname = "worldspawn"; ///< Entity.Classname
             uint8_t Dummy[Dummy_Length]{}; ///< Entity.Dummy
             int EntityFlags{}; ///< Entity.EntityFlags
             std::unordered_map<std::string, std::string> Values{}; ///< Entity.Values
@@ -581,7 +581,7 @@ namespace Decay::Rmf
         World WorldInfo{};
 
     public:
-        int ActiveCamera = 0;
+        int ActiveCamera = -1;
         std::vector<Camera> Cameras{};
 
     public:

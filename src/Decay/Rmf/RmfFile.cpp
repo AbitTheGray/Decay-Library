@@ -595,10 +595,19 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&pairs), sizeof(pairs));
         for(const auto& kv : world.Values)
         {
-            R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
-            R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
+            R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength, "KeyValue Key is too long");
             WriteNString(out, kv.first);
-            WriteNString(out, kv.second);
+
+            if(kv.first == "wad" && kv.second.size() >= RmfFile::Entity::KeyValue_Value_MaxLength)
+            {
+                std::cerr << "Using empty value for \"wad\" as otherwise it would be too long." << std::endl;
+                WriteNString(out, ""); // Empty to prevent invalid value
+            }
+            else
+            {
+                R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength, "KeyValue Value is too long");
+                WriteNString(out, kv.second);
+            }
         }
 
         out.write(reinterpret_cast<const char*>(world.Dummy2), RmfFile::World::Dummy2_Length);

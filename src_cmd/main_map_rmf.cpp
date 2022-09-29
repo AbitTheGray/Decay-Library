@@ -120,13 +120,17 @@ cxxopts::Options Options_rmf2map(int argc, const char** argv)
     options.add_options("Output")
        ("map", "MAP file", cxxopts::value<std::string>(), "<file.map>")
     ;
+    options.add_options("Engine Variant")
+       ("goldsrc", "GoldSrc")
+       ("idtech2", "IdTech 2")
+    ;
 
     options.positional_help("-f <file.rmf> --map <file.map>");
     return options;
 }
 int Help_rmf2map(int argc, const char** argv)
 {
-    std::cout << Options_rmf2map(argc, argv).help({ "Input", "Output" }) << std::endl;
+    std::cout << Options_rmf2map(argc, argv).help({ "Input", "Output", "Engine Variant" }) << std::endl;
     return 0;
 }
 int Exec_rmf2map(int argc, const char** argv)
@@ -201,11 +205,26 @@ int Exec_rmf2map(int argc, const char** argv)
 #pragma endregion
 
     using namespace Decay::Map;
+
+#pragma region Engine Variant
+    std::optional<MapFile::EngineVariant> variant = {};
+    if(result.count("goldsrc"))
+    {
+        R_ASSERT(!variant.has_value(), "Multiple variants selected");
+        variant = MapFile::EngineVariant::GoldSrc;
+    }
+    if(result.count("idtech2"))
+    {
+        R_ASSERT(!variant.has_value(), "Multiple variants selected");
+        variant = MapFile::EngineVariant::IdTech2;
+    }
+#pragma endregion
+
     MapFile mapFile = (MapFile)rmfFile;
 
     {
         std::fstream out(mapPath, std::ios_base::out);
-        mapFile.Write(out, MapFile::EngineVariant::GoldSrc); //TODO EngineVariant
+        mapFile.Write(out, variant.has_value() ? variant.value() : MapFile::EngineVariant::GoldSrc);
     }
 
     return 0;

@@ -69,3 +69,36 @@ add_test(
         test.png
 )
 set_tests_properties(Test_CMD_wad_add PROPERTIES LABELS "cmd;GoldSrc;wad;wad3")
+
+# rmf2map (GoldSrc)
+configure_file(test_rmf2map.rmf ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
+add_test(
+    NAME Test_CMD_rmf2map
+    COMMAND DecayLib_Command
+        rmf2map
+        --file test_rmf2map.rmf
+        --map test_rmf2map_goldsrc.map
+)
+set_tests_properties(Test_CMD_rmf2map PROPERTIES LABELS "cmd;GoldSrc;rmf;map")
+
+# rmf2map (IdTech2)
+add_test(
+    NAME Test_CMD_rmf2map_idtech2
+    COMMAND DecayLib_Command
+        rmf2map
+        --file test_rmf2map.rmf
+        --map test_rmf2map_idtech2.map
+        --idtech2
+)
+set_tests_properties(Test_CMD_rmf2map_idtech2 PROPERTIES LABELS "cmd;GoldSrc;IdTech2;rmf;map")
+
+# map2rmf
+configure_file(test_map2rmf.map ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
+add_test(
+    NAME Test_CMD_map2rmf
+    COMMAND DecayLib_Command
+        map2rmf
+        --file test_map2rmf.map
+        --rmf test_map2rmf.rmf
+)
+set_tests_properties(Test_CMD_map2rmf PROPERTIES LABELS "cmd;GoldSrc;rmf;map")

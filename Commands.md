@@ -86,21 +86,22 @@ Display information how to use the command-line utility.
 | `--file <file.map>` |    ✓     |          | Source MAP file |
 | `--rmf [file.rmf]`  |    ✓     |          | Output RMF file |
 
-- use `rmf2map` for conversion in the opposite direction
+- Use `rmf2map` for conversion in the opposite direction
 - This conversion won't lose any data and will decrease file size (because of conversion from text file to binary file)
 
 ### RMF -> MAP
 `rmf2map`
 
-| Argument            | Required | Multiple | Description                                          |
-|---------------------|:--------:|:--------:|------------------------------------------------------|
-| `--file <file.rmf>` |    ✓     |          | Source RMF file                                      |
-| `--map [file.map]`  |    ✓     |          | Output MAP file                                      |
-| ~~`--goldsrc`~~     |          |          | ~~Force GoldSrc variant of MAP (currently default)~~ |
-| ~~`--idtech2`~~     |          |          | ~~Force IdTech2 variant of MAP~~                     |
+| Argument            | Required | Multiple | Description                                      |
+|---------------------|:--------:|:--------:|--------------------------------------------------|
+| `--file <file.rmf>` |    ✓     |          | Source RMF file                                  |
+| `--map [file.map]`  |    ✓     |          | Output MAP file                                  |
+| `--goldsrc`         |          |          | Force GoldSrc variant of MAP (currently default) |
+| `--idtech2`         |          |          | Force IdTech2 variant of MAP                     |
 
-- use `map2rmf` for conversion in the opposite direction
+- Use `map2rmf` for conversion in the opposite direction
 - There is no advantage in this conversion - you loose part of the information (which is not needed for compilation), not gain anything and file size will increase (binary -> text)
+- Using both `--goldsrc` and `--idtech2` is not valid
 
 ## FGD -> JSON
 ~~`fgd_json`~~ - NOT IMPLEMENTED
