@@ -48,6 +48,22 @@ std::unordered_map<std::string, Command> Commands = {
             Help_bsp_entity,
             "Manipulate BSP entities"
         }
+    },
+    {
+        "map2rmf",
+        Command{
+            Exec_map2rmf,
+            Help_map2rmf,
+            "Convert MAP to RMF format (in-development map)"
+        }
+    },
+    {
+        "rmf2map",
+        Command{
+            Exec_rmf2map,
+            Help_rmf2map,
+            "Convert RMf to MAP format (in-development map)"
+        }
     }
 };
 

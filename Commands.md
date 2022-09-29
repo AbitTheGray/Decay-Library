@@ -79,13 +79,25 @@ Display information how to use the command-line utility.
 ~~`map_obj`~~ - NOT IMPLEMENTED
 
 ### MAP -> RMF
-~~`map2rmf`~~ - NOT IMPLEMENTED
+`map2rmf`
+
+| Argument            | Required | Multiple | Description     |
+|---------------------|:--------:|:--------:|-----------------|
+| `--file <file.map>` |    ✓     |          | Source MAP file |
+| `--rmf [file.rmf]`  |    ✓     |          | Output RMF file |
 
 - use `rmf2map` for conversion in the opposite direction
 - This conversion won't lose any data and will decrease file size (because of conversion from text file to binary file)
 
 ### RMF -> MAP
-~~`rmf2map`~~ - NOT IMPLEMENTED
+`rmf2map`
+
+| Argument            | Required | Multiple | Description                                          |
+|---------------------|:--------:|:--------:|------------------------------------------------------|
+| `--file <file.rmf>` |    ✓     |          | Source RMF file                                      |
+| `--map [file.map]`  |    ✓     |          | Output MAP file                                      |
+| ~~`--goldsrc`~~     |          |          | ~~Force GoldSrc variant of MAP (currently default)~~ |
+| ~~`--idtech2`~~     |          |          | ~~Force IdTech2 variant of MAP~~                     |
 
 - use `map2rmf` for conversion in the opposite direction
 - There is no advantage in this conversion - you loose part of the information (which is not needed for compilation), not gain anything and file size will increase (binary -> text)

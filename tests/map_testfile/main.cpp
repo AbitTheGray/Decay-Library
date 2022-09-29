@@ -11,13 +11,21 @@ int main(int argc, const char* argv[])
     std::fstream in = std::fstream(argv[1], std::ios_base::in);
     MapFile map(in);
 
-    std::cout << map;
+    std::cout << std::endl;
+    std::cout << "IdTech 2" << std::endl;
+    map.Write(std::cout, MapFile::EngineVariant::IdTech2);
+
+    std::cout << std::endl;
+    std::cout << "GoldSrc" << std::endl;
+    map.Write(std::cout, MapFile::EngineVariant::GoldSrc);
+
 #ifdef DEBUG
+    std::cout << std::endl;
     for(const auto& entity : map.Entities)
     {
         for(const auto& brush : entity.Brushes)
         {
-            for(const auto& plane : brush.Planes)
+            for(const auto& plane : brush.Faces)
             {
                 const auto normal = plane.Normal();
                 std::cout << "( " << std::to_string(normal.x) << " * x ) + ( " << std::to_string(normal.y) << " * y ) + ( " << std::to_string(normal.z) << " * z )" << " = " << std::to_string(plane.DistanceFromOrigin()) << std::endl;
@@ -27,8 +35,12 @@ int main(int argc, const char* argv[])
 #endif
 
     {
-        std::fstream out = std::fstream(argv[1] + std::string("_out"), std::ios_base::out);
-        out << map;
+        std::fstream out = std::fstream(argv[1] + std::string("_idtech2"), std::ios_base::out);
+        map.Write(out, MapFile::EngineVariant::IdTech2);
+    }
+    {
+        std::fstream out = std::fstream(argv[1] + std::string("_goldsrc"), std::ios_base::out);
+        map.Write(out, MapFile::EngineVariant::GoldSrc);
     }
 
     std::fstream in2 = std::fstream(argv[1], std::ios_base::in);

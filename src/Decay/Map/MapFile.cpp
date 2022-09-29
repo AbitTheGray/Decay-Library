@@ -46,7 +46,7 @@ namespace Decay::Map
         };
     }
     /// Read vector+value inside square brackets
-    void ReadTextureVector(std::istream& in, glm::i32vec3& vec, int32_t& val)
+    void ReadTextureVector(std::istream& in, glm::vec3& vec, float& val)
     {
         R_ASSERT(in.good());
         int c;
@@ -61,16 +61,16 @@ namespace Decay::Map
         in.ignore(); // Skip '['
 
         IgnoreWhitespace(in);
-        std::vector<char> num0 = ReadOnlyNumber(in, true);
+        std::vector<char> num0 = ReadOnlyNumber(in, true, true);
         R_ASSERT(!num0.empty());
         IgnoreWhitespace(in);
-        std::vector<char> num1 = ReadOnlyNumber(in, true);
+        std::vector<char> num1 = ReadOnlyNumber(in, true, true);
         R_ASSERT(!num1.empty());
         IgnoreWhitespace(in);
-        std::vector<char> num2 = ReadOnlyNumber(in, true);
+        std::vector<char> num2 = ReadOnlyNumber(in, true, true);
         R_ASSERT(!num2.empty());
         IgnoreWhitespace(in);
-        std::vector<char> num3 = ReadOnlyNumber(in, true);
+        std::vector<char> num3 = ReadOnlyNumber(in, true, true);
         R_ASSERT(!num3.empty());
         IgnoreWhitespace(in);
 
@@ -80,11 +80,11 @@ namespace Decay::Map
         in.ignore(); // Skip ']'
 
         vec = {
-            std::stoi(str(num0)),
-            std::stoi(str(num1)),
-            std::stoi(str(num2))
+            std::stof(str(num0)),
+            std::stof(str(num1)),
+            std::stof(str(num2))
         };
-        val = std::stoi(str(num3));
+        val = std::stof(str(num3));
     }
 }
 
@@ -110,7 +110,7 @@ namespace Decay::Map
 // Stream Operators
 namespace Decay::Map
 {
-    std::istream& operator>>(std::istream& in, MapFile::Plane& plane)
+    std::istream& operator>>(std::istream& in, MapFile::Face& plane)
     {
         R_ASSERT(in.good());
 
@@ -121,7 +121,7 @@ namespace Decay::Map
             in.setstate(std::ios_base::failbit);
             return in;
         }
-        for(int i = 0; i < MapFile::Plane::PlaneVertexCount; i++)
+        for(int i = 0; i < MapFile::Face::PlaneVertexCount; i++)
         {
             auto& pv = plane.PlaneVertices[i];
             ReadPlaneVector(in, pv);
@@ -144,19 +144,19 @@ namespace Decay::Map
             std::vector<char> num;
 
             plane.UAxis = { 0, 0, 0};
-            num = ReadOnlyNumber(in, true);
-            plane.UOffset = std::stoi(str(num));
+            num = ReadOnlyNumber(in, true, true);
+            plane.UOffset = std::stof(str(num));
 
             IgnoreWhitespace(in);
 
             plane.VAxis = { 0, 0, 0};
-            num = ReadOnlyNumber(in, true);
-            plane.VOffset = std::stoi(str(num));
+            num = ReadOnlyNumber(in, true, true);
+            plane.VOffset = std::stof(str(num));
         }
 
         IgnoreWhitespace(in);
 
-        plane.Rotation = std::stoi(str(ReadOnlyNumber(in, true)));
+        plane.Rotation = std::stof(str(ReadOnlyNumber(in, true, true)));
 
         IgnoreWhitespace(in);
 
@@ -171,31 +171,42 @@ namespace Decay::Map
 
         return in;
     }
-    std::ostream& operator<<(std::ostream& out, const MapFile::Plane& plane)
+    void MapFile::Face::Write(std::ostream& out, EngineVariant variant) const
     {
+        out << std::noshowpoint;
 #ifdef MAP_TAB_OFFSET
         out << "\t\t";
 #endif
         // cross((p3 - p1), (p2 - p1)) != null
-        R_ASSERT(glm::cross(glm::vec3(plane.PlaneVertices[2] - plane.PlaneVertices[0]), glm::vec3(plane.PlaneVertices[1] - plane.PlaneVertices[0])) != glm::vec3{});
+        R_ASSERT(glm::cross(glm::vec3(PlaneVertices[2] - PlaneVertices[0]), glm::vec3(PlaneVertices[1] - PlaneVertices[0])) != glm::vec3{});
 
-        for(int i = 0; i < MapFile::Plane::PlaneVertexCount; i++)
+        for(int i = 0; i < MapFile::Face::PlaneVertexCount; i++)
         {
-            auto& pv = plane.PlaneVertices[i];
+            auto& pv = PlaneVertices[i];
             out << "( " << pv.x << ' ' << pv.y << ' ' << pv.z << " ) ";
         }
 
-        R_ASSERT(plane.Texture.find(' ') == std::string::npos);
-        out << plane.Texture << ' ';
+        R_ASSERT(Texture.find(' ') == std::string::npos);
+        out << Texture << ' ';
 
-        out << "[ " << plane.UAxis.x << ' ' << plane.UAxis.y << ' ' << plane.UAxis.z << ' ' << plane.UOffset << " ] ";
-        out << "[ " << plane.VAxis.x << ' ' << plane.VAxis.y << ' ' << plane.VAxis.z << ' ' << plane.VOffset << " ] ";
+        switch(variant)
+        {
+            case EngineVariant::GoldSrc:
+                out << "[ " << UAxis.x << ' ' << UAxis.y << ' ' << UAxis.z << ' ' << UOffset << " ] ";
+                out << "[ " << VAxis.x << ' ' << VAxis.y << ' ' << VAxis.z << ' ' << VOffset << " ] ";
+                break;
+            case EngineVariant::IdTech2:
+                //TODO Verify offset order (UAxis and VAxis can potentially swap those)
+                out << UOffset << ' ';
+                out << VOffset << ' ';
+                break;
+            default:
+                throw std::runtime_error("Invalid engine variant");
+        }
 
-        out << plane.Rotation << ' ';
+        out << Rotation << ' ';
 
-        out << plane.Scale.x << ' ' << plane.Scale.y;
-
-        return out;
+        out << Scale.x << ' ' << Scale.y;
     }
 
     std::istream& operator>>(std::istream& in, MapFile::Brush& brush)
@@ -229,31 +240,33 @@ namespace Decay::Map
             else
             {
                 R_ASSERT(in.good());
-                MapFile::Plane plane;
+                MapFile::Face plane;
                 in >> plane;
                 if(in.fail())
-                    throw std::runtime_error("Failed to read Brush Plane");
-                brush.Planes.emplace_back(plane);
+                    throw std::runtime_error("Failed to read Brush Face");
+                brush.Faces.emplace_back(plane);
             }
         }
         return in;
     }
-    std::ostream& operator<<(std::ostream& out, const MapFile::Brush& brush)
+    void MapFile::Brush::Write(std::ostream& out, EngineVariant variant) const
     {
 #ifdef MAP_TAB_OFFSET
         out << '\t';
 #endif
         out << "{\n";
         {
-            R_ASSERT(brush.Planes.size() >= 4);
-            for(const MapFile::Plane& plane : brush.Planes)
-                out << plane << '\n';
+            R_ASSERT(Faces.size() >= 4);
+            for(const MapFile::Face& face : Faces)
+            {
+                face.Write(out, variant);
+                out << '\n';
+            }
         }
 #ifdef MAP_TAB_OFFSET
         out << '\t';
 #endif
         out << '}';
-        return out;
     }
 
     std::istream& operator>>(std::istream& in, MapFile::Entity& entity)
@@ -314,10 +327,10 @@ namespace Decay::Map
         }
         return in;
     }
-    std::ostream& operator<<(std::ostream& out, const MapFile::Entity& entity)
+    void MapFile::Entity::Write(std::ostream& out, EngineVariant variant) const
     {
         out << "{\n";
-        for(const auto& kv : entity.Values)
+        for(const auto& kv : Values)
         {
 #ifdef MAP_TAB_OFFSET
             out << '\t';
@@ -327,10 +340,12 @@ namespace Decay::Map
             R_ASSERT(kv.second.find('\"') == std::string::npos);
             out << '\"' << kv.first << "\" \"" << kv.second << "\"\n";
         }
-        for(const auto& brush : entity.Brushes)
-            out << brush << '\n';
+        for(const auto& brush : Brushes)
+        {
+            brush.Write(out, variant);
+            out << '\n';
+        }
         out << "}";
-        return out;
     }
 
     std::istream& operator>>(std::istream& in, MapFile& mapFile)
@@ -360,10 +375,12 @@ namespace Decay::Map
                 return in;
         }
     }
-    std::ostream& operator<<(std::ostream& out, const MapFile& mapFile)
+    void MapFile::Write(std::ostream& out, EngineVariant variant) const
     {
-        for(const auto& entity : mapFile.Entities)
-            out << entity << '\n';
-        return out;
+        for(const auto& entity : Entities)
+        {
+            entity.Write(out, variant);
+            out << '\n';
+        }
     }
 }

@@ -25,3 +25,9 @@ int Help_bsp_lightmap(int argc, const char** argv);
 
 int Exec_bsp_entity(int argc, const char** argv);
 int Help_bsp_entity(int argc, const char** argv);
+
+int Exec_map2rmf(int argc, const char** argv);
+int Help_map2rmf(int argc, const char** argv);
+
+int Exec_rmf2map(int argc, const char** argv);
+int Help_rmf2map(int argc, const char** argv);

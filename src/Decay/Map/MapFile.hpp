@@ -10,19 +10,25 @@ namespace Decay::Map
     class MapFile
     {
     public:
-        struct Plane
+        enum class EngineVariant
+        {
+            IdTech2 = 0,
+            GoldSrc = 1
+        };
+    public:
+        struct Face
         {
             static const int PlaneVertexCount = 3;
             glm::i32vec3 PlaneVertices[PlaneVertexCount]{};
             std::string Texture{};
 
-            glm::i32vec3 UAxis;
-            int32_t UOffset = 0;
+            glm::vec3 UAxis;
+            float UOffset = 0;
 
-            glm::i32vec3 VAxis;
-            int32_t VOffset = 0;
+            glm::vec3 VAxis;
+            float VOffset = 0;
 
-            int Rotation = 0;
+            float Rotation = 0;
 
             glm::vec2 Scale = { 1, 1 };
 
@@ -38,16 +44,16 @@ namespace Decay::Map
 #ifdef DEBUG
                 double d1 = (normal.x * PlaneVertices[1].x) + (normal.y * PlaneVertices[1].y) + (normal.z * PlaneVertices[1].z);
                 double d2 = (normal.x * PlaneVertices[2].x) + (normal.y * PlaneVertices[2].y) + (normal.z * PlaneVertices[2].z);
-                R_ASSERT(abs(d0 - d1) < 0.001);
-                R_ASSERT(abs(d0 - d2) < 0.001);
-                R_ASSERT(abs(d1 - d2) < 0.001);
+                D_ASSERT(abs(d0 - d1) < 0.001);
+                D_ASSERT(abs(d0 - d2) < 0.001);
+                D_ASSERT(abs(d1 - d2) < 0.001);
 #endif
                 return d0;
             }
 
-            [[nodiscard]] inline bool operator==(const Plane& other) const
+            [[nodiscard]] inline bool operator==(const Face& other) const
             {
-                for(int i = 0; i < Plane::PlaneVertexCount; i++)
+                for(int i = 0; i < Face::PlaneVertexCount; i++)
                     if(PlaneVertices[i] != other.PlaneVertices[i])
                         return false;
 
@@ -71,7 +77,9 @@ namespace Decay::Map
 
                 return true;
             }
-            [[nodiscard]] inline bool operator!=(const Plane& other) const { return !operator==(other); }
+            [[nodiscard]] inline bool operator!=(const Face& other) const { return !operator==(other); }
+
+            void Write(std::ostream&, EngineVariant) const;
         };
         template<std::size_t N, typename T>
         struct Polygon
@@ -81,46 +89,50 @@ namespace Decay::Map
         struct Brush
         {
             /// At least 4 planes creating convex object.
-            std::vector<Plane> Planes{};
+            std::vector<Face> Faces{};
 
             //TODO More utility functions
             [[nodiscard]] std::vector<Polygon<3, double>> Polygons() const;
 
             [[nodiscard]] inline bool operator==(const Brush& other) const
             {
-                if(Planes.size() != other.Planes.size())
+                if(Faces.size() != other.Faces.size())
                     return false;
-                for(int i = 0; i < Planes.size(); i++)
-                    if(Planes[i] != other.Planes[i])
+                for(int i = 0; i < Faces.size(); i++)
+                    if(Faces[i] != other.Faces[i])
                         return false;
 
                 return true;
             }
             [[nodiscard]] inline bool operator!=(const Brush& other) const { return !operator==(other); }
+
+            void Write(std::ostream&, EngineVariant) const;
         };
         struct Entity
         {
             std::unordered_map<std::string, std::string> Values{};
             std::vector<Brush> Brushes{};
+
+            void Write(std::ostream&, EngineVariant) const;
         };
 
+    public:
         std::vector<Entity> Entities{};
 
     public:
         MapFile() = default;
         explicit MapFile(std::istream& in);
         ~MapFile() = default;
+
+    public:
+        void Write(std::ostream&, EngineVariant) const;
     };
 
-    std::istream& operator>>(std::istream& in, MapFile::Plane&);
-    std::ostream& operator<<(std::ostream& out, const MapFile::Plane&);
+    std::istream& operator>>(std::istream& in, MapFile::Face&);
 
     std::istream& operator>>(std::istream& in, MapFile::Brush&);
-    std::ostream& operator<<(std::ostream& out, const MapFile::Brush&);
 
     std::istream& operator>>(std::istream& in, MapFile::Entity&);
-    std::ostream& operator<<(std::ostream& out, const MapFile::Entity&);
 
     std::istream& operator>>(std::istream& in, MapFile&);
-    std::ostream& operator<<(std::ostream& out, const MapFile&);
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Decay/Common.hpp"
-#include "unordered_map"
+#include "Decay/Map/MapFile.hpp"
 
 namespace Decay::Rmf
 {
@@ -16,12 +16,26 @@ namespace Decay::Rmf
             static const int Name_Length = 128;
             static const int Dummy2_Length = 3;
 
-            char Name[Name_Length];
-            Color_t Color;
-            uint8_t Dummy;
-            int Index;
-            uint8_t Visible; ///< 1 = visible, 0 = not visible
-            uint8_t Dummy2[Dummy2_Length];
+            VisGroup() = default;
+            VisGroup(
+                const std::string& name,
+                Color_t color,
+                int index,
+                bool visible
+            )
+              : Color(color),
+                Index(index),
+                Visible(visible)
+            {
+                Name_str(name);
+            }
+
+            char Name[Name_Length]{};
+            Color_t Color{};
+            uint8_t Dummy{};
+            int Index{};
+            uint8_t Visible{}; ///< 1 = visible, 0 = not visible
+            uint8_t Dummy2[Dummy2_Length]{};
 
             [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, Name_Length); }
             inline void Name_str(const std::string& val) { Str2Cstr(val, Name, Name_Length); }
@@ -59,23 +73,51 @@ namespace Decay::Rmf
             static const int Dummy2_Length = 16;
             static const int PlaneVertices_Length = 3;
 
-            char TextureName[TextureName_Length];
-            float Dummy;
+            Face() = default;
+            Face(
+                const std::string& textureName,
+                Vector_t uAxis,
+                float xShift,
+                Vector_t vAxis,
+                float yShift,
+                float textureRotation,
+                glm::vec2 textureScale
+            )
+              : UAxis(uAxis),
+                XShift(xShift),
+                VAxis(vAxis),
+                YShift(yShift),
+                TextureRotation(textureRotation),
+                TextureScale(textureScale)
+            {
+                TextureName_str(textureName);
+            }
 
-            Vector_t UAxis;
-            float XShift;
-            Vector_t VAxis;
-            float YShift;
+            char TextureName[TextureName_Length]{};
+            float Dummy{};
 
-            float TextureRotation; ///< Degrees
-            glm::vec2 TextureScale;
+            Vector_t UAxis{};
+            float XShift{};
+            Vector_t VAxis{};
+            float YShift{};
 
-            uint8_t Dummy2[Dummy2_Length];
-            std::vector<Vector_t> Vertices;
-            Vector_t PlaneVertices[PlaneVertices_Length];
+            float TextureRotation{}; ///< Degrees
+            glm::vec2 TextureScale{};
+
+            uint8_t Dummy2[Dummy2_Length]{};
+            std::vector<Vector_t> Vertices{};
+            Vector_t PlaneVertices[PlaneVertices_Length]{};
 
             [[nodiscard]] inline std::string TextureName_str() const { return Cstr2Str(TextureName, TextureName_Length); }
             inline void TextureName_str(const std::string& val) { Str2Cstr(val, TextureName, TextureName_Length); }
+
+            inline void emplace(Vector_t vec)
+            {
+                if(Vertices.size() < 3)
+                    PlaneVertices[Vertices.size()] = vec;
+
+                Vertices.emplace_back(vec);
+            }
 
 
             [[nodiscard]] inline bool operator==(const Face& other) const
@@ -121,20 +163,65 @@ namespace Decay::Rmf
                 return true;
             }
             [[nodiscard]] inline bool operator!=(const Face& other) const { return !operator==(other); }
+
+            explicit Face(const Map::MapFile::Face& mapFace)
+              : UAxis(mapFace.UAxis), XShift(mapFace.UOffset),
+                VAxis(mapFace.VAxis), YShift(mapFace.VOffset),
+                TextureRotation(mapFace.Rotation),
+                TextureScale(mapFace.Scale)
+            {
+                PlaneVertices[0] = mapFace.PlaneVertices[0];
+                PlaneVertices[1] = mapFace.PlaneVertices[1];
+                PlaneVertices[2] = mapFace.PlaneVertices[2];
+
+                TextureName_str(mapFace.Texture);
+            }
+            explicit operator Map::MapFile::Face() const
+            {
+                return Map::MapFile::Face
+                {
+                    {
+                        PlaneVertices[0],
+                        PlaneVertices[1],
+                        PlaneVertices[2]
+                    },
+                    TextureName_str(),
+
+                    UAxis,
+                    XShift,
+
+                    VAxis,
+                    YShift,
+
+                    TextureRotation,
+
+                    TextureScale
+                };
+            }
         };
-        struct Solid
+        struct Brush
         {
             static constexpr const char* TypeName = "CMapSolid";
 
             static const int Dummy_Length = 4;
 
-            int VisGroup;
-            Color_t DisplayColor;
-            uint8_t Dummy[Dummy_Length];
-            std::vector<Face> Faces;
+            Brush() = default;
+            Brush(
+                int visGroup,
+                Color_t displayColor
+            )
+              : VisGroup(visGroup),
+                DisplayColor(displayColor)
+            {
+            }
+
+            int VisGroup{};
+            Color_t DisplayColor{};
+            uint8_t Dummy[Dummy_Length]{};
+            std::vector<Face> Faces{};
 
 
-            [[nodiscard]] inline bool operator==(const Solid& other) const
+            [[nodiscard]] inline bool operator==(const Brush& other) const
             {
                 if(VisGroup != other.VisGroup)
                     return false;
@@ -153,7 +240,24 @@ namespace Decay::Rmf
 
                 return true;
             }
-            [[nodiscard]] inline bool operator!=(const Solid& other) const { return !operator==(other); }
+            [[nodiscard]] inline bool operator!=(const Brush& other) const { return !operator==(other); }
+
+            explicit Brush(const Map::MapFile::Brush& brush)
+            {
+                Faces.reserve(brush.Faces.size());
+                for(const auto& face : brush.Faces)
+                    Faces.emplace_back(face);
+            }
+            explicit operator Map::MapFile::Brush() const
+            {
+                Map::MapFile::Brush brush{};
+
+                brush.Faces.reserve(Faces.size());
+                for(const auto& face : Faces)
+                    brush.Faces.emplace_back(face);
+
+                return brush;
+            }
         };
         struct Entity
         {
@@ -166,13 +270,25 @@ namespace Decay::Rmf
             static const int Dummy2_Length = 14;
             static const int Dummy3_Length = 4;
 
+            Entity() = default;
+            Entity(
+                int visGroup,
+                Color_t displayColor,
+                std::string classname,
+                int entityFlags,
+                Vector_t position
+            )
+            {
+
+            }
+
             int VisGroup{};
             Color_t DisplayColor{};
-            std::vector<Solid> Solids{};
+            std::vector<Brush> Brushes{};
             std::string Classname{};
             uint8_t Dummy[Dummy_Length]{};
             int EntityFlags{};
-            std::unordered_map<std::string, std::string> KeyValue{};
+            std::unordered_map<std::string, std::string> Values{};
             uint8_t Dummy2[Dummy2_Length]{};
             Vector_t Position{};
             uint8_t Dummy3[Dummy3_Length]{};
@@ -185,10 +301,10 @@ namespace Decay::Rmf
                 if(DisplayColor != other.DisplayColor)
                     return false;
 
-                if(Solids.size() != other.Solids.size())
+                if(Brushes.size() != other.Brushes.size())
                     return false;
-                for(int i = 0; i < Solids.size(); i++)
-                    if(Solids[i] != other.Solids[i])
+                for(int i = 0; i < Brushes.size(); i++)
+                    if(Brushes[i] != other.Brushes[i])
                         return false;
 
                 if(Classname != other.Classname)
@@ -201,7 +317,7 @@ namespace Decay::Rmf
                 if(EntityFlags != other.EntityFlags)
                     return false;
 
-                //TODO Compare values of `KeyValue`
+                //TODO Compare values of `Values`
 
                 for(int i = 0; i < Dummy2_Length; i++)
                     if(Dummy2[i] != other.Dummy2[i])
@@ -217,6 +333,27 @@ namespace Decay::Rmf
                 return true;
             }
             [[nodiscard]] inline bool operator!=(const Entity& other) const { return !operator==(other); }
+
+            explicit Entity(const Map::MapFile::Entity& entity)
+            {
+                Brushes.reserve(entity.Brushes.size());
+                for(const auto& face : entity.Brushes)
+                    Brushes.emplace_back(face);
+
+                Values = entity.Values;
+            }
+            explicit operator Map::MapFile::Entity() const
+            {
+                Map::MapFile::Entity entity{};
+
+                entity.Brushes.reserve(Brushes.size());
+                for(const auto& brush : Brushes)
+                    entity.Brushes.emplace_back(brush);
+
+                entity.Values = Values;
+
+                return entity;
+            }
         };
         struct Group
         {
@@ -226,7 +363,7 @@ namespace Decay::Rmf
             Color_t DisplayColor;
 
             // Objects
-            std::vector<Solid> Solids;
+            std::vector<Brush> Brushes;
             std::vector<Entity> Entities;
             std::vector<Group> Groups;
 
@@ -238,10 +375,10 @@ namespace Decay::Rmf
                 if(DisplayColor != other.DisplayColor)
                     return false;
 
-                if(Solids.size() != other.Solids.size())
+                if(Brushes.size() != other.Brushes.size())
                     return false;
-                for(int i = 0; i < Solids.size(); i++)
-                    if(Solids[i] != other.Solids[i])
+                for(int i = 0; i < Brushes.size(); i++)
+                    if(Brushes[i] != other.Brushes[i])
                         return false;
 
                 if(Entities.size() != other.Entities.size())
@@ -284,7 +421,7 @@ namespace Decay::Rmf
                     if(NameOverride[i] != other.NameOverride[i])
                         return false;
 
-                //TODO Compare values of `KeyValue`
+                //TODO Compare values of `Values`
 
                 return true;
             }
@@ -364,16 +501,16 @@ namespace Decay::Rmf
             Color_t DisplayColor{};
 
             // Objects
-            std::vector<Solid> Solids{};
+            std::vector<Brush> Brushes{};
             std::vector<Entity> Entities{};
             std::vector<Group> Groups{};
 
-            std::string Classname; ///< Entity.Classname
+            std::string Classname{}; ///< Entity.Classname
             uint8_t Dummy[Dummy_Length]{}; ///< Entity.Dummy
-            int EntityFlags; ///< Entity.EntityFlags
-            std::unordered_map<std::string, std::string> KeyValue; ///< Entity.KeyValue
+            int EntityFlags{}; ///< Entity.EntityFlags
+            std::unordered_map<std::string, std::string> Values{}; ///< Entity.Values
             uint8_t Dummy2[Dummy2_Length]{};
-            std::vector<Path> Paths;
+            std::vector<Path> Paths{};
 
 
             [[nodiscard]] inline bool operator==(const World& other) const
@@ -383,10 +520,10 @@ namespace Decay::Rmf
                 if(DisplayColor != other.DisplayColor)
                     return false;
 
-                if(Solids.size() != other.Solids.size())
+                if(Brushes.size() != other.Brushes.size())
                     return false;
-                for(int i = 0; i < Solids.size(); i++)
-                    if(Solids[i] != other.Solids[i])
+                for(int i = 0; i < Brushes.size(); i++)
+                    if(Brushes[i] != other.Brushes[i])
                         return false;
 
                 if(Entities.size() != other.Entities.size())
@@ -411,7 +548,7 @@ namespace Decay::Rmf
                 if(EntityFlags != other.EntityFlags)
                     return false;
 
-                //TODO Compare values of `KeyValue`
+                //TODO Compare values of `Values`
 
                 for(int i = 0; i < Dummy2_Length; i++)
                     if(Dummy2[i] != other.Dummy2[i])
@@ -451,6 +588,10 @@ namespace Decay::Rmf
         RmfFile() = default;
         explicit RmfFile(std::istream& in);
         ~RmfFile() = default;
+
+    public:
+        explicit RmfFile(const Map::MapFile& entity);
+        explicit operator Map::MapFile() const;
     };
 
     std::istream& operator>>(std::istream& in, RmfFile::VisGroup&);
@@ -460,8 +601,8 @@ namespace Decay::Rmf
     std::ostream& operator<<(std::ostream& out, const RmfFile::Face&);
 
     /// Does not check `TypeName`
-    std::istream& operator>>(std::istream& in, RmfFile::Solid&);
-    std::ostream& operator<<(std::ostream& out, const RmfFile::Solid&);
+    std::istream& operator>>(std::istream& in, RmfFile::Brush&);
+    std::ostream& operator<<(std::ostream& out, const RmfFile::Brush&);
 
     /// Does not check `TypeName`
     std::istream& operator>>(std::istream& in, RmfFile::Entity&);

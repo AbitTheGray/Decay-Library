@@ -2,10 +2,10 @@
 
 using namespace Decay::Map;
 
-void Test_Plane(const MapFile::Plane& original)
+void Test_Face(const MapFile::Face& original, MapFile::EngineVariant variant)
 {
     std::stringstream ss;
-    ss << original;
+    original.Write(ss, variant);
     R_ASSERT(ss.good());
 
 #ifdef DEBUG
@@ -14,26 +14,28 @@ void Test_Plane(const MapFile::Plane& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    MapFile::Plane result = {};
+    MapFile::Face result = {};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
-    for(int i = 0; i < MapFile::Plane::PlaneVertexCount; i++)
+    for(int i = 0; i < MapFile::Face::PlaneVertexCount; i++)
     {
         R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i]);
     }
     R_ASSERT(result.Texture == original.Texture);
-    R_ASSERT(result.UAxis == original.UAxis);
+    if(variant != MapFile::EngineVariant::IdTech2)
+        R_ASSERT(result.UAxis == original.UAxis);
     R_ASSERT(result.UOffset == original.UOffset);
-    R_ASSERT(result.VAxis == original.VAxis);
+    if(variant != MapFile::EngineVariant::IdTech2)
+        R_ASSERT(result.VAxis == original.VAxis);
     R_ASSERT(result.VOffset == original.VOffset);
     R_ASSERT(result.Rotation == original.Rotation);
     R_ASSERT(result.Scale == original.Scale);
-    R_ASSERT(result == original);
+    //R_ASSERT(result == original);
 }
 void Test_Brush(const MapFile::Brush& original)
 {
     std::stringstream ss;
-    ss << original;
+    original.Write(ss, MapFile::EngineVariant::GoldSrc);
     R_ASSERT(ss.good());
 
 #ifdef DEBUG
@@ -45,17 +47,17 @@ void Test_Brush(const MapFile::Brush& original)
     MapFile::Brush result = {};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.Planes.size() == original.Planes.size());
-    for(int i = 0; i < result.Planes.size(); i++)
+    R_ASSERT(result.Faces.size() == original.Faces.size());
+    for(int i = 0; i < result.Faces.size(); i++)
     {
-        R_ASSERT(result.Planes[i] == original.Planes[i]);
+        R_ASSERT(result.Faces[i] == original.Faces[i]);
     }
     R_ASSERT(result == original);
 }
 void Test_Entity(const MapFile::Entity& original)
 {
     std::stringstream ss;
-    ss << original;
+    original.Write(ss, MapFile::EngineVariant::GoldSrc);
     R_ASSERT(ss.good());
 
 #ifdef DEBUG
@@ -83,34 +85,40 @@ void Test_Entity(const MapFile::Entity& original)
 
 int main()
 {
-    // Plane
+    // Face
     {
-        std::cout << "Plane" << std::endl;
+        std::cout << "Face" << std::endl;
 
-        Test_Plane({
-                       {
-                           { 0, 0, 0 },
-                           { 1, 1, 0 },
-                           { 1, 0, 0 }
-                       },
-                       "abcd",
-                       { 1, 0, 0 }, 0,
-                       { 0, -1, 0 }, 0,
-                       0,
-                       { 1.0, 1.0 }
-                   });
-        Test_Plane({
-                       {
-                           { 0, 0, 123 },
-                           { 1, 1, 123 },
-                           { 1, 0, 123 }
-                       },
-                       "aBcD",
-                       { 1, 0, 0 }, 1,
-                       { 0, -1, 0 }, -1,
-                       45,
-                       { -1.0, 3.6 }
-                   });
+        MapFile::Face face0 = {
+            {
+                { 0, 0, 0 },
+                { 1, 1, 0 },
+                { 1, 0, 0 }
+            },
+            "abcd",
+            { 1, 0, 0 }, 0,
+            { 0, -1, 0 }, 0,
+            0,
+            { 1.0, 1.0 }
+        };
+        MapFile::Face face1 = {
+            {
+                { 0, 0, 123 },
+                { 1, 1, 123 },
+                { 1, 0, 123 }
+            },
+            "aBcD",
+            { 1, 0, 0 }, 1,
+            { 0, -1, 0 }, -1,
+            45,
+            { -1.0, 3.6 }
+        };
+
+        Test_Face(face0, MapFile::EngineVariant::IdTech2);
+        Test_Face(face1, MapFile::EngineVariant::IdTech2);
+
+        Test_Face(face0, MapFile::EngineVariant::GoldSrc);
+        Test_Face(face1, MapFile::EngineVariant::GoldSrc);
 
         std::cout << std::endl;
     }

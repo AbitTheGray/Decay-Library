@@ -13,7 +13,7 @@ void Test_VisGroup(const RmfFile::VisGroup& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::VisGroup result = {};
+    RmfFile::VisGroup result{};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
     R_ASSERT(result.Name_str() == original.Name_str());
@@ -36,7 +36,7 @@ void Test_Face(const RmfFile::Face& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Face result = {};
+    RmfFile::Face result{};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
     R_ASSERT(result.TextureName_str() == original.TextureName_str());
@@ -61,7 +61,7 @@ void Test_Face(const RmfFile::Face& original)
         R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i]);
     R_ASSERT(result == original);
 }
-void Test_Solid(const RmfFile::Solid& original)
+void Test_Solid(const RmfFile::Brush& original)
 {
     std::stringstream ss;
     ss << original;
@@ -70,10 +70,10 @@ void Test_Solid(const RmfFile::Solid& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Solid result = {};
+    RmfFile::Brush result{};
     { // Type Name
         int typeNameLength = ss.get();
-        R_ASSERT(std::strlen(RmfFile::Solid::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Brush::TypeName) + 1 == typeNameLength);
         ss.ignore(typeNameLength);
     }
     ss >> result;
@@ -81,7 +81,7 @@ void Test_Solid(const RmfFile::Solid& original)
     R_ASSERT(result.VisGroup == original.VisGroup);
     R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    for(int i = 0; i < RmfFile::Solid::Dummy_Length; i++)
+    for(int i = 0; i < RmfFile::Brush::Dummy_Length; i++)
         R_ASSERT(result.Dummy[i] == original.Dummy[i]);
 
     R_ASSERT(result.Faces.size() == original.Faces.size());
@@ -99,7 +99,7 @@ void Test_Entity(const RmfFile::Entity& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Entity result = {};
+    RmfFile::Entity result{};
     { // Type Name
         int typeNameLength = ss.get();
         R_ASSERT(std::strlen(RmfFile::Entity::TypeName) + 1 == typeNameLength);
@@ -110,9 +110,9 @@ void Test_Entity(const RmfFile::Entity& original)
     R_ASSERT(result.VisGroup == original.VisGroup);
     R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    R_ASSERT(result.Solids.size() == original.Solids.size());
-    for(int i = 0; i < result.Solids.size(); i++)
-        R_ASSERT(result.Solids[i] == original.Solids[i]);
+    R_ASSERT(result.Brushes.size() == original.Brushes.size());
+    for(int i = 0; i < result.Brushes.size(); i++)
+        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
 
     R_ASSERT(result.Classname == original.Classname);
 
@@ -121,7 +121,7 @@ void Test_Entity(const RmfFile::Entity& original)
 
     R_ASSERT(result.EntityFlags == original.EntityFlags);
 
-    //TODO order-independent test of KeyValue
+    //TODO order-independent test of Values
 
     for(int i = 0; i < RmfFile::Entity::Dummy2_Length; i++)
         R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
@@ -142,7 +142,7 @@ void Test_Group(const RmfFile::Group& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Group result = {};
+    RmfFile::Group result{};
     { // Type Name
         int typeNameLength = ss.get();
         R_ASSERT(std::strlen(RmfFile::Group::TypeName) + 1 == typeNameLength);
@@ -153,9 +153,9 @@ void Test_Group(const RmfFile::Group& original)
     R_ASSERT(result.VisGroup == original.VisGroup);
     R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    R_ASSERT(result.Solids.size() == original.Solids.size());
-    for(int i = 0; i < result.Solids.size(); i++)
-        R_ASSERT(result.Solids[i] == original.Solids[i]);
+    R_ASSERT(result.Brushes.size() == original.Brushes.size());
+    for(int i = 0; i < result.Brushes.size(); i++)
+        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
 
     R_ASSERT(result.Entities.size() == original.Entities.size());
     for(int i = 0; i < result.Entities.size(); i++)
@@ -176,14 +176,14 @@ void Test_Corner(const RmfFile::Corner& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Corner result = {};
+    RmfFile::Corner result{};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
     R_ASSERT(result.Position == original.Position);
     R_ASSERT(result.Index == original.Index);
     R_ASSERT(result.NameOverride_str() == original.NameOverride_str());
 
-    //TODO order-independent test of KeyValue
+    //TODO order-independent test of Values
 
     R_ASSERT(result == original);
 }
@@ -196,7 +196,7 @@ void Test_PathType(const RmfFile::PathType& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::PathType result = {};
+    RmfFile::PathType result{};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
     R_ASSERT(result == original);
@@ -210,7 +210,7 @@ void Test_Path(const RmfFile::Path& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Path result = {};
+    RmfFile::Path result{};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
     R_ASSERT(result.Name_str() == original.Name_str());
@@ -232,7 +232,7 @@ void Test_Camera(const RmfFile::Camera& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::Camera result = {};
+    RmfFile::Camera result{};
     ss >> result;
     R_ASSERT(ss.good() || ss.eof());
     R_ASSERT(result.EyePosition == original.EyePosition);
@@ -249,7 +249,7 @@ void Test_World(const RmfFile::World& original)
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
-    RmfFile::World result = {};
+    RmfFile::World result{};
     { // Type Name
         int typeNameLength = ss.get();
         R_ASSERT(std::strlen(RmfFile::World::TypeName) + 1 == typeNameLength);
@@ -260,9 +260,9 @@ void Test_World(const RmfFile::World& original)
     R_ASSERT(result.VisGroup == original.VisGroup);
     R_ASSERT(result.DisplayColor == original.DisplayColor);
 
-    R_ASSERT(result.Solids.size() == original.Solids.size());
-    for(int i = 0; i < result.Solids.size(); i++)
-        R_ASSERT(result.Solids[i] == original.Solids[i]);
+    R_ASSERT(result.Brushes.size() == original.Brushes.size());
+    for(int i = 0; i < result.Brushes.size(); i++)
+        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
 
     R_ASSERT(result.Entities.size() == original.Entities.size());
     for(int i = 0; i < result.Entities.size(); i++)
@@ -279,8 +279,8 @@ void Test_World(const RmfFile::World& original)
 
     R_ASSERT(result.EntityFlags == original.EntityFlags);
 
-    //TODO order-independent test of KeyValue
-    R_ASSERT(result.KeyValue.size() == original.KeyValue.size());
+    //TODO order-independent test of Values
+    R_ASSERT(result.Values.size() == original.Values.size());
 
     for(int i = 0; i < RmfFile::World::Dummy2_Length; i++)
         R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
@@ -298,23 +298,22 @@ int main()
     {
         std::cout << "Vis Group" << std::endl;
 
-        Test_VisGroup({
-            { 'a', 'b', 'c', 'd' },
-            { 1, 2, 3 },
-            0, // Dummy
-            0,
-            0,
-            {} // Dummy 2
-        });
-
-        Test_VisGroup({
-            { 'a', 'B', 'c', 'D' },
-            { 66, 6, 0 },
-            0, // Dummy
-            1,
-            1,
-            {} // Dummy 2
-        });
+        Test_VisGroup(
+            RmfFile::VisGroup(
+                "abcd",
+                { 1, 2, 3 },
+                0,
+                false
+            )
+        );
+        Test_VisGroup(
+            RmfFile::VisGroup(
+                "aBcD",
+                { 66, 6, 0 },
+                1,
+                true
+            )
+        );
 
         std::cout << std::endl;
     }
@@ -325,45 +324,27 @@ int main()
     {
         std::cout << "Face" << std::endl;
 
-        face0 = {
-            { 'a', 'b', 'c', 'd' },
-            0.0f, // Dummy
-            { 1, 0, 0 }, 0,
-            { 0, -1, 0 }, 0,
+        face0 = RmfFile::Face(
+            "abcd",
+            { 1, 0, 0 }, 0, // X / U
+            { 0, -1, 0 }, 0, // Y / V
             0,
-            { 1.0, 1.0 },
-            {}, // Dummy 2
-            { // Vertices
-                { 0, 0, 0 },
-                { 1, 1, 0 },
-                { 1, 0, 0 }
-            },
-            { // Plane Vertices
-                { 0, 0, 0 },
-                { 1, 1, 0 },
-                { 1, 0, 0 }
-            }
-        };
+            { 1.0, 1.0 }
+        );
+        face0.emplace({ 0, 0, 0 });
+        face0.emplace({ 1, 1, 0 });
+        face0.emplace({ 1, 0, 0 });
 
         face1 = {
-            { 'a', 'B', 'c', 'D' },
-            0.0f, // Dummy
-            { 1, 0, 0 }, 1,
-            { 0, -1, 0 }, -1,
+            "aBcD",
+            { 1, 0, 0 }, 1, // X / U
+            { 0, -1, 0 }, -1, // Y / V
             45,
-            { -1.0, 3.6 },
-            {}, // Dummy 2
-            { // Vertices
-                { 0, 0, 123 },
-                { 1, 1, 123 },
-                { 1, 0, 123 }
-            },
-            { // Plane Vertices
-                { 0, 0, 123 },
-                { 1, 1, 123 },
-                { 1, 0, 123 }
-            }
+            { -1.0, 3.6 }
         };
+        face1.emplace({ 0, 0, 123 });
+        face1.emplace({ 1, 1, 123 });
+        face1.emplace({ 1, 0, 123 });
 
         Test_Face(face0);
         Test_Face(face1);
@@ -371,39 +352,33 @@ int main()
         std::cout << std::endl;
     }
 
-    // Solid
-    RmfFile::Solid solid0;
-    RmfFile::Solid solid1;
+    // Brush
+    RmfFile::Brush brush0;
+    RmfFile::Brush brush1;
     {
-        std::cout << "Solid" << std::endl;
+        std::cout << "Brush" << std::endl;
 
-        solid0 = {
+        brush0 = RmfFile::Brush(
             0,
-            { 1, 2, 3 },
-            {}, // Dummy
-            {
-                face0,
-                face0,
-                face0,
-                face0
-            }
-        };
+            { 1, 2, 3 }
+        );
+        brush0.Faces.emplace_back(face0);
+        brush0.Faces.emplace_back(face0);
+        brush0.Faces.emplace_back(face0);
+        brush0.Faces.emplace_back(face0);
 
-        solid1 = {
+        brush1 = RmfFile::Brush(
             1,
-            { 0, 66, 3 },
-            {}, // Dummy
-            {
-                face0,
-                face0,
-                face0,
-                face0,
-                face1
-            }
-        };
+            { 0, 66, 3 }
+        );
+        brush1.Faces.emplace_back(face0);
+        brush1.Faces.emplace_back(face0);
+        brush1.Faces.emplace_back(face0);
+        brush1.Faces.emplace_back(face0);
+        brush1.Faces.emplace_back(face1);
 
-        Test_Solid(solid0);
-        Test_Solid(solid1);
+        Test_Solid(brush0);
+        Test_Solid(brush1);
 
         std::cout << std::endl;
     }
@@ -415,55 +390,36 @@ int main()
     {
         std::cout << "Entity" << std::endl;
 
-        entity0 = {
+        entity0 = RmfFile::Entity(
             0,
             { 1, 2, 3 },
-            {
-                solid0
-            },
             "worldspawn",
-            {}, // Dummy
             0,
-            {
-                { "wad", "\\half-life\\valve\\half-life.wad" },
-                { "skybox", "city_01" }
-            },
-            {}, // Dummy 2
-            { 11, 22, 33 },
-            {} // Dummy 3
-        };
+            { 11, 22, 33 }
+        );
+        entity0.Brushes.emplace_back(brush0);
+        entity0.Values["wad"] = R"(\half-life\valve\half-life.wad)";
+        entity0.Values["skybox"] = "city_01";
 
-        entity1 = {
+        entity1 = RmfFile::Entity(
             1,
             { 11, 22, 33 },
-            {
-                solid0,
-                solid1
-            },
             "worldspawn",
-            {}, // Dummy
             0,
-            {
-                { "wad", "\\half-life\\valve\\half-life.wad" },
-                { "skybox", "city_01" }
-            },
-            {}, // Dummy 2
-            { 11, 22, 33 },
-            {} // Dummy 3
-        };
+            { 11, 22, 33 }
+        );
+        entity1.Brushes.emplace_back(brush0);
+        entity1.Brushes.emplace_back(brush1);
+        entity1.Values["wad"] = R"(\half-life\valve\half-life.wad)";
+        entity1.Values["skybox"] = "city_17";
 
-        entity2 = {
+        entity2 = RmfFile::Entity(
             0,
             { 16, 26, 36 },
-            {},
             "info",
-            {}, // Dummy
             0,
-            {},
-            {}, // Dummy 2
-            { 0, 0, 0 },
-            {} // Dummy 3
-        };
+            { 0, 0, 0 }
+        );
 
         Test_Entity(entity0);
         Test_Entity(entity1);
@@ -488,8 +444,8 @@ int main()
             1,
             { 1, 2, 3 },
             {
-                solid0,
-                solid1
+                brush0,
+                brush1
             },
             {
                 entity0,
@@ -599,7 +555,7 @@ int main()
             0,
             { 1, 2, 3 },
             {
-                solid0
+                brush0
             },
             {
                 entity0,

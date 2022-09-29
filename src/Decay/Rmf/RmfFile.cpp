@@ -53,6 +53,19 @@ namespace Decay::Rmf
         uint8_t byte = 0;
         out.write(reinterpret_cast<const char*>(&byte), sizeof(byte));
     }
+    inline void ProcessGroupIntoEntityAndBrush(std::vector<Map::MapFile::Entity>& entities, Map::MapFile::Entity& worldspawn, const RmfFile::Group& group)
+    {
+        entities.reserve(group.Entities.size());
+        for(const auto& entity : group.Entities)
+            entities.emplace_back(entity);
+
+        worldspawn.Brushes.reserve(group.Brushes.size());
+        for(const auto& brush : group.Brushes)
+            worldspawn.Brushes.emplace_back(brush);
+
+        for(const auto& subGroup : group.Groups)
+            ProcessGroupIntoEntityAndBrush(entities, worldspawn, group);
+    }
 }
 
 namespace Decay::Rmf
@@ -62,6 +75,53 @@ namespace Decay::Rmf
         in >> *this;
         if(in.fail())
             throw std::runtime_error("Failed to read Rmf file");
+    }
+    RmfFile::RmfFile(const Map::MapFile& mapFile)
+    {
+        for(const auto& entity : mapFile.Entities)
+        {
+            const auto it_classname = entity.Values.find("classname");
+            if(it_classname == entity.Values.end() || it_classname->second.empty())
+                throw std::runtime_error("Entity in map must have a classname");
+            const auto& classname = it_classname->second;
+
+            if(classname == "worldspawn")
+            {
+                WorldInfo.Brushes.reserve(entity.Brushes.size());
+                for(const auto& brush : entity.Brushes)
+                    WorldInfo.Brushes.emplace_back(brush);
+
+                for(const auto& kv : entity.Values)
+                    WorldInfo.Values.emplace(kv);
+            }
+            else
+            {
+                WorldInfo.Entities.emplace_back(entity);
+            }
+        }
+    }
+    RmfFile::operator Map::MapFile() const
+    {
+        Map::MapFile mapFile{};
+
+        mapFile.Entities.reserve(WorldInfo.Entities.size());
+
+        Map::MapFile::Entity worldspawn = Map::MapFile::Entity{
+            WorldInfo.Values,
+            {}
+        };
+        worldspawn.Brushes.reserve(WorldInfo.Brushes.size());
+        for(const auto& brush : WorldInfo.Brushes)
+            worldspawn.Brushes.emplace_back(brush);
+
+        for(const auto& entity : WorldInfo.Entities)
+            mapFile.Entities.emplace_back(entity);
+
+        for(const auto& group : WorldInfo.Groups)
+            ProcessGroupIntoEntityAndBrush(mapFile.Entities, worldspawn, group);
+
+        mapFile.Entities.insert(mapFile.Entities.begin(), std::move(worldspawn));
+        return mapFile;
     }
 }
 
@@ -119,38 +179,38 @@ namespace Decay::Rmf
         return out;
     }
 
-    std::istream& operator>>(std::istream& in, RmfFile::Solid& solid)
+    std::istream& operator>>(std::istream& in, RmfFile::Brush& brush)
     {
         R_ASSERT(in.good());
-        in.read(reinterpret_cast<char*>(&solid.VisGroup), sizeof(solid.VisGroup));
-        in.read(reinterpret_cast<char*>(&solid.DisplayColor), sizeof(solid.DisplayColor));
-        in.read(reinterpret_cast<char*>(solid.Dummy), solid.Dummy_Length);
+        in.read(reinterpret_cast<char*>(&brush.VisGroup), sizeof(brush.VisGroup));
+        in.read(reinterpret_cast<char*>(&brush.DisplayColor), sizeof(brush.DisplayColor));
+        in.read(reinterpret_cast<char*>(brush.Dummy), brush.Dummy_Length);
 
         // Faces
         int faceCount = 0;
         in.read(reinterpret_cast<char*>(&faceCount), sizeof(faceCount));
         R_ASSERT(in.good());
         R_ASSERT(faceCount >= 4);
-        solid.Faces.resize(faceCount);
+        brush.Faces.resize(faceCount);
         for(int i = 0; i < faceCount; i++)
-            in >> solid.Faces[i];
+            in >> brush.Faces[i];
 
         return in;
     }
-    std::ostream& operator<<(std::ostream& out, const RmfFile::Solid& solid)
+    std::ostream& operator<<(std::ostream& out, const RmfFile::Brush& brush)
     {
-        WriteNString(out, solid.TypeName);
+        WriteNString(out, brush.TypeName);
 
-        out.write(reinterpret_cast<const char*>(&solid.VisGroup), sizeof(solid.VisGroup));
-        out.write(reinterpret_cast<const char*>(&solid.DisplayColor), sizeof(solid.DisplayColor));
-        out.write(reinterpret_cast<const char*>(solid.Dummy), sizeof(solid.Dummy_Length));
+        out.write(reinterpret_cast<const char*>(&brush.VisGroup), sizeof(brush.VisGroup));
+        out.write(reinterpret_cast<const char*>(&brush.DisplayColor), sizeof(brush.DisplayColor));
+        out.write(reinterpret_cast<const char*>(brush.Dummy), sizeof(brush.Dummy_Length));
 
         // Faces
-        R_ASSERT(solid.Faces.size() <= std::numeric_limits<int>::max());
-        int faceCount = solid.Faces.size();
+        R_ASSERT(brush.Faces.size() <= std::numeric_limits<int>::max());
+        int faceCount = brush.Faces.size();
         out.write(reinterpret_cast<const char*>(&faceCount), sizeof(faceCount));
         for(int i = 0; i < faceCount; i++)
-            out << solid.Faces[i];
+            out << brush.Faces[i];
 
         return out;
     }
@@ -161,23 +221,23 @@ namespace Decay::Rmf
         in.read(reinterpret_cast<char*>(&entity.VisGroup), sizeof(entity.VisGroup));
         in.read(reinterpret_cast<char*>(&entity.DisplayColor), sizeof(entity.DisplayColor));
 
-        // Solids
+        // Brushes
         {
-            int solidCount = 0;
-            in.read(reinterpret_cast<char*>(&solidCount), sizeof(solidCount));
+            int brushCount = 0;
+            in.read(reinterpret_cast<char*>(&brushCount), sizeof(brushCount));
             R_ASSERT(in.good());
 
-            entity.Solids.reserve(solidCount);
-            for(int i = 0; i < solidCount; i++)
+            entity.Brushes.reserve(brushCount);
+            for(int i = 0; i < brushCount; i++)
             {
                 std::string type = ReadNString(in, 20);
-                R_ASSERT(type == RmfFile::Solid::TypeName);
+                R_ASSERT(type == RmfFile::Brush::TypeName);
 
-                RmfFile::Solid solid{};
-                in >> solid;
+                RmfFile::Brush brush{};
+                in >> brush;
                 R_ASSERT(in.good());
 
-                entity.Solids.emplace_back(solid);
+                entity.Brushes.emplace_back(brush);
             }
         }
 
@@ -186,13 +246,13 @@ namespace Decay::Rmf
         in.read(reinterpret_cast<char*>(entity.Dummy), entity.Dummy_Length);
         in.read(reinterpret_cast<char*>(&entity.EntityFlags), sizeof(entity.EntityFlags));
 
-        // Read KeyValue
+        // Read Values
         {
             int keyValueCount = 0;
             in.read(reinterpret_cast<char*>(&keyValueCount), sizeof(keyValueCount));
 
             for(int i = 0; i < keyValueCount; i++)
-                entity.KeyValue[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+                entity.Values[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
         }
 
         in.read(reinterpret_cast<char*>(entity.Dummy2), entity.Dummy2_Length);
@@ -208,12 +268,12 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&entity.VisGroup), sizeof(RmfFile::Entity::VisGroup));
         out.write(reinterpret_cast<const char*>(&entity.DisplayColor), sizeof(RmfFile::Entity::DisplayColor));
 
-        // Solids
-        R_ASSERT(entity.Solids.size() <= std::numeric_limits<int>::max());
-        int solidCount = entity.Solids.size();
-        out.write(reinterpret_cast<const char*>(&solidCount), sizeof(solidCount));
-        for(int i = 0; i < solidCount; i++)
-            out << entity.Solids[i];
+        // Brushes
+        R_ASSERT(entity.Brushes.size() <= std::numeric_limits<int>::max());
+        int brushCount = entity.Brushes.size();
+        out.write(reinterpret_cast<const char*>(&brushCount), sizeof(brushCount));
+        for(int i = 0; i < brushCount; i++)
+            out << entity.Brushes[i];
 
         R_ASSERT(entity.Classname.size() < RmfFile::Entity::Classname_MaxLength); // < and not <= because there needs to be space for '\0'
         WriteNString(out, entity.Classname);
@@ -222,10 +282,10 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&entity.EntityFlags), sizeof(RmfFile::Entity::EntityFlags));
 
         // Key-Values
-        R_ASSERT(entity.KeyValue.size() <= std::numeric_limits<int>::max());
-        int pairs = entity.KeyValue.size();
+        R_ASSERT(entity.Values.size() <= std::numeric_limits<int>::max());
+        int pairs = entity.Values.size();
         out.write(reinterpret_cast<const char*>(&pairs), sizeof(pairs));
-        for(const auto& kv : entity.KeyValue)
+        for(const auto& kv : entity.Values)
         {
             R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
             R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
@@ -252,19 +312,19 @@ namespace Decay::Rmf
             in.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
             R_ASSERT(in.good());
 
-            group.Solids.reserve(objectCount);
+            group.Brushes.reserve(objectCount);
             group.Entities.reserve(objectCount);
             group.Groups.reserve(objectCount);
             for(int i = 0; i < objectCount; i++)
             {
                 std::string type = ReadNString(in, 20);
-                if(type == RmfFile::Solid::TypeName)
+                if(type == RmfFile::Brush::TypeName)
                 {
-                    RmfFile::Solid solid{};
-                    in >> solid;
+                    RmfFile::Brush brush{};
+                    in >> brush;
                     R_ASSERT(in.good());
 
-                    group.Solids.emplace_back(solid);
+                    group.Brushes.emplace_back(brush);
                 }
                 else if(type == RmfFile::Entity::TypeName)
                 {
@@ -296,10 +356,10 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&group.VisGroup), sizeof(RmfFile::Entity::VisGroup));
         out.write(reinterpret_cast<const char*>(&group.DisplayColor), sizeof(RmfFile::Entity::DisplayColor));
 
-        int objectCount = group.Solids.size() + group.Entities.size() + group.Groups.size();
+        int objectCount = group.Brushes.size() + group.Entities.size() + group.Groups.size();
         out.write(reinterpret_cast<const char*>(&objectCount), sizeof(objectCount));
-        for(const auto& solid : group.Solids)
-            out << solid;
+        for(const auto& brush : group.Brushes)
+            out << brush;
         for(const auto& entity : group.Entities)
             out << entity;
         for(const auto& subGroup : group.Groups)
@@ -317,7 +377,7 @@ namespace Decay::Rmf
         in.read(reinterpret_cast<char*>(corner.NameOverride), corner.NameOverride_Length);
         R_ASSERT(IsNullTerminated(corner.NameOverride, corner.NameOverride_Length));
 
-        // Read KeyValue
+        // Read Values
         {
             int keyValueCount = 0;
             in.read(reinterpret_cast<char*>(&keyValueCount), sizeof(keyValueCount));
@@ -437,19 +497,19 @@ namespace Decay::Rmf
             in.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
             R_ASSERT(in.good());
 
-            world.Solids.reserve(objectCount);
+            world.Brushes.reserve(objectCount);
             world.Entities.reserve(objectCount);
             world.Groups.reserve(objectCount);
             for(int i = 0; i < objectCount; i++)
             {
                 std::string type = ReadNString(in, 20);
-                if(type == RmfFile::Solid::TypeName)
+                if(type == RmfFile::Brush::TypeName)
                 {
-                    RmfFile::Solid solid{};
-                    in >> solid;
+                    RmfFile::Brush brush{};
+                    in >> brush;
                     R_ASSERT(in.good());
 
-                    world.Solids.emplace_back(solid);
+                    world.Brushes.emplace_back(brush);
                 }
                 else if(type == RmfFile::Entity::TypeName)
                 {
@@ -479,13 +539,13 @@ namespace Decay::Rmf
         in.read(reinterpret_cast<char*>(world.Dummy), world.Dummy_Length);
         in.read(reinterpret_cast<char*>(&world.EntityFlags), sizeof(world.EntityFlags));
 
-        // Read KeyValue
+        // Read Values
         {
             int keyValueCount = 0;
             in.read(reinterpret_cast<char*>(&keyValueCount), sizeof(keyValueCount));
 
             for(int i = 0; i < keyValueCount; i++)
-                world.KeyValue[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+                world.Values[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
         }
 
         in.read(reinterpret_cast<char*>(world.Dummy2), world.Dummy2_Length);
@@ -515,10 +575,10 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&world.VisGroup), sizeof(RmfFile::World::VisGroup));
         out.write(reinterpret_cast<const char*>(&world.DisplayColor), sizeof(RmfFile::World::DisplayColor));
 
-        int objectCount = world.Solids.size() + world.Entities.size() + world.Groups.size();
+        int objectCount = world.Brushes.size() + world.Entities.size() + world.Groups.size();
         out.write(reinterpret_cast<const char*>(&objectCount), sizeof(objectCount));
-        for(const auto& solid : world.Solids)
-            out << solid;
+        for(const auto& brush : world.Brushes)
+            out << brush;
         for(const auto& entity : world.Entities)
             out << entity;
         for(const auto& subGroup : world.Groups)
@@ -530,10 +590,10 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(&world.EntityFlags), sizeof(RmfFile::World::EntityFlags));
 
         // Key-Values
-        R_ASSERT(world.KeyValue.size() <= std::numeric_limits<int>::max());
-        int pairs = world.KeyValue.size();
+        R_ASSERT(world.Values.size() <= std::numeric_limits<int>::max());
+        int pairs = world.Values.size();
         out.write(reinterpret_cast<const char*>(&pairs), sizeof(pairs));
-        for(const auto& kv : world.KeyValue)
+        for(const auto& kv : world.Values)
         {
             R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
             R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
@@ -578,7 +638,7 @@ namespace Decay::Rmf
             R_ASSERT(in.good());
             for(int i = 0; i < visGroupCount; i++)
             {
-                RmfFile::VisGroup visGroup = {};
+                RmfFile::VisGroup visGroup{};
                 in >> visGroup;
                 R_ASSERT(in.good());
                 rmf.VisGroups.emplace_back(visGroup);

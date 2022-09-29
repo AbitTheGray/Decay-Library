@@ -23,9 +23,9 @@ The same entity will also contain `"wad"` like `"\half-life\cstrike\cstrike.wad;
 
 ### Brush
 
-Brush starts by `{` and end by corresponding `}` and contain 1 plane per line with minimum of 4 planes (otherwise cannot construct 3D object).
+Brush (officially called "Brush") starts by `{` and end by corresponding `}` and contain 1 plane per line with minimum of 4 planes (otherwise cannot construct 3D object).
 
-#### Plane
+#### Face
 
 A line of Brush definition can look like this, and it describes a plane in 3D space.
 ```
@@ -42,3 +42,31 @@ A line of Brush definition can look like this, and it describes a plane in 3D sp
   - Not used for calculation, only for editor to know current rotation
 - `1 1` - Texture scale
   - Only this (officially) supports decimal values
+
+Current implementation of this library allows decimal points for all of those numbers which is consistent with community-made implementations of Quake and [RMF](RMF.md) specification.
+
+In C-like structure it would be like:
+```cpp
+struct i32vec3
+{
+    int32 X, Y, Z;
+};
+struct vec3
+{
+    float X, Y, Z;
+};
+struct Plane
+{
+    i32vec3 PlanePoint[3];
+    std::string TextureName;
+    
+    i32vec3 UAxis;
+    int32   UOffset;
+    i32vec3 VAxis;
+    int32   VOffset;
+    
+    int32 Rotation;
+    
+    vec3 Rotation;
+};
+```
