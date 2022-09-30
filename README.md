@@ -29,8 +29,9 @@ All libraries are used as `static library` to maximize optimization and limit pr
 ## Formats
 
 - IdTech 2 (Quake, Quake 2)
-  - MAP - in-development map
+  - MAP - in-development map (text)
     - Can be read by GoldSrc MAP reader
+    - Exporting to this type is possible but not complete
 - GoldSrc (Half-Life, Counter-Strike...)
   - BSP (v30) - compiled map
     - Extract/Export:
@@ -53,7 +54,8 @@ All libraries are used as `static library` to maximize optimization and limit pr
       - RGB and RGBA export supported
     - Images
     - Fonts
-  - MAP - in-development map
+  - MAP - in-development map (text)
+  - RMF - in-development map (binary)
   - FGD - entity definitions
     - See `Source` implementation which is extension of this format
 - Source
@@ -72,7 +74,7 @@ It is recommended to keep it where it is and use [Symbolic link](https://en.wiki
 
 Enabled by default, `set(DECAY_LIBRARY_CMD=OFF)` in your `CMakeLists.txt` to disable.
 
-For list of commands, see [Commands.md](Commands.md)
+For list of commands, see [Commands.md](Commands.md).
 
 ## Linux tools
 
@@ -80,13 +82,14 @@ Inside `linux` directory, there are [MIME type](https://en.wikipedia.org/wiki/Me
 
 They recommend having only 1 `.xml` file per application but several are used sor simplicity.
 
-| MIME                        | Definition File     | File type      |
-|-----------------------------|---------------------|----------------|
-| `application/goldsrc-bsp30` | `goldsrc-bsp30.xml` | BSP version 30 |
-| `application/goldsrc-wad2`  | `goldsrc-wad2.xml`  | WAD2           |
-| `application/goldsrc-wad3`  | `goldsrc-wad3.xml`  | WAD3           |
-| `application/goldsrc-map`   | `goldsrc-map.xml`   | MAP            |
-| `application/goldsrc-fgd`   | `goldsrc-fgd.xml`   | MAP            |
+| MIME                        | Definition File     | File type                       |
+|-----------------------------|---------------------|---------------------------------|
+| `application/goldsrc-bsp30` | `goldsrc-bsp30.xml` | BSP version 30                  |
+| `application/goldsrc-fgd`   | `goldsrc-fgd.xml`   | FGD (entity definition)         |
+| `application/goldsrc-map`   | `goldsrc-map.xml`   | In-development map (text)       |
+| `application/goldsrc-rmf`   | `goldsrc-rmf.xml`   | In-development map (binary)     |
+| `application/goldsrc-wad2`  | `goldsrc-wad2.xml`  | WAD 2 - textures, images, fonts |
+| `application/goldsrc-wad3`  | `goldsrc-wad3.xml`  | WAD 3 - textures, images, fonts |
 
 `*-bsp30` and `*-wad*` have weight `80` (same as `application/x-doom`) but are defined by file headers.
 
