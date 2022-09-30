@@ -420,7 +420,7 @@ namespace Decay::Wad::Wad3
             throw std::runtime_error("Loaded empty image");
 
         Texture texture = Texture();
-        texture.Name = filename.filename();
+        texture.Name = filename.filename().string();
         texture.Width = width;
         texture.Height = height;
         texture.MipMapData[0].resize(width * height);

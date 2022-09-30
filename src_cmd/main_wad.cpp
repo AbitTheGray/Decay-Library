@@ -80,7 +80,7 @@ int Exec_wad_add(int argc, const char** argv)
                     continue;
                 if(!std::filesystem::exists(tPath))
                 {
-                    std::string errorMsg = "Texture file '" + std::string(tPath) + "' not found";
+                    std::string errorMsg = "Texture file '" + tPath.string() + "' not found";
 #ifdef DEBUG
                     throw std::runtime_error(errorMsg);
 #else
@@ -90,7 +90,7 @@ int Exec_wad_add(int argc, const char** argv)
                 }
                 if(!std::filesystem::is_regular_file(tPath))
                 {
-                    std::string errorMsg = "Texture file '" + std::string(tPath) + "' does not refer to valid file";
+                    std::string errorMsg = "Texture file '" + tPath.string() + "' does not refer to valid file";
 #ifdef DEBUG
                     throw std::runtime_error(errorMsg);
 #else

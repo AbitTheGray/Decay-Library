@@ -494,13 +494,13 @@ int Exec_bsp_lightmap(int argc, const char** argv)
             return 1;
         }
 
-        std::string extension = exportLight.extension();
+        std::string extension = exportLight.extension().string();
         R_ASSERT(extension.size() > 1);
         R_ASSERT(extension[0] == '.');
 
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* data)> writeFunc = Decay::ImageWriteFunction_RGB(extension);
 
-        writeFunc(exportLight.c_str(), bspTree->Light.Width, bspTree->Light.Height, bspTree->Light.Data.data());
+        writeFunc(exportLight.string().c_str(), bspTree->Light.Width, bspTree->Light.Height, bspTree->Light.Data.data());
 #pragma endregion
     }
 #pragma endregion
