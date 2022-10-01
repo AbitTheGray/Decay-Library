@@ -1,12 +1,23 @@
 * text=auto
 
+*.txt text eol=lf
+
 *.c text eol=lf
 *.cpp text eol=lf
 *.h text eol=lf
 *.hpp text eol=lf
 *.md text eol=lf
+
+*.map text eol=lf
 *.fgd text eol=lf
+
+*.rmf binary
+*.bsp binary
+*.wad binary
 
 *.png binary
 *.jpg binary
 *.jpeg binary
+*.tga binary
+*.bmp binary
+*.bin binary

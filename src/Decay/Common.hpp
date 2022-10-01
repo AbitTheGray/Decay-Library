@@ -272,7 +272,7 @@ namespace Decay
     /// - .bmp
     /// - .tga
     /// - .jpg / .jpeg (maximum quality)
-    /// - .raw (uint32_t width, uint32_t width, uint8_t components, uint32_t... rgba_data)
+    /// - .bin (uint32_t width, uint32_t width, uint8_t components, uint32_t... rgba_data)
     [[nodiscard]] inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> ImageWriteFunction_RGBA(const std::string& extension)
     {
         if(extension == ".png" || extension == ".PNG")
@@ -330,7 +330,7 @@ namespace Decay
                 );
             };
         }
-        else if(extension == ".raw" || extension == ".RAW")
+        else if(extension == ".bin" || extension == ".BIN")
         {
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba) -> void
             {
@@ -357,7 +357,7 @@ namespace Decay
     /// - .bmp
     /// - .tga
     /// - .jpg / .jpeg (maximum quality
-    /// - .raw (uint32_t width, uint32_t width, uint8_t components, uint24_t... rgb_data)
+    /// - .bin (uint32_t width, uint32_t width, uint8_t components, uint24_t... rgb_data)
     [[nodiscard]] inline std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb)> ImageWriteFunction_RGB(const std::string& extension)
     {
         if(extension == ".png" || extension == ".PNG")
@@ -415,7 +415,7 @@ namespace Decay
                 );
             };
         }
-        else if(extension == ".raw" || extension == ".RAW")
+        else if(extension == ".bin" || extension == ".BIN")
         {
             return [](const char* path, uint32_t width, uint32_t height, const glm::u8vec3* rgb) -> void
             {
