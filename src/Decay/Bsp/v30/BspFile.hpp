@@ -364,6 +364,7 @@ namespace Decay::Bsp::v30
         [[nodiscard]] std::vector<Wad::Wad3::WadFile::Texture> GetTextures() const;
 
         void SetTextures(const std::vector<Wad::Wad3::WadFile::Texture>& textures);
+        void SetEntities(const std::string& entitiesString);
 
         void Save(const std::filesystem::path& filename) const;
 

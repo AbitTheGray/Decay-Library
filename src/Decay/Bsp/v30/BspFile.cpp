@@ -408,6 +408,29 @@ namespace Decay::Bsp::v30
 
         out.close();
     }
+    void BspFile::SetEntities(const std::string& entities)
+    {
+        auto& data = m_Data[static_cast<int>(LumpType::Entities)];
+        auto& dataLength = m_DataLength[static_cast<int>(LumpType::Entities)];
+
+        std::free(data);
+
+        if(entities.ends_with('\0'))
+        {
+            dataLength = entities.length();
+            data = std::malloc(dataLength);
+
+            std::copy(entities.begin(), entities.end(), reinterpret_cast<char*>(data));
+        }
+        else
+        {
+            dataLength = entities.length() + 1;
+            data = std::malloc(dataLength);
+
+            std::copy(entities.begin(), entities.end(), reinterpret_cast<char*>(data));
+            reinterpret_cast<char*>(data)[dataLength - 1] = '\0';
+        }
+    }
     void BspFile::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec3> pixels = AsRgb();

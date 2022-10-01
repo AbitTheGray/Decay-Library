@@ -376,7 +376,52 @@ int Exec_bsp2wad(int argc, const char** argv)
                 if(!bspWadPath.starts_with(R"(\half-life\)"))
                     std::cerr << "WARNING: Path for `--newbspwad` should start by \\half-life\\" << std::endl;
 
-                //TODO add into "wad"
+                {
+                    // add into "wad"
+                    BspEntities entities(*bsp);
+                    {
+                        for(int i = 0; i < entities.size(); i++)
+                        {
+                            auto& ent = entities[i];
+                            const auto classname = ent.find("classname");
+                            if(classname == ent.end() || classname->second != "worldspawn")
+                                continue;
+
+                            auto& wad = ent["wad"];
+                            if(wad.empty())
+                                wad = bspWadPath;
+                            else
+                                wad += ';' + bspWadPath;
+                            break;
+                        }
+                    }
+
+                    // Convert to string
+                    std::stringstream ss;
+                    ss << entities;
+
+                    // Save entities string into BSP
+                    bsp->SetEntities(ss.str());
+                }
+#ifdef DEBUG
+                {
+                    BspEntities entities(*bsp);
+                    {
+                        for(int i = 0; i < entities.size(); i++)
+                        {
+                            auto& ent = entities[i];
+                            const auto classname = ent.find("classname");
+                            if(classname == ent.end() || classname->second != "worldspawn")
+                                continue;
+
+                            auto& wad = ent["wad"];
+                            if(wad.find(bspWadPath) == std::string::npos)
+                                throw std::runtime_error("Change in \"wad\" of \"worldspawn\" did not go through");
+                            break;
+                        }
+                    }
+                }
+#endif
             }
         }
 #pragma endregion

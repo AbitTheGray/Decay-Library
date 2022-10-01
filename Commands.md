@@ -20,12 +20,12 @@ Use other command after `help` (for example `help bsp2obj`) to show help for the
 ## BSP -> WAD
 `bsp2wad`
 
-| Argument                                     | Required | Multiple | Description                                       |
-|----------------------------------------------|:--------:|:--------:|---------------------------------------------------|
-| `--file <map.bsp>`                           |    ✓     |          | Source BSP map file                               |
-| `--wad <map.wad>`                            |          |          | Add (or create) packed textures from BSP into WAD |
-| `--newbsp <new_map.bsp>`                     |          |          | Save BSP map with no packed textures              |
-| ~~`--newbspwad <\half-life\valve\map.bsp>`~~ |          |          | ~~Path to add into map's "wad" path~~             |
+| Argument                                 | Required | Multiple | Description                                       |
+|------------------------------------------|:--------:|:--------:|---------------------------------------------------|
+| `--file <map.bsp>`                       |    ✓     |          | Source BSP map file                               |
+| `--wad <map.wad>`                        |          |          | Add (or create) packed textures from BSP into WAD |
+| `--newbsp <new_map.bsp>`                 |          |          | Save BSP map with no packed textures              |
+| `--newbspwad <\half-life\valve\map.bsp>` |          |          | Path to add into map's "wad" path                 |
 
 ## BSP Lightmap
 `bsp_lightmap`
