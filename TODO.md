@@ -7,8 +7,6 @@
     -[ ] Replace `R_ASSERT` by `D_ASSERT` where it is only for comfort and not really needed
   -[ ] Add utility function to implement TODOs for "order-independent comparison" for `std::map` (and equivalent)
   -[ ] Verify all formats in Valve Hammer Editor
-- BSP
-  -[ ] Fix JSON export (without nlohmann's JSON library) to correctly escape `\` (required for `"wad"`)
 - FGD
   -[ ] Test for `Fgd::FgdFile::ProcessIncludes(...)`
   -[ ] Test for `Fgd::FgdFile::Subtract(...)`

@@ -12,12 +12,20 @@ namespace Decay::Bsp::v30
             const auto& entity = Entities[e];
 
             out << "    {" << std::endl;
-            auto it = entity.begin();
-            for(int ei = 0; ei < entity.size(); ei++, it++)
+            int remainingKv = entity.size();
+            for(const auto& kv : entity)
             {
-                const auto& kv = *it;
-                out << "      \"" << kv.first << "\": \"" << kv.second << "\""; //TODO escape `"` and `\` in `kv.second`
-                if(ei != entity.size() - 1) //TODO change `ei` to `remaining` and check against it
+                out << "      \"" << kv.first << "\": \"";
+                for(char c : kv.second)
+                {
+                    if(c == '\\' || c == '\"')
+                        out << '\\';
+                    out << c;
+                }
+                out << "\"";
+
+                remainingKv--;
+                if(remainingKv)
                     out << ",";
                 out << std::endl;
             }
