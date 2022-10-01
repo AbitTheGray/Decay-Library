@@ -32,7 +32,7 @@ namespace Decay
     {
         int ignoredChars = 0;
 
-        while(in.good())
+        while(in.good() && !in.eof())
         {
             int c = in.peek();
             if(c == EOF) // End of File
@@ -382,10 +382,16 @@ namespace Decay
 
         std::vector<char> name;
         int c;
+        while(true)
         {
             GOTO_QUOTED_STRING_START:
             IgnoreWhitespace(in);
 
+            if(in.eof())
+            {
+                in.setstate(std::ios_base::failbit);
+                return {};
+            }
             c = in.peek();
             if(c == EOF) // End of file
             {
@@ -401,6 +407,7 @@ namespace Decay
 
             { // Main part, always exists
                 auto name2 = ReadUntil(in, '\"', true);
+                R_ASSERT(in.good());
                 // Insert `name2` into `name`
                 Combine(name, name2);
             }
@@ -416,16 +423,20 @@ namespace Decay
             }
 
             IgnoreWhitespace(in);
+            if(in.eof())
+                break;
 
             c = in.peek();
+            if(c == EOF)
+                break;
             if(c == '+')
             {
                 in.ignore(); // Skip '+'
 
-                // `goto` to the beginning of parsing.
-                // Recursion could be used here (but at different position in code - later in this function).
-                goto GOTO_QUOTED_STRING_START;
+                continue;
             }
+
+            break;
         }
 
         // Post-processing

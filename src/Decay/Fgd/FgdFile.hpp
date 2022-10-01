@@ -345,6 +345,7 @@ namespace Decay::Fgd
         /// Call `Include` for all FGD files mentioned in `IncludeFiles`.
         /// This function is also called on included files before `Add` to allow nested includes.
         /// Every file is processed only once thanks to `filesToIgnore` being filled by files as they are being processed - it is recommended to place path to `this` FGD file there at the beginning.
+        /// All paths in `filesToIgnore` must be absolute canonical paths (absolute paths without `.` / `..` or symlinks).
         void ProcessIncludes(const std::filesystem::path& relativeToDirectory, std::vector<std::filesystem::path>& filesToIgnore);
         /// Completely reworks the order of `Classes` based on `base(...)` option to make sure a class in listed AFTER its dependencies (=base classes first).
         /// Throws exception if a recursive dependency is found.

@@ -715,11 +715,12 @@ namespace Decay::Fgd
     }
     void FgdFile::ProcessIncludes(const std::filesystem::path& relativeToDirectory, std::vector<std::filesystem::path>& filesToIgnore)
     {
-        for(const std::string& includeFile : IncludeFiles)
+        for(int i = 0; i < IncludeFiles.size(); i++)
         {
+            const std::string& includeFile = IncludeFiles[i];
             if(includeFile.empty())
                 continue; // Empty file
-            std::filesystem::path fullIncludeFile = relativeToDirectory / includeFile; //THINK Process for absolute path?
+            std::filesystem::path fullIncludeFile = std::filesystem::canonical(relativeToDirectory / includeFile);
 
             if(std::find(filesToIgnore.begin(), filesToIgnore.end(), fullIncludeFile) != filesToIgnore.end())
                 continue; // File should be ignored / already processed
@@ -1892,6 +1893,7 @@ GOTO_OPTION_PARAM:
             else if(StringCaseInsensitiveEqual(str_view(object), "@include")) [[unlikely]]
             {
                 IgnoreWhitespace(in);
+                R_ASSERT(in.peek() == '\"', "@Include mus be followed by whitespace and quoted path. Do not use round brackets.");
 
                 std::vector<char> filename;
                 try
@@ -1904,6 +1906,8 @@ GOTO_OPTION_PARAM:
                 }
                 if(filename.empty())
                     throw std::runtime_error("Cannot `@include` empty path");
+                if(in.fail())
+                    throw std::runtime_error("Failed to read `@include` path");
 
                 fgd.IncludeFiles.emplace_back(str(filename));
             }

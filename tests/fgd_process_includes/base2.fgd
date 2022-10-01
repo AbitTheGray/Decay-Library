@@ -1,0 +1,8 @@
+@MapSize(-512, 512)
+
+@SolidClass = worldspawn : "World entity"
+[
+	message(string) : "Map Description / Title"
+	skybox(string) : "Skybox texture (cubemap)"
+	baseProp(integer)
+]

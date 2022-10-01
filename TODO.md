@@ -8,7 +8,6 @@
   -[ ] Add utility function to implement TODOs for "order-independent comparison" for `std::map` (and equivalent)
   -[ ] Verify all formats in Valve Hammer Editor
 - FGD
-  -[ ] Test for `Fgd::FgdFile::ProcessIncludes(...)`
   -[ ] Test for `Fgd::FgdFile::Subtract(...)`
   -[ ] `Fgd::FgdFile::Add(...)`, `Fgd::FgdFile::Subtract(...)` and `Fgd::FgdFile::Include(...)` should look at base classes
     - Verify whenever it is needed

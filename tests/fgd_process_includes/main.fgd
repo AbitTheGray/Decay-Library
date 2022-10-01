@@ -1,0 +1,8 @@
+@Include "base.fgd"
+
+@SolidClass = worldspawn : "Map Configuration"
+[
+	message(string) : "Message at the beginning of the map"
+	skybox(string)
+	mainProp(integer)
+]
