@@ -121,7 +121,7 @@ void Test_Entity(const RmfFile::Entity& original)
 
     R_ASSERT(result.EntityFlags == original.EntityFlags);
 
-    //TODO order-independent test of Values
+    R_ASSERT(Decay::IsSame(result.Values, original.Values));
 
     for(int i = 0; i < RmfFile::Entity::Dummy2_Length; i++)
         R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
@@ -183,7 +183,7 @@ void Test_Corner(const RmfFile::Corner& original)
     R_ASSERT(result.Index == original.Index);
     R_ASSERT(result.NameOverride_str() == original.NameOverride_str());
 
-    //TODO order-independent test of Values
+    R_ASSERT(Decay::IsSame(result.Values, original.Values));
 
     R_ASSERT(result == original);
 }
@@ -279,8 +279,7 @@ void Test_World(const RmfFile::World& original)
 
     R_ASSERT(result.EntityFlags == original.EntityFlags);
 
-    //TODO order-independent test of Values
-    R_ASSERT(result.Values.size() == original.Values.size());
+    R_ASSERT(Decay::IsSame(result.Values, original.Values));
 
     for(int i = 0; i < RmfFile::World::Dummy2_Length; i++)
         R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);

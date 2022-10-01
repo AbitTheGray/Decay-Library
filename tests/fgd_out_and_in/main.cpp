@@ -179,10 +179,8 @@ void Test_Class(const FgdFile::Class& original)
     }
     R_ASSERT(result.Codename == original.Codename);
     R_ASSERT(result.Description == original.Description);
-    R_ASSERT(result.Properties.size() == original.Properties.size());
-    //TODO order-independent Properties comparison
-    R_ASSERT(result.IO.size() == original.IO.size());
-    //TODO order-independent IO comparison
+    R_ASSERT(Decay::IsSame(result.Properties, original.Properties));
+    R_ASSERT(Decay::IsSame(result.IO, original.IO));
     R_ASSERT(result == original);
 }
 

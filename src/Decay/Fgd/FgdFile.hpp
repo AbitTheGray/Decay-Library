@@ -246,13 +246,11 @@ namespace Decay::Fgd
                 if(Description != other.Description)
                     return false;
 
-                if(Properties.size() != other.Properties.size())
+                if(!Decay::IsSame(Properties, other.Properties))
                     return false;
-                //TODO order-independent `Properties` check
 
-                if(IO.size() != other.IO.size())
+                if(!Decay::IsSame(IO, other.IO))
                     return false;
-                //TODO order-independent `IO` check
 
                 return true;
             }

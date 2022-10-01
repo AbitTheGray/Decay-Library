@@ -5,7 +5,6 @@
     -[ ] Add messages into `R_ASSERT` and `D_ASSERT`
     -[ ] Look for places where `R_ASSERT` can simplify the code (instead of `if` + `throw`)
     -[ ] Replace `R_ASSERT` by `D_ASSERT` where it is only for comfort and not really needed
-  -[ ] Add utility function to implement TODOs for "order-independent comparison" for `std::map` (and equivalent)
   -[ ] Verify all formats in Valve Hammer Editor
 - FGD
   -[ ] Test for `Fgd::FgdFile::Subtract(...)`

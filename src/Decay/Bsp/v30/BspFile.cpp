@@ -46,7 +46,6 @@ namespace Decay::Bsp::v30
         sizeof(SurfaceEdges),
         sizeof(Model),
     };
-
     BspFile::BspFile(const std::filesystem::path& filename)
     {
         if(!std::filesystem::exists(filename))
@@ -182,13 +181,11 @@ namespace Decay::Bsp::v30
             }
         }
     }
-
     BspFile::~BspFile()
     {
         for(std::size_t i = 0; i < LumpType_Size; i++)
             std::free(m_Data[i]);
     }
-
     uint32_t BspFile::GetTextureCount() const
     {
         MemoryBuffer itemDataBuffer(
@@ -202,7 +199,6 @@ namespace Decay::Bsp::v30
 
         return count;
     }
-
     std::vector<Wad::Wad3::WadFile::Texture> BspFile::GetTextures() const
     {
         MemoryBuffer itemDataBuffer(
@@ -284,7 +280,6 @@ namespace Decay::Bsp::v30
 
         return textures;
     }
-
     void BspFile::SetTextures(const std::vector<Wad::Wad3::WadFile::Texture>& textures)
     {
         // Free old
@@ -375,7 +370,6 @@ namespace Decay::Bsp::v30
         // `out.flush()` was called at end of Texture Insert Loop
         // `out.close()` should not be needed + destructor will call it after end of this function
     }
-
     void BspFile::Save(const std::filesystem::path& filename) const
     {
         std::size_t dataSize = 0;
@@ -414,7 +408,6 @@ namespace Decay::Bsp::v30
 
         out.close();
     }
-
     void BspFile::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec3> pixels = AsRgb();
@@ -422,7 +415,6 @@ namespace Decay::Bsp::v30
         R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 3);
         stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
-
     void BspFile::TextureParsed::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();

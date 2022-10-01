@@ -6,25 +6,6 @@
 // Utility functions
 namespace Decay::Fgd
 {
-    template<typename TIn, typename TVal>
-    [[nodiscard]] inline bool ContainsAll(const TIn& inside, const TVal& values)
-    {
-        for(const auto& val : values)
-        {
-            bool found = false;
-            for(const auto& in : inside)
-            {
-                if(in == val)
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if(!found)
-                return false;
-        }
-        return true;
-    }
     void AddClassAndDependencies(
         std::vector<std::string>& orderedClasses, ///< Output
         const std::string& className, ///< Name of the class currently being processed

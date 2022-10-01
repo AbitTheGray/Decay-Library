@@ -317,7 +317,8 @@ namespace Decay::Rmf
                 if(EntityFlags != other.EntityFlags)
                     return false;
 
-                //TODO Compare values of `Values`
+                if(!Decay::IsSame(Values, other.Values))
+                    return false;
 
                 for(int i = 0; i < Dummy2_Length; i++)
                     if(Dummy2[i] != other.Dummy2[i])
@@ -404,7 +405,7 @@ namespace Decay::Rmf
             Vector_t Position;
             int Index; ///< Used to generate targetnames (corner01, corner02...)
             char NameOverride[NameOverride_Length]; ///< Empty for no override
-            std::unordered_map<std::string, std::string> KeyValue;
+            std::unordered_map<std::string, std::string> Values;
 
             [[nodiscard]] inline std::string NameOverride_str() const { return Cstr2Str(NameOverride, NameOverride_Length); }
             inline void NameOverride_str(const std::string& val) { Str2Cstr(val, NameOverride, NameOverride_Length); }
@@ -421,7 +422,8 @@ namespace Decay::Rmf
                     if(NameOverride[i] != other.NameOverride[i])
                         return false;
 
-                //TODO Compare values of `Values`
+                if(!Decay::IsSame(Values, other.Values))
+                    return false;
 
                 return true;
             }
@@ -548,21 +550,15 @@ namespace Decay::Rmf
                 if(EntityFlags != other.EntityFlags)
                     return false;
 
-                //TODO Compare values of `Values`
-
-                for(int i = 0; i < Dummy2_Length; i++)
-                    if(Dummy2[i] != other.Dummy2[i])
-                        return false;
-
-                for(int i = 0; i < Dummy2_Length; i++)
-                    if(Dummy2[i] != other.Dummy2[i])
-                        return false;
-
-                if(Paths.size() != other.Paths.size())
+                if(!Decay::IsSame(Values, other.Values))
                     return false;
-                for(int i = 0; i < Paths.size(); i++) //TODO Order-independent comparison
-                    if(Paths[i] != other.Paths[i])
+
+                for(int i = 0; i < Dummy2_Length; i++)
+                    if(Dummy2[i] != other.Dummy2[i])
                         return false;
+
+                if(!Decay::IsSame(Paths, other.Paths))
+                    return false;
 
                 return true;
             }

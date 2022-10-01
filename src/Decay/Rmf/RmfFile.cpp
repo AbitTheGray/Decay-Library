@@ -252,7 +252,10 @@ namespace Decay::Rmf
             in.read(reinterpret_cast<char*>(&keyValueCount), sizeof(keyValueCount));
 
             for(int i = 0; i < keyValueCount; i++)
-                entity.Values[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+            {
+                const auto key = ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength);
+                entity.Values[key] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+            }
         }
 
         in.read(reinterpret_cast<char*>(entity.Dummy2), entity.Dummy2_Length);
@@ -383,7 +386,10 @@ namespace Decay::Rmf
             in.read(reinterpret_cast<char*>(&keyValueCount), sizeof(keyValueCount));
 
             for(int i = 0; i < keyValueCount; i++)
-                corner.KeyValue[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+            {
+                const auto key = ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength);
+                corner.Values[key] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+            }
         }
 
         return in;
@@ -395,10 +401,10 @@ namespace Decay::Rmf
         out.write(reinterpret_cast<const char*>(corner.NameOverride), RmfFile::Corner::NameOverride_Length);
 
         // Key-Values
-        R_ASSERT(corner.KeyValue.size() <= std::numeric_limits<int>::max());
-        int keyValueCount = corner.KeyValue.size();
+        R_ASSERT(corner.Values.size() <= std::numeric_limits<int>::max());
+        int keyValueCount = corner.Values.size();
         out.write(reinterpret_cast<const char*>(&keyValueCount), sizeof(keyValueCount));
-        for(const auto& kv : corner.KeyValue)
+        for(const auto& kv : corner.Values)
         {
             R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength);
             R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength);
@@ -545,7 +551,10 @@ namespace Decay::Rmf
             in.read(reinterpret_cast<char*>(&keyValueCount), sizeof(keyValueCount));
 
             for(int i = 0; i < keyValueCount; i++)
-                world.Values[ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength)] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+            {
+                const auto key = ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength);
+                world.Values[key] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+            }
         }
 
         in.read(reinterpret_cast<char*>(world.Dummy2), world.Dummy2_Length);

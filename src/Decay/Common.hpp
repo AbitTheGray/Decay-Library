@@ -437,4 +437,107 @@ namespace Decay
     }
 
 #pragma endregion
+
+#pragma region map/vector contains
+#   pragma region vector+vector
+    template<typename T>
+    [[nodiscard]] inline bool ContainsAll(const std::vector<T>& inside, const std::vector<T>& values)
+    {
+        for(const auto& val : values)
+        {
+            bool found = false;
+            for(const auto& in : inside)
+            {
+                if(in == val)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                return false;
+        }
+        return true;
+    }
+    template<typename T>
+    [[nodiscard]] inline bool IsSame(const std::vector<T>& inside, const std::vector<T>& values)
+    {
+        if(inside.size() != values.size())
+            return false;
+        return ContainsAll(inside, values);
+    }
+#   pragma endregion
+#   pragma region vector+set
+    template<typename T>
+    [[nodiscard]] inline bool ContainsAll(const std::vector<T>& inside, const std::set<T>& values)
+    {
+        for(const auto& val : values)
+        {
+            bool found = false;
+            for(const auto& in : inside)
+            {
+                if(in == val)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                return false;
+        }
+        return true;
+    }
+    template<typename T>
+    [[nodiscard]] inline bool IsSame(const std::vector<T>& inside, const std::set<T>& values)
+    {
+        if(inside.size() != values.size())
+            return false;
+        return ContainsAll(inside, values);
+    }
+#   pragma endregion
+#   pragma region map+map
+    template<typename TK, typename TV>
+    [[nodiscard]] inline bool ContainsAll(const std::map<TK, TV>& inside, const std::map<TK, TV>& values)
+    {
+        for(const auto& valKv : values)
+        {
+            auto inIt = inside.find(valKv.first);
+            if(inIt == inside.end())
+                return false;
+            if(inIt->second != valKv.second)
+                return false;
+        }
+        return true;
+    }
+    template<typename TK, typename TV>
+    [[nodiscard]] inline bool IsSame(const std::map<TK, TV>& inside, const std::map<TK, TV>& values)
+    {
+        if(inside.size() != values.size())
+            return false;
+        return ContainsAll(inside, values);
+    }
+#   pragma endregion
+#   pragma region map+map
+    template<typename TK, typename TV>
+    [[nodiscard]] inline bool ContainsAll(const std::unordered_map<TK, TV>& inside, const std::unordered_map<TK, TV>& values)
+    {
+        for(const auto& valKv : values)
+        {
+            auto inIt = inside.find(valKv.first);
+            if(inIt == inside.end())
+                return false;
+            if(inIt->second != valKv.second)
+                return false;
+        }
+        return true;
+    }
+    template<typename TK, typename TV>
+    [[nodiscard]] inline bool IsSame(const std::unordered_map<TK, TV>& inside, const std::unordered_map<TK, TV>& values)
+    {
+        if(inside.size() != values.size())
+            return false;
+        return ContainsAll(inside, values);
+    }
+#   pragma endregion
+#pragma endregion
 }
