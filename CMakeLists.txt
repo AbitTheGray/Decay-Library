@@ -84,8 +84,8 @@ if(DECAY_RMF_INCLUDE_WAD)
     add_compile_definitions("RMF_INCLUDE_WAD")
 endif()
 
-#
-option(DECAY_RMF_PATH_TYPE_CHECK "Limith RMF's Path records only to `path_corner` and `path_track` entities" ON)
+# Apply GoldSrc limit of classname for Path entities (separate list from Entities)
+option(DECAY_RMF_PATH_TYPE_CHECK "Limit RMF's Path records only to `path_corner` and `path_track` entities" ON)
 if(DECAY_RMF_PATH_TYPE_CHECK)
     add_compile_definitions("RMF_PATH_TYPE_CHECK")
 endif()

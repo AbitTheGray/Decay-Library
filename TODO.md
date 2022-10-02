@@ -2,9 +2,7 @@
 
 - General
   - `R_ASSERT` / `D_ASSERT`
-    -[ ] Add messages into `R_ASSERT` and `D_ASSERT`
     -[ ] Look for places where `R_ASSERT` can simplify the code (instead of `if` + `throw`)
-    -[ ] Replace `R_ASSERT` by `D_ASSERT` where it is only for comfort and not really needed
   -[ ] Verify all formats in Valve Hammer Editor
 - FGD
   -[ ] Test for `Fgd::FgdFile::Subtract(...)`
