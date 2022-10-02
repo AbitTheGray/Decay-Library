@@ -19,49 +19,27 @@
 #pragma region D_ASSERT / R_ASSERT
 
 #ifdef DEBUG
-/// Debug-only assert
-inline constexpr void D_ASSERT(bool condition, const std::string& msg)
-{
-    if(!condition) [[unlikely]]
-    {
-        std::cerr << msg << std::endl;
-        throw std::runtime_error(msg);
+#   define D_ASSERT(a_condition, a_msg) \
+    {\
+        if(!(a_condition)) [[unlikely]]\
+        {\
+            std::cerr << a_msg << std::endl;\
+            throw std::runtime_error("Assertion failed");\
+        }\
     }
-}
-/// Debug-only assert
-inline constexpr void D_ASSERT(bool condition)
-{
-    if(!condition) [[unlikely]]
-    {
-        std::cerr << "Assertion failed" << std::endl;
-        throw std::runtime_error("Assertion failed");
-    }
-}
 #else
-/// Debug-only assert
-inline constexpr void D_ASSERT(bool condition, const std::string& msg) {}
-/// Debug-only assert
-inline constexpr void D_ASSERT(bool condition) {}
+#   define D_ASSERT(a_condition, a_msg) \
+    while(false) {}
 #endif
 
-/// Always active assert
-inline constexpr void R_ASSERT(bool condition, const std::string& msg)
-{
-    if(!condition) [[unlikely]]
-    {
-        std::cerr << msg << std::endl;
-        throw std::runtime_error(msg);
+#define R_ASSERT(a_condition, a_msg) \
+    {\
+        if(!(a_condition)) [[unlikely]]\
+        {\
+            std::cerr << a_msg << std::endl;\
+            throw std::runtime_error("Assertion failed");\
+        }\
     }
-}
-/// Always active assert
-inline constexpr void R_ASSERT(bool condition)
-{
-    if(!condition) [[unlikely]]
-    {
-        std::cerr << "Assertion failed" << std::endl;
-        throw std::runtime_error("Assertion failed");
-    }
-}
 
 #pragma endregion
 

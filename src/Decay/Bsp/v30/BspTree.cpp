@@ -36,10 +36,10 @@ namespace Decay::Bsp::v30
             return {};
 
         // Texture info
-        R_ASSERT(face.TextureMapping < Bsp->GetTextureMappingCount());
+        R_ASSERT(face.TextureMapping < Bsp->GetTextureMappingCount(), "Texture mapping is outside of bounds");
         const BspFile::TextureMapping& textureMapping = Bsp->GetRawTextureMapping()[face.TextureMapping];
         auto textureIndex = textureMapping.Texture;
-        R_ASSERT(textureIndex < Textures.size());
+        R_ASSERT(textureIndex < Textures.size(), "Texture index (from mapping) is outside of bound");
 
         const Wad::Wad3::WadFile::Texture& texture = Textures[textureIndex];
 
@@ -63,7 +63,7 @@ namespace Decay::Bsp::v30
 
 
         // Get vertex indices from: Face -> Surface Edge -> Edge (-> Vertex)
-        R_ASSERT(face.SurfaceEdgeCount >= 3); // To at least for a triangle
+        R_ASSERT(face.SurfaceEdgeCount >= 3, "Surface edge does not form a polygon"); // To at least for a triangle
         std::vector<uint16_t> faceIndices(face.SurfaceEdgeCount);
         for(
             std::size_t sei = face.FirstSurfaceEdge, seii = 0;
@@ -71,17 +71,17 @@ namespace Decay::Bsp::v30
             sei++, seii++
         )
         {
-            R_ASSERT(sei < Bsp->GetSurfaceEdgeCount());
+            R_ASSERT(sei < Bsp->GetSurfaceEdgeCount(), "Surface Edge index is outside of bounds");
             const BspFile::SurfaceEdges& surfaceEdge = Bsp->GetRawSurfaceEdges()[sei];
 
             if(surfaceEdge >= 0)
             {
-                R_ASSERT(surfaceEdge < Bsp->GetEdgeCount());
+                R_ASSERT(surfaceEdge < Bsp->GetEdgeCount(), "Edge index is outside of bounds");
                 faceIndices[seii] = Bsp->GetRawEdges()[surfaceEdge].First;
             }
             else
             {
-                R_ASSERT(-surfaceEdge < Bsp->GetEdgeCount());
+                R_ASSERT(-surfaceEdge < Bsp->GetEdgeCount(), "Edge index is outside of bounds");
                 faceIndices[seii] = Bsp->GetRawEdges()[-surfaceEdge].Second; // IdTech2 used ~ (swap bits) instead of - (swap sign)
             }
         }
@@ -93,7 +93,7 @@ namespace Decay::Bsp::v30
         float minT = 0, maxT = 0;
         glm::ivec2 lightmapSize;
 
-        R_ASSERT(face.LightmapOffset >= -1);
+        R_ASSERT(face.LightmapOffset >= -1, "Invalid lightmap offset");
         if(face.LightmapOffset != -1)
         {
             // Get UV bounds
@@ -129,8 +129,8 @@ namespace Decay::Bsp::v30
                 ceilf(maxS / 16.0f) - floorf(minS / 16.0f) + 1,
                 ceilf(maxT / 16.0f) - floorf(minT / 16.0f) + 1
             );
-            R_ASSERT(lightmapSize.x > 0);
-            R_ASSERT(lightmapSize.y > 0);
+            R_ASSERT(lightmapSize.x > 0, "Invalid lightmap size (width failed)");
+            R_ASSERT(lightmapSize.y > 0, "Invalid lightmap size (width failed)");
             /*
             R_ASSERT(lightmapSize.x <= 16);
             R_ASSERT(lightmapSize.y <= 16);
@@ -206,7 +206,7 @@ namespace Decay::Bsp::v30
             );
 
             // Other indices
-            R_ASSERT(face.SurfaceEdgeCount >= 3);
+            R_ASSERT(face.SurfaceEdgeCount >= 3, "Surface Edges does not form a polygon");
             for(std::size_t ii = 2; ii < face.SurfaceEdgeCount; ii++)
             {
                 auto thirdVertex = Bsp->GetRawVertices()[faceIndices[ii]];
@@ -243,7 +243,7 @@ namespace Decay::Bsp::v30
             }
         }
 
-        R_ASSERT(smartFace.Indices.size() % 3 == 0);
+        R_ASSERT(smartFace.Indices.size() % 3 == 0, "Smart Face did not result in triangulated indices");
 
         return smartFace;
     }
@@ -304,7 +304,7 @@ namespace Decay::Bsp::v30
                 bool prevPolygon = false;
 #endif
 
-                R_ASSERT(indices.size() % 3 == 0);
+                R_ASSERT(indices.size() % 3 == 0, "Indices does not form a triangle");
                 for(std::size_t ii = 0; ii < indices.size(); ii += 3)
                 {
                     // +1 because OBJ starts at 1 instead of 0
@@ -312,9 +312,9 @@ namespace Decay::Bsp::v30
                     uint16_t i1 = indices[ii + 1] + 1;
                     uint16_t i2 = indices[ii + 2] + 1;
 
-                    R_ASSERT(i0 <= Vertices.size());
-                    R_ASSERT(i1 <= Vertices.size());
-                    R_ASSERT(i2 <= Vertices.size());
+                    R_ASSERT(i0 <= Vertices.size(), "Vertex index of face triangle is outside of bounds");
+                    R_ASSERT(i1 <= Vertices.size(), "Vertex index of face triangle is outside of bounds");
+                    R_ASSERT(i2 <= Vertices.size(), "Vertex index of face triangle is outside of bounds");
 
 #ifdef BSP_OBJ_POLYGONS
                     if(prevPolygon)
@@ -401,8 +401,8 @@ namespace Decay::Bsp::v30
         else
             std::filesystem::create_directory(directory);
 
-        R_ASSERT(textureExtension.size() > 1);
-        R_ASSERT(textureExtension[0] == '.');
+        R_ASSERT(textureExtension.size() > 1, "Invalid texture extension");
+        R_ASSERT(textureExtension[0] == '.', "Invalid texture extension - extension must start by '.' character");
 
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* data)> writeFunc = ImageWriteFunction_RGBA(textureExtension);
 
@@ -493,10 +493,10 @@ namespace Decay::Bsp::v30
             // Use to top-left corner instead of top quarter.
             for(int64_t oldIndex = dataSize_old, newIndex = dataSize / 2 - w; oldIndex > 0; oldIndex -= w, newIndex -= Light.Width)
             {
-                R_ASSERT(newIndex >= 0);
+                R_ASSERT(newIndex >= 0, "Invalid new index");
 
                 int64_t oldIndex_new = oldIndex + w;
-                R_ASSERT(oldIndex_new <= dataSize);
+                R_ASSERT(oldIndex_new <= dataSize, "Repositioned old index is outside of the lightmap");
 
                 // Data
                 std::move(
@@ -541,9 +541,11 @@ namespace Decay::Bsp::v30
         // Same as above but skips previous pixels
         {
             //TODO Optimize
-            // Check few pixels (left, right, middle) before checking whole row?
+            // - Check few pixels (left, right, middle) before checking whole row?
+            /*
             R_ASSERT(Light.Height / 2 - 16 >= 0);
             R_ASSERT(Light.Width / 2 - 16 >= 0);
+            */
             for(uint32_t y = Light.Height / 2 - 16; y < Light.Height - size.y; y++)
             {
                 for(uint32_t x = Light.Width / 2 - 16; x < Light.Width - size.x; x++)

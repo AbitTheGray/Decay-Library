@@ -197,7 +197,7 @@ namespace Decay::Fgd
                 if(orderClassesByDependency)
                 {
                     std::vector<std::string> orderedClasses = OrderClassesByDependency();
-                    R_ASSERT(orderedClasses.size() == Classes.size());
+                    R_ASSERT(orderedClasses.size() == Classes.size(), "Number of ordered classes does not match those ordered by dependency");
                     for(const auto& clssName : orderedClasses)
                     {
                         bool found = false;
@@ -213,7 +213,7 @@ namespace Decay::Fgd
                                 break;
                             }
                         }
-                        R_ASSERT(found);
+                        R_ASSERT(found, "Did not find class from OrderClassesByDependency");
                     }
                 }
                 else

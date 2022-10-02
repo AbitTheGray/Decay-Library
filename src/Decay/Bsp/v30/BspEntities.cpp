@@ -16,7 +16,7 @@ namespace Decay::Bsp::v30
             IgnoreWhitespace(in);
             if(in.eof())
                 break;
-            R_ASSERT(in.good());
+            R_ASSERT(in.good(), "Input stream is not in a good shape");
 
             c = in.get();
             if(c == EOF)
@@ -27,7 +27,7 @@ namespace Decay::Bsp::v30
             while(true)
             {
                 IgnoreWhitespace(in);
-                R_ASSERT(in.good());
+                R_ASSERT(in.good(), "Input stream is not in a good shape");
 
                 c = in.peek();
                 if(c == '}')
@@ -44,11 +44,8 @@ namespace Decay::Bsp::v30
                 else
                     throw std::runtime_error("Unexpected character inside entity");
             }
-            IgnoreWhitespace(in);
-            R_ASSERT(in.good());
-
             c = in.get();
-            R_ASSERT(c == '}');
+            D_ASSERT(c == '}', "Invalid character at the end of entity data - how did it get out of the `while(true`");
 
             entities.emplace_back(std::move(entity));
             entity = {};

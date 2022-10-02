@@ -5,6 +5,8 @@
 
 #include "Decay/Wad/Wad3/WadFile.hpp"
 
+#include "util.hpp"
+
 #pragma region wad_add
 cxxopts::Options Options_wad_add(int argc, const char** argv)
 {

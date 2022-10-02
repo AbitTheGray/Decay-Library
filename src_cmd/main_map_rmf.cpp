@@ -6,6 +6,8 @@
 #include "Decay/Map/MapFile.hpp"
 #include "Decay/Rmf/RmfFile.hpp"
 
+#include "util.hpp"
+
 #pragma region map2rmf
 cxxopts::Options Options_map2rmf(int argc, const char** argv)
 {

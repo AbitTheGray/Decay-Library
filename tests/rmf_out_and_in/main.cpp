@@ -4,68 +4,70 @@
 
 using namespace Decay::Rmf;
 
+#define R_ASSERT_TEST(a_column) R_ASSERT(result.a_column == original.a_column, #a_column " does not match")
+
 void Test_VisGroup(const RmfFile::VisGroup& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::VisGroup result{};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.Name_str() == original.Name_str());
-    R_ASSERT(result.Color == original.Color);
-    R_ASSERT(result.Dummy == original.Dummy);
-    R_ASSERT(result.Index == original.Index);
-    R_ASSERT(result.Visible == original.Visible);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT(result.Name_str() == original.Name_str(), "Name does not match");
+    R_ASSERT_TEST(Color);
+    R_ASSERT_TEST(Dummy);
+    R_ASSERT_TEST(Index);
+    R_ASSERT_TEST(Visible);
 
     for(int i = 0; i < RmfFile::VisGroup::Dummy2_Length; i++)
-        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i], "Dummy2[" << i << "] does not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Face(const RmfFile::Face& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Face result{};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.TextureName_str() == original.TextureName_str());
-    R_ASSERT(result.Dummy == original.Dummy);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT(result.TextureName_str() == original.TextureName_str(), "Texture Name does not match");
+    R_ASSERT_TEST(Dummy);
 
-    R_ASSERT(result.UAxis == original.UAxis);
-    R_ASSERT(result.XShift == original.XShift);
-    R_ASSERT(result.VAxis == original.VAxis);
-    R_ASSERT(result.YShift == original.YShift);
+    R_ASSERT_TEST(UAxis);
+    R_ASSERT_TEST(XShift);
+    R_ASSERT_TEST(VAxis);
+    R_ASSERT_TEST(YShift);
 
-    R_ASSERT(result.TextureRotation == original.TextureRotation);
-    R_ASSERT(result.TextureScale == original.TextureScale);
+    R_ASSERT_TEST(TextureRotation);
+    R_ASSERT_TEST(TextureScale);
 
     for(int i = 0; i < RmfFile::Face::Dummy2_Length; i++)
-        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
+    R_ASSERT(result.Dummy2[i] == original.Dummy2[i], "Dummy2[" << i << "] does not match");
 
-    R_ASSERT(result.Vertices.size() == original.Vertices.size());
+    R_ASSERT(result.Vertices.size() == original.Vertices.size(), "Vertex count does not match");
     for(int i = 0; i < result.Vertices.size(); i++)
-        R_ASSERT(result.Vertices[i] == original.Vertices[i]);
+        R_ASSERT(result.Vertices[i] == original.Vertices[i], "Vertices[" << i << "] does not match");
 
     for(int i = 0; i < RmfFile::Face::PlaneVertices_Length; i++)
-        R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i]);
-    R_ASSERT(result == original);
+        R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i], "PlaneVertices[" << i << "] does not match");
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Solid(const RmfFile::Brush& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -73,28 +75,28 @@ void Test_Solid(const RmfFile::Brush& original)
     RmfFile::Brush result{};
     { // Type Name
         int typeNameLength = ss.get();
-        R_ASSERT(std::strlen(RmfFile::Brush::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Brush::TypeName) + 1 == typeNameLength, "Brush saved incorrect type (based on length)");
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.VisGroup == original.VisGroup);
-    R_ASSERT(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT_TEST(VisGroup);
+    R_ASSERT_TEST(DisplayColor);
 
     for(int i = 0; i < RmfFile::Brush::Dummy_Length; i++)
-        R_ASSERT(result.Dummy[i] == original.Dummy[i]);
+        R_ASSERT(result.Dummy[i] == original.Dummy[i], "Dummy[" << i << "] does not match");
 
-    R_ASSERT(result.Faces.size() == original.Faces.size());
+    R_ASSERT(result.Faces.size() == original.Faces.size(), "Face count does not match");
     for(int i = 0; i < result.Faces.size(); i++)
-        R_ASSERT(result.Faces[i] == original.Faces[i]);
+        R_ASSERT(result.Faces[i] == original.Faces[i], "Faces[" << i << "] does not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Entity(const RmfFile::Entity& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -102,42 +104,42 @@ void Test_Entity(const RmfFile::Entity& original)
     RmfFile::Entity result{};
     { // Type Name
         int typeNameLength = ss.get();
-        R_ASSERT(std::strlen(RmfFile::Entity::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Entity::TypeName) + 1 == typeNameLength, "Entity saved incorrect type (based on length)");
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.VisGroup == original.VisGroup);
-    R_ASSERT(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT_TEST(VisGroup);
+    R_ASSERT_TEST(DisplayColor);
 
-    R_ASSERT(result.Brushes.size() == original.Brushes.size());
+    R_ASSERT(result.Brushes.size() == original.Brushes.size(), "Brush count does not match");
     for(int i = 0; i < result.Brushes.size(); i++)
-        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
+        R_ASSERT(result.Brushes[i] == original.Brushes[i], "Brushes[" << i << "] does not match");
 
-    R_ASSERT(result.Classname == original.Classname);
+    R_ASSERT_TEST(Classname);
 
     for(int i = 0; i < RmfFile::Entity::Dummy_Length; i++)
-        R_ASSERT(result.Dummy[i] == original.Dummy[i]);
+        R_ASSERT(result.Dummy[i] == original.Dummy[i], "Dummy[" << i << "] does not match");
 
-    R_ASSERT(result.EntityFlags == original.EntityFlags);
+    R_ASSERT_TEST(EntityFlags);
 
-    R_ASSERT(Decay::IsSame(result.Values, original.Values));
+    R_ASSERT(Decay::IsSame(result.Values, original.Values), "Key-Values do not match");
 
     for(int i = 0; i < RmfFile::Entity::Dummy2_Length; i++)
-        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i], "Dummy2[" << i << "] does not match");
 
-    R_ASSERT(result.Position == original.Position);
+    R_ASSERT_TEST(Position);
 
     for(int i = 0; i < RmfFile::Entity::Dummy3_Length; i++)
-        R_ASSERT(result.Dummy3[i] == original.Dummy3[i]);
+        R_ASSERT(result.Dummy3[i] == original.Dummy3[i], "Dummy3[" << i << "] does not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Group(const RmfFile::Group& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -145,106 +147,106 @@ void Test_Group(const RmfFile::Group& original)
     RmfFile::Group result{};
     { // Type Name
         int typeNameLength = ss.get();
-        R_ASSERT(std::strlen(RmfFile::Group::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::Group::TypeName) + 1 == typeNameLength, "Group saved incorrect type (based on length)");
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.VisGroup == original.VisGroup);
-    R_ASSERT(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT_TEST(VisGroup);
+    R_ASSERT_TEST(DisplayColor);
 
-    R_ASSERT(result.Brushes.size() == original.Brushes.size());
+    R_ASSERT(result.Brushes.size() == original.Brushes.size(), "Brush count does not match");
     for(int i = 0; i < result.Brushes.size(); i++)
-        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
+        R_ASSERT(result.Brushes[i] == original.Brushes[i], "Brushes[" << i << "] does not match");
 
-    R_ASSERT(result.Entities.size() == original.Entities.size());
+    R_ASSERT(result.Entities.size() == original.Entities.size(), "Entity count does not match");
     for(int i = 0; i < result.Entities.size(); i++)
-        R_ASSERT(result.Entities[i] == original.Entities[i]);
+        R_ASSERT(result.Entities[i] == original.Entities[i], "Entities[" << i << "] does not match");
 
-    R_ASSERT(result.Groups.size() == original.Groups.size());
+    R_ASSERT(result.Groups.size() == original.Groups.size(), "Group count does not match");
     for(int i = 0; i < result.Groups.size(); i++)
-        R_ASSERT(result.Groups[i] == original.Groups[i]);
+        R_ASSERT(result.Groups[i] == original.Groups[i], "Groups[" << i << "] does not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Corner(const RmfFile::Corner& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Corner result{};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.Position == original.Position);
-    R_ASSERT(result.Index == original.Index);
-    R_ASSERT(result.NameOverride_str() == original.NameOverride_str());
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT_TEST(Position);
+    R_ASSERT_TEST(Index);
+    R_ASSERT(result.NameOverride_str() == original.NameOverride_str(), "Name Override does not match");
 
-    R_ASSERT(Decay::IsSame(result.Values, original.Values));
+    R_ASSERT(Decay::IsSame(result.Values, original.Values), "Key-Values do not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_PathType(const RmfFile::PathType& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::PathType result{};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result == original);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Path(const RmfFile::Path& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Path result{};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.Name_str() == original.Name_str());
-    R_ASSERT(result.Class_str() == original.Class_str());
-    R_ASSERT(result.Type == original.Type);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT(result.Name_str() == original.Name_str(), "Name does not match");
+    R_ASSERT(result.Class_str() == original.Class_str(), "Class does not match");
+    R_ASSERT_TEST(Type);
 
-    R_ASSERT(result.Corners.size() == original.Corners.size());
+    R_ASSERT(result.Corners.size() == original.Corners.size(), "Corner count does not match");
     for(int i = 0; i < result.Corners.size(); i++)
-        R_ASSERT(result.Corners[i] == original.Corners[i]);
+        R_ASSERT(result.Corners[i] == original.Corners[i], "Corners[" << i << "] does not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Camera(const RmfFile::Camera& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
 
     RmfFile::Camera result{};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.EyePosition == original.EyePosition);
-    R_ASSERT(result.LookPosition == original.LookPosition);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT_TEST(EyePosition);
+    R_ASSERT_TEST(LookPosition);
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_World(const RmfFile::World& original)
 {
     std::stringstream ss;
     ss << original;
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
     ss.seekg(0, std::ios_base::beg);
     ss.seekp(0, std::ios_base::beg);
@@ -252,43 +254,43 @@ void Test_World(const RmfFile::World& original)
     RmfFile::World result{};
     { // Type Name
         int typeNameLength = ss.get();
-        R_ASSERT(std::strlen(RmfFile::World::TypeName) + 1 == typeNameLength);
+        R_ASSERT(std::strlen(RmfFile::World::TypeName) + 1 == typeNameLength, "World saved incorrect type (based on length)");
         ss.ignore(typeNameLength);
     }
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.VisGroup == original.VisGroup);
-    R_ASSERT(result.DisplayColor == original.DisplayColor);
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT_TEST(VisGroup);
+    R_ASSERT_TEST(DisplayColor);
 
-    R_ASSERT(result.Brushes.size() == original.Brushes.size());
+    R_ASSERT(result.Brushes.size() == original.Brushes.size(), "Brush count does not match");
     for(int i = 0; i < result.Brushes.size(); i++)
-        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
+        R_ASSERT(result.Brushes[i] == original.Brushes[i], "Brushes[" << i << "] does not match");
 
-    R_ASSERT(result.Entities.size() == original.Entities.size());
+    R_ASSERT(result.Entities.size() == original.Entities.size(), "Entity count does not match");
     for(int i = 0; i < result.Entities.size(); i++)
-        R_ASSERT(result.Entities[i] == original.Entities[i]);
+        R_ASSERT(result.Entities[i] == original.Entities[i], "Entities[" << i << "] does not match");
 
-    R_ASSERT(result.Groups.size() == original.Groups.size());
+    R_ASSERT(result.Groups.size() == original.Groups.size(), "Group count does not match");
     for(int i = 0; i < result.Groups.size(); i++)
-        R_ASSERT(result.Groups[i] == original.Groups[i]);
+        R_ASSERT(result.Groups[i] == original.Groups[i], "Groups[" << i << "] does not match");
 
-    R_ASSERT(result.Classname == original.Classname);
+    R_ASSERT_TEST(Classname);
 
     for(int i = 0; i < RmfFile::World::Dummy_Length; i++)
-        R_ASSERT(result.Dummy[i] == original.Dummy[i]);
+        R_ASSERT(result.Dummy[i] == original.Dummy[i], "Dummy[" << i << "] does not match");
 
-    R_ASSERT(result.EntityFlags == original.EntityFlags);
+    R_ASSERT_TEST(EntityFlags);
 
-    R_ASSERT(Decay::IsSame(result.Values, original.Values));
+    R_ASSERT(Decay::IsSame(result.Values, original.Values), "Key-Values do not match");
 
     for(int i = 0; i < RmfFile::World::Dummy2_Length; i++)
-        R_ASSERT(result.Dummy2[i] == original.Dummy2[i]);
+        R_ASSERT(result.Dummy2[i] == original.Dummy2[i], "Dummy2[" << i << "] does not match");
 
-    R_ASSERT(result.Paths.size() == original.Paths.size());
+    R_ASSERT(result.Paths.size() == original.Paths.size(), "Path count does not match");
     for(int i = 0; i < result.Paths.size(); i++)
-        R_ASSERT(result.Paths[i] == original.Paths[i]);
+        R_ASSERT(result.Paths[i] == original.Paths[i], "Paths[" << i << "] does not match");
 
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Result does not match the original");
 }
 
 int main()
@@ -397,7 +399,9 @@ int main()
             { 11, 22, 33 }
         );
         entity0.Brushes.emplace_back(brush0);
+#ifdef RMF_INCLUDE_WAD
         entity0.Values["wad"] = R"(\half-life\valve\half-life.wad)";
+#endif
         entity0.Values["skybox"] = "city_01";
 
         entity1 = RmfFile::Entity(
@@ -409,7 +413,9 @@ int main()
         );
         entity1.Brushes.emplace_back(brush0);
         entity1.Brushes.emplace_back(brush1);
+#ifdef RMF_INCLUDE_WAD
         entity1.Values["wad"] = R"(\half-life\valve\half-life.wad)";
+#endif
         entity1.Values["skybox"] = "city_17";
 
         entity2 = RmfFile::Entity(
@@ -569,7 +575,9 @@ int main()
             {}, // Dummy
             0,
             {
+#ifdef RMF_INCLUDE_WAD
                 { "wad", "\\half-life\\valve\\half-life.wad" },
+#endif
                 { "skybox", "city_01" }
             },
             {}, // Dummy 2

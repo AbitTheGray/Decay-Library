@@ -168,7 +168,7 @@ namespace Decay::Fgd
         }
         if(isPreviousChar_Number)
             dimension++;
-        R_ASSERT(dimension <= 4);
+        R_ASSERT(dimension <= 4, "Vector with more than 4 dimensions is invalid");
         return dimension;
     }
     void FgdFile::Add(const FgdFile& toAdd)
@@ -726,7 +726,7 @@ namespace Decay::Fgd
                 {
                     for(const auto& baseClass : option.Params)
                     {
-                        R_ASSERT(!baseClass.Quoted);
+                        R_ASSERT(!baseClass.Quoted, "FGD Class does not support `base` option with quoted parameters - refer to other class using its name without quotes");
                         baseClasses.emplace(ToLowerAscii(baseClass.Name));
                     }
                 }
@@ -752,11 +752,11 @@ namespace Decay::Fgd
 
                 // Process the `it` class
                 AddClassAndDependencies(orderedClasses, itName, itDepend, dependencyGraph, recursionPrevention);
-                R_ASSERT(recursionPrevention.empty());
+                R_ASSERT(recursionPrevention.empty(), "Recursion prevention inside `OrderClassesByDependency` failed - algorithm problem");
             }
         }
-        R_ASSERT(dependencyGraph.empty());
-        R_ASSERT(orderedClasses.size() == Classes.size());
+        R_ASSERT(dependencyGraph.empty(), "`OrderClassesByDependency` did not process all classes - algorithm problem");
+        R_ASSERT(orderedClasses.size() == Classes.size(), "Number of classes from `OrderClassesByDependency` does not match number of existing classes");
         return orderedClasses;
     }
     decltype(FgdFile::Classes) FgdFile::ProcessClassDependency() const
@@ -770,7 +770,7 @@ namespace Decay::Fgd
         {
             const auto& className = orderedClasses[i];
             auto it_clss = Classes.find(className);
-            R_ASSERT(it_clss != Classes.end());
+            R_ASSERT(it_clss != Classes.end(), "Ordered class was not found in class list");
             Class clss = it_clss->second; // Copy
 
             for(const Option& option : clss.Options)
@@ -957,8 +957,8 @@ GOTO_OPTION_PARAM:
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Option& option)
     {
-        R_ASSERT(!option.Name.empty());
-        R_ASSERT(option.Name.find(' ') == std::string::npos); //TODO Check for other than alphanumeric characters
+        R_ASSERT(!option.Name.empty(), "Cannot write empty FGD Option");
+        R_ASSERT(option.Name.find(' ') == std::string::npos, "FGD Option cannot contain whitespace character"); //TODO Check for other than alphanumeric characters
         out << option.Name;
         if(StringCaseInsensitiveEqual(option.Name, "halfgridsnap")) // `halfgridsnap` is exception and does not have `()` after it.
         {
@@ -1175,7 +1175,7 @@ GOTO_OPTION_PARAM:
             IgnoreWhitespace(in);
 
             c = in.peek();
-            R_ASSERT(c == '[');
+            R_ASSERT(c == '[', "Body of FGD file must start with '[' character");
             in.ignore(); // Skip '['
 
             while(true)
@@ -1204,8 +1204,8 @@ GOTO_OPTION_PARAM:
     }
     std::ostream& operator<<(std::ostream& out, const FgdFile::Property& property)
     {
-        R_ASSERT(!property.Codename.empty());
-        R_ASSERT(!property.Type.empty());
+        R_ASSERT(!property.Codename.empty(), "Codename of FGD property cannot be empty");
+        R_ASSERT(!property.Type.empty(), "Type of FGD property cannot be empty");
         out << property.Codename << '(' << property.Type << ')';
         if(property.ReadOnly)
             out << " readonly";
@@ -1503,22 +1503,21 @@ GOTO_OPTION_PARAM:
             IgnoreWhitespace(in);
 
             c = in.peek();
-            R_ASSERT(c == '[');
+            R_ASSERT(c == '[', "Body of FGD Class must start with '[' - if you do not want any properties (or IO) just use \"[]\"");
             in.ignore();
 
             while(true)
             {
                 IgnoreWhitespace(in);
 
+                R_ASSERT(in.good(), "Input stream is not in a good shape");
                 c = in.peek();
-                R_ASSERT(in.good() || in.eof());
-                if(in.bad() || in.fail())
-                    throw std::runtime_error("Failed reading FGD class from stream");
+                R_ASSERT(in.good(), "Input stream is not in a good shape");
+                R_ASSERT(!in.eof(), "Input stream ended too soon in body of FGD Class");
                 if(c == ']')
                 {
                     in.ignore(); // Skip ']'
-                    if(in.bad() || in.fail())
-                        throw std::runtime_error("Failed reading FGD class from stream");
+                    R_ASSERT(in.good(), "Input stream is not in a good shape");
                     break;
                 }
                 else if(c == EOF) [[unlikely]]
@@ -1537,7 +1536,7 @@ GOTO_OPTION_PARAM:
                         else
                         {
                             in.clear(in.rdstate() & ~std::istream::failbit);
-                            R_ASSERT(in.good() || in.eof());
+                            R_ASSERT(in.good(), "Input stream is not in a good shape");
                         }
                     }
 
@@ -1553,7 +1552,7 @@ GOTO_OPTION_PARAM:
                         else
                         {
                             in.clear(in.rdstate() & ~std::istream::failbit);
-                            R_ASSERT(in.good() || in.eof());
+                            R_ASSERT(in.good(), "Input stream is not in a good shape");
                         }
                     }
 
@@ -1566,8 +1565,8 @@ GOTO_OPTION_PARAM:
     std::ostream& operator<<(std::ostream& out, const FgdFile::Class& clss)
     {
         { // Header
-            R_ASSERT(!clss.Type.empty());
-            R_ASSERT(clss.Type.find(' ') == std::string::npos);
+            R_ASSERT(!clss.Type.empty(), "FGD Class Type cannot be empty");
+            R_ASSERT(clss.Type.find(' ') == std::string::npos, "FGD Class Type cannot contain whitespace character");
             out << '@' << clss.Type;
             if(!clss.Options.empty())
             {
@@ -1575,8 +1574,8 @@ GOTO_OPTION_PARAM:
                     out << ' ' << option;
             }
 
-            R_ASSERT(!clss.Codename.empty());
-            R_ASSERT(clss.Codename.find(' ') == std::string::npos);
+            R_ASSERT(!clss.Codename.empty(), "FGD Class Codename cannot be empty");
+            R_ASSERT(clss.Codename.find(' ') == std::string::npos, "FGD Class Codename cannot contain whitespace character");
             out << " = " << clss.Codename;
 
             if(!clss.Description.empty())
@@ -1839,8 +1838,10 @@ GOTO_OPTION_PARAM:
                     throw std::runtime_error("Maximum value of `@mapsize` contains invalid character");
                 }
 
+                IgnoreWhitespace(in);
+
                 c = in.peek();
-                R_ASSERT(c == ')');
+                R_ASSERT(c == ')', "@MapSize value must end by ')");
                 in.ignore();
 
                 int min, max;

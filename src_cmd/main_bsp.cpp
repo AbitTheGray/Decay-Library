@@ -7,6 +7,8 @@
 
 #include "Decay/Fgd/FgdFile.hpp"
 
+#include "util.hpp"
+
 #pragma region bsp2obj
 cxxopts::Options Options_bsp2obj(int argc, const char** argv)
 {
@@ -268,72 +270,42 @@ int Exec_bsp2wad(int argc, const char** argv)
     auto result = options.parse(argc, argv);
 
 #pragma region --file
-    if(!result.count("file"))
-    {
-        const char* errorMsg = "You need to specify input file, use `--file path/to/map.bsp`";
-#ifdef DEBUG
-        throw std::runtime_error(errorMsg);
-#else
-        std::cerr << errorMsg << std::endl;
-#endif
-        return 1;
-    }
     using namespace Decay::Bsp::v30;
+    std::filesystem::path bspPath{};
     std::shared_ptr<BspFile> bsp;
+    if(GetFilePath_Existing(result, "file", bspPath, ".bsp"))
     {
-        std::filesystem::path bspPath = result["file"].as<std::string>();
-        if(!std::filesystem::exists(bspPath) || !std::filesystem::is_regular_file(bspPath))
-        {
-            const char* errorMsg = "`--file` must point to a valid file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
-            return 1;
-        }
-        if(bspPath.extension() != ".bsp")
-            std::cerr << "WARNING: BSP file path should have `.bsp` extension" << std::endl;
         try
         {
             bsp = std::make_shared<BspFile>(bspPath);
         }
         catch(std::runtime_error& ex)
         {
-            const char* errorMsg = "Failed to read/parse BSP file - ";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg + std::string(ex.what()));
-#else
-            std::cerr << errorMsg << ex.what() << std::endl;
-#endif
+            std::cerr << "Failed to read/parse BSP file - " << ex.what() << std::endl;
             return 1;
         }
     }
+    else
+        return 1;
 #pragma endregion
 
 #pragma region --wad + Add Textures
     if(result.count("wad"))
     {
-        std::filesystem::path wadPath = result["wad"].as<std::string>();
-        if(std::filesystem::exists(wadPath) && !std::filesystem::is_regular_file(wadPath))
+        std::filesystem::path wadPath{};
+        if(GetFilePath_NewOrOverride(result, "wad", wadPath, ".wad"))
         {
-            const char* errorMsg = "`--wad` must point to a valid existing WAD file (or non-existing one to create a new one)";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
-            return 1;
+            using namespace Decay::Wad::Wad3;
+            auto textures = bsp->GetTextures();
+
+            auto count = WadFile::AddToFile(wadPath, textures, {}, {});
+            if(count == 0)
+                std::cerr << "No textures to add" << std::endl;
+            else
+                std::cout << "Added " << count << " textures into " << wadPath << std::endl;
         }
-
-        using namespace Decay::Wad::Wad3;
-        auto textures = bsp->GetTextures();
-
-        auto count = WadFile::AddToFile(wadPath, textures, {}, {});
-        if(count == 0)
-            std::cerr << "No textures to add" << std::endl;
         else
-            std::cout << "Added " << count << " textures into " << wadPath << std::endl;
+            return 1;
     }
 #pragma endregion
 
@@ -341,21 +313,9 @@ int Exec_bsp2wad(int argc, const char** argv)
     // BSP without packed textures
     if(result.count("newbsp"))
     {
-        std::filesystem::path outBspPath = result["newbsp"].as<std::string>();
-        {
-            if(outBspPath.extension() != ".bsp")
-                std::cerr << "WARNING: Output BSP (`--newbsp`) file path does not have .bsp extension" << std::endl;
-            if(std::filesystem::exists(outBspPath) && !std::filesystem::is_regular_file(outBspPath))
-            {
-                const char* errorMsg = "Output BSP file (`--newbsp`) exists but does not refer to valid file";
-#ifdef DEBUG
-                throw std::runtime_error(errorMsg);
-#else
-                std::cerr << errorMsg << std::endl;
-#endif
-                return 1;
-            }
-        }
+        std::filesystem::path outBspPath = {};
+        if(!GetFilePath_NewOrOverride(result, "newbsp", outBspPath, ".bsp"))
+            return 1;
 
 #pragma region Textures
         using namespace Decay::Wad::Wad3;
@@ -463,66 +423,29 @@ int Exec_bsp_lightmap(int argc, const char** argv)
     auto result = options.parse(argc, argv);
 
 #pragma region --file
-    if(!result.count("file"))
-    {
-        const char* errorMsg = "You need to specify input file, use `--file path/to/map.bsp`";
-#ifdef DEBUG
-        throw std::runtime_error(errorMsg);
-#else
-        std::cerr << errorMsg << std::endl;
-#endif
-        return 1;
-    }
     using namespace Decay::Bsp::v30;
+    std::filesystem::path bspPath{};
     std::shared_ptr<BspFile> bsp;
+    if(GetFilePath_Existing(result, "file", bspPath, ".bsp"))
     {
-        std::filesystem::path bspPath = result["file"].as<std::string>();
-        if(!std::filesystem::exists(bspPath) || !std::filesystem::is_regular_file(bspPath))
-        {
-            const char* errorMsg = "`--file` must point to a valid file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
-            return 1;
-        }
-        if(bspPath.extension() != ".bsp")
-            std::cerr << "WARNING: BSP file path should have `.bsp` extension" << std::endl;
         try
         {
             bsp = std::make_shared<BspFile>(bspPath);
         }
         catch(std::runtime_error& ex)
         {
-            const char* errorMsg = "Failed to read/parse BSP file - ";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg + std::string(ex.what()));
-#else
-            std::cerr << errorMsg << ex.what() << std::endl;
-#endif
+            std::cerr << "Failed to read/parse BSP file - " << ex.what() << std::endl;
             return 1;
         }
     }
+    else
+        return 1;
 #pragma endregion
 
-
 #pragma region --lightmap
-    if(result.count("lightmap"))
+    std::filesystem::path lightmapPath{};
+    if(GetFilePath_Existing(result, "lightmap", lightmapPath, ".png"))
     {
-        std::filesystem::path exportLight = result["lightmap"].as<std::string>();
-
-        if(std::filesystem::exists(exportLight))
-        {
-            if(!std::filesystem::is_regular_file(exportLight))
-            {
-                std::cerr << "Export lightmap path exists but is not a file" << std::endl;
-                return 1;
-            }
-        }
-
-
-#pragma region Export lightmap
         std::shared_ptr<BspTree> bspTree;
         try
         {
@@ -530,24 +453,21 @@ int Exec_bsp_lightmap(int argc, const char** argv)
         }
         catch(std::runtime_error& ex)
         {
-            const char* errorMsg = "Failed to parse BSP file into high-level structure (BspTree) - ";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg + std::string(ex.what()));
-#else
-            std::cerr << errorMsg << ex.what() << std::endl;
-#endif
+            std::cerr << "Failed to parse BSP file into high-level structure (BspTree) - " << ex.what() << std::endl;
             return 1;
         }
 
-        std::string extension = exportLight.extension().string();
-        R_ASSERT(extension.size() > 1);
-        R_ASSERT(extension[0] == '.');
+        std::string extension = lightmapPath.extension().string();
+        R_ASSERT(extension.size() > 1, "Lightmap path must have a supported extension - extension is too short");
+        R_ASSERT(extension[0] == '.', "Lightmap path must have a supported extension - no extension or no '.' character");
 
         std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec3* data)> writeFunc = Decay::ImageWriteFunction_RGB(extension);
+        R_ASSERT(writeFunc != nullptr, "Lightmap path must have a supported extension - unsupported extension");
 
-        writeFunc(exportLight.string().c_str(), bspTree->Light.Width, bspTree->Light.Height, bspTree->Light.Data.data());
-#pragma endregion
+        writeFunc(lightmapPath.string().c_str(), bspTree->Light.Width, bspTree->Light.Height, bspTree->Light.Data.data());
     }
+    else
+        return 1;
 #pragma endregion
 
     return 0;
@@ -619,7 +539,7 @@ int Exec_bsp_entity(int argc, const char** argv)
         try
         {
             std::shared_ptr<BspFile> bsp = std::make_shared<BspFile>(bspPath);
-            R_ASSERT(bsp != nullptr);
+            R_ASSERT(bsp != nullptr, "Failed to load BSP");
             entities = BspEntities(*bsp);
         }
         catch(std::runtime_error& ex)

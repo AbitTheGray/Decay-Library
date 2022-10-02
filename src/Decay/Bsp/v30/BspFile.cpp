@@ -100,7 +100,7 @@ namespace Decay::Bsp::v30
 #ifdef BSP_DEBUG
                     std::cout << i << ": " << m_DataLength[i] << " < " << (s_DataMaxLength[i] * s_DataElementSize[i]) << " (" << s_DataMaxLength[i] << " * " << s_DataElementSize[i] << ")" << std::endl;
 #endif
-                    R_ASSERT(m_DataLength[i] < s_DataMaxLength[i] * s_DataElementSize[i]);
+                    R_ASSERT(m_DataLength[i] < s_DataMaxLength[i] * s_DataElementSize[i], "Lump " << i << " is too short for its content");
                 }
             }
 
@@ -111,7 +111,7 @@ namespace Decay::Bsp::v30
 
             // Planes
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Planes)] % sizeof(Plane) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Planes)] % sizeof(Plane) == 0, "Lump size for Planes does not match exactly expected size");
             }
 
             // Textures
@@ -121,7 +121,7 @@ namespace Decay::Bsp::v30
 
             // Vertices
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Vertices)] % sizeof(glm::vec3) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Vertices)] % sizeof(glm::vec3) == 0, "Lump size for Vertices does not match exactly expected size");
             }
 
             // Visibility
@@ -131,17 +131,17 @@ namespace Decay::Bsp::v30
 
             // Nodes
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Nodes)] % sizeof(Node) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Nodes)] % sizeof(Node) == 0, "Lump size for Nodes does not match exactly expected size");
             }
 
             // Texture Mapping
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::TextureMapping)] % sizeof(TextureMapping) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::TextureMapping)] % sizeof(TextureMapping) == 0, "Lump size for Texture Mapping does not match exactly expected size");
             }
 
             // Faces
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Faces)] % sizeof(Face) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Faces)] % sizeof(Face) == 0, "Lump size for Faces does not match exactly expected size");
             }
 
             // Lighting
@@ -151,33 +151,33 @@ namespace Decay::Bsp::v30
 
             // Clip Nodes
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::ClipNodes)] % sizeof(ClipNode) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::ClipNodes)] % sizeof(ClipNode) == 0, "Lump size for Clip Nodes does not match exactly expected size");
             }
 
             // Leaves
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Leaves)] % sizeof(Leaf) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Leaves)] % sizeof(Leaf) == 0, "Lump size for Leaves does not match exactly expected size");
             }
 
             // Mark Surface
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::MarkSurface)] % sizeof(MarkSurface) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::MarkSurface)] % sizeof(MarkSurface) == 0, "Lump size for Mark Surface does not match exactly expected size");
             }
 
             // Edges
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Edges)] % sizeof(Edge) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Edges)] % sizeof(Edge) == 0, "Lump size for Edges does not match exactly expected size");
             }
 
             // Surface Edges
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::SurfaceEdges)] % sizeof(SurfaceEdges) == 0);
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::SurfaceEdges)] % sizeof(SurfaceEdges) == 0, "Lump size for Surface Edges does not match exactly expected size");
             }
 
             // Models
             {
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Models)] % sizeof(Model) == 0);
-                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Models)] >= sizeof(Model)); // There must be at least 1 model
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Models)] % sizeof(Model) == 0, "Lump size for Models does not match exactly expected size");
+                R_ASSERT(m_DataLength[static_cast<uint8_t>(LumpType::Models)] >= sizeof(Model), "There must be at least 1 model in the BSP file (for static world)");
             }
         }
     }
@@ -209,7 +209,7 @@ namespace Decay::Bsp::v30
 
         uint32_t count;
         in.read(reinterpret_cast<char*>(&count), sizeof(count));
-        R_ASSERT(count < MaxTextures);
+        R_ASSERT(count < MaxTextures, "Too many textures");
 
         std::vector<uint32_t> offsets(count);
         in.read(reinterpret_cast<char*>(offsets.data()), sizeof(uint32_t) * count);
@@ -217,8 +217,8 @@ namespace Decay::Bsp::v30
         std::vector<Wad::Wad3::WadFile::Texture> textures(count);
         for(std::size_t i = 0; i < count; i++)
         {
-            R_ASSERT(offsets[i] >= sizeof(uint32_t) + sizeof(uint32_t) * count);
-            R_ASSERT(offsets[i] < m_DataLength[static_cast<uint8_t>(LumpType::Textures)]);
+            R_ASSERT(offsets[i] >= sizeof(uint32_t) + sizeof(uint32_t) * count, "Texture data offset points into offset list - too low value");
+            R_ASSERT(offsets[i] < m_DataLength[static_cast<uint8_t>(LumpType::Textures)], "Texture data offset is outside of Textures Lump");
             in.seekg(offsets[i]);
 
             Texture texture = {};
@@ -229,7 +229,7 @@ namespace Decay::Bsp::v30
                 texture.Width,
                 texture.Height
             };
-            R_ASSERT(!wadTexture.Name.empty());
+            R_ASSERT(!wadTexture.Name.empty(), "Texture name cannot be empty");
 
             if(texture.IsPacked())
             {
@@ -246,8 +246,8 @@ namespace Decay::Bsp::v30
                     data.resize(dataLength);
                     in.read(reinterpret_cast<char*>(data.data()), dataLength);
                 }
-                R_ASSERT(texture.Width == wadTexture.MipMapDimensions[0].x);
-                R_ASSERT(texture.Height == wadTexture.MipMapDimensions[0].y);
+                R_ASSERT(texture.Width == wadTexture.MipMapDimensions[0].x, "MipMap level 0 must match texture size (width failed)");
+                R_ASSERT(texture.Height == wadTexture.MipMapDimensions[0].y, "MipMap level 0 must match texture size (height failed)");
 
                 // Palette size after last MipMap level
                 uint16_t paletteSize;
@@ -328,7 +328,7 @@ namespace Decay::Bsp::v30
 
             // Name
             {
-                R_ASSERT(texture.Name.length() < MaxTextureName);
+                R_ASSERT(texture.Name.length() < MaxTextureName, "Texture name is too long");
                 std::fill(t.Name, t.Name + MaxTextureName, '\0');
                 texture.Name.copy(t.Name, texture.Name.length());
             }
@@ -350,7 +350,7 @@ namespace Decay::Bsp::v30
                     out.write(reinterpret_cast<const char*>(texture.MipMapData[i].data()), texture.MipMapData[i].size());
 
                 // Palette
-                R_ASSERT(texture.Palette.size() <= 256);
+                R_ASSERT(texture.Palette.size() <= 256, "Texture palette is too big");
                 short paletteSize = texture.Palette.size();
                 out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
 
@@ -434,15 +434,15 @@ namespace Decay::Bsp::v30
     void BspFile::TextureParsed::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec3> pixels = AsRgb();
-        R_ASSERT(pixels.size() == Width * Height);
-        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 3);
+        R_ASSERT(pixels.size() == Width * Height, "Too many pixels to write");
+        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 3, "Width is too big (numeric overflow)");
         stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
     }
     void BspFile::TextureParsed::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
     {
         std::vector<glm::u8vec4> pixels = AsRgba();
-        R_ASSERT(pixels.size() == Width * Height);
-        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 4);
+        R_ASSERT(pixels.size() == Width * Height, "Too many pixels to write");
+        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 4, "Width is too big (numeric overflow)");
         stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
     }
 }

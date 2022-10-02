@@ -117,10 +117,10 @@ namespace Decay::Bsp::v30
 
             [[nodiscard]] inline bool IsPacked() const
             {
-                R_ASSERT(MipMaps[0] == 0 || MipMaps[0] >= sizeof(Texture));
-                R_ASSERT(MipMaps[1] == 0 || MipMaps[1] > sizeof(Texture));
-                R_ASSERT(MipMaps[2] == 0 || MipMaps[2] > sizeof(Texture));
-                R_ASSERT(MipMaps[3] == 0 || MipMaps[3] > sizeof(Texture));
+                R_ASSERT(MipMaps[0] == 0 || MipMaps[0] >= sizeof(Texture), "MipMap[0] starts too soon");
+                R_ASSERT(MipMaps[1] == 0 || MipMaps[1] > sizeof(Texture), "MipMap[1] starts too soon");
+                R_ASSERT(MipMaps[2] == 0 || MipMaps[2] > sizeof(Texture), "MipMap[2] starts too soon");
+                R_ASSERT(MipMaps[3] == 0 || MipMaps[3] > sizeof(Texture), "MipMap[3] starts too soon");
 
                 return MipMaps[0] && MipMaps[1] && MipMaps[2] && MipMaps[3];
             }
@@ -322,7 +322,7 @@ namespace Decay::Bsp::v30
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
             {
-                R_ASSERT(level < MipMapLevels);
+                R_ASSERT(level < MipMapLevels, "Requested mip-map level is too high");
 
                 if(MipMapData[level].empty())
                     throw std::runtime_error("Texture does not contain data");
@@ -335,7 +335,7 @@ namespace Decay::Bsp::v30
 
             [[nodiscard]] inline std::vector<glm::u8vec4> AsRgba(std::size_t level = 0) const
             {
-                R_ASSERT(level < MipMapLevels);
+                R_ASSERT(level < MipMapLevels, "Requested mip-map level is too high");
 
                 if(MipMapData[level].empty())
                     throw std::runtime_error("Texture does not contain data");

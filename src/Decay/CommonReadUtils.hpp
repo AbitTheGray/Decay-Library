@@ -38,7 +38,7 @@ namespace Decay
             if(c == EOF) // End of File
             {
                 in.setstate(std::ios_base::eofbit);
-                R_ASSERT(!in.fail());
+                R_ASSERT(!in.fail(), "Input stream in a fail state");
                 return ignoredChars;
             }
             else if(IsWhitespace(static_cast<char>(c))) // Whitespace
@@ -407,7 +407,7 @@ namespace Decay
 
             { // Main part, always exists
                 auto name2 = ReadUntil(in, '\"', true);
-                R_ASSERT(in.good());
+                R_ASSERT(in.good(), "Input stream is not in a good state");
                 // Insert `name2` into `name`
                 Combine(name, name2);
             }

@@ -6,7 +6,7 @@ void Test_Face(const MapFile::Face& original, MapFile::EngineVariant variant)
 {
     std::stringstream ss;
     original.Write(ss, variant);
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -16,27 +16,27 @@ void Test_Face(const MapFile::Face& original, MapFile::EngineVariant variant)
 
     MapFile::Face result = {};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
     for(int i = 0; i < MapFile::Face::PlaneVertexCount; i++)
     {
-        R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i]);
+        R_ASSERT(result.PlaneVertices[i] == original.PlaneVertices[i], "Plane vertex at index " << i << " does not match");
     }
-    R_ASSERT(result.Texture == original.Texture);
+    R_ASSERT(result.Texture == original.Texture, "Face texture does not match");
     if(variant != MapFile::EngineVariant::IdTech2)
-        R_ASSERT(result.UAxis == original.UAxis);
-    R_ASSERT(result.UOffset == original.UOffset);
+        R_ASSERT(result.UAxis == original.UAxis, "U Axis does not match");
+    R_ASSERT(result.UOffset == original.UOffset, "U Offset does not match");
     if(variant != MapFile::EngineVariant::IdTech2)
-        R_ASSERT(result.VAxis == original.VAxis);
-    R_ASSERT(result.VOffset == original.VOffset);
-    R_ASSERT(result.Rotation == original.Rotation);
-    R_ASSERT(result.Scale == original.Scale);
-    //R_ASSERT(result == original);
+        R_ASSERT(result.VAxis == original.VAxis, "V Axis does not match");
+    R_ASSERT(result.VOffset == original.VOffset, "V Offset does not match");
+    R_ASSERT(result.Rotation == original.Rotation, "Rotation does not match");
+    R_ASSERT(result.Scale == original.Scale, "Scale does not match");
+    //R_ASSERT(result == original, "Result does not match the original");
 }
 void Test_Brush(const MapFile::Brush& original)
 {
     std::stringstream ss;
     original.Write(ss, MapFile::EngineVariant::GoldSrc);
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -46,19 +46,19 @@ void Test_Brush(const MapFile::Brush& original)
 
     MapFile::Brush result = {};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.Faces.size() == original.Faces.size());
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT(result.Faces.size() == original.Faces.size(), "Number of faces does not match");
     for(int i = 0; i < result.Faces.size(); i++)
     {
-        R_ASSERT(result.Faces[i] == original.Faces[i]);
+        R_ASSERT(result.Faces[i] == original.Faces[i], "Face at index " << i << " does not match");
     }
-    R_ASSERT(result == original);
+    R_ASSERT(result == original, "Brush does not match");
 }
 void Test_Entity(const MapFile::Entity& original)
 {
     std::stringstream ss;
     original.Write(ss, MapFile::EngineVariant::GoldSrc);
-    R_ASSERT(ss.good());
+    R_ASSERT(ss.good(), "Stream is not in a good state");
 
 #ifdef DEBUG
     std::cout << ss.str() << std::endl;
@@ -68,19 +68,10 @@ void Test_Entity(const MapFile::Entity& original)
 
     MapFile::Entity result = {};
     ss >> result;
-    R_ASSERT(ss.good() || ss.eof());
-    R_ASSERT(result.Values.size() == original.Values.size());
-    for(const auto& originalKv : original.Values)
-    {
-        R_ASSERT(result.Values.contains(originalKv.first));
-        R_ASSERT(result.Values[originalKv.first] == originalKv.second);
-    }
-    R_ASSERT(result.Brushes.size() == original.Brushes.size());
-    for(int i = 0; i < result.Brushes.size(); i++)
-    {
-        R_ASSERT(result.Brushes[i] == original.Brushes[i]);
-    }
-    //R_ASSERT(result == original); //TODO
+    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    R_ASSERT(Decay::IsSame(result.Values, original.Values), "Entity Values does not match");
+    R_ASSERT(Decay::IsSame(result.Brushes, original.Brushes), "Entity Brushes does not match");
+    //R_ASSERT(result == original, "Result does not match the original"); //TODO
 }
 
 int main()

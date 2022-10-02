@@ -11,7 +11,7 @@ namespace Decay::Map
     /// Read vector inside round brackets.
     void ReadPlaneVector(std::istream& in, glm::i32vec3& vec)
     {
-        R_ASSERT(in.good());
+        R_ASSERT(in.good(), "Input stream is not in a good state");
         int c;
         IgnoreWhitespace(in);
 
@@ -24,14 +24,20 @@ namespace Decay::Map
         in.ignore(); // Skip '('
 
         IgnoreWhitespace(in);
+
         std::vector<char> num0 = ReadOnlyNumber(in, true);
-        R_ASSERT(!num0.empty());
+        R_ASSERT(!num0.empty(), "1st number of vector cannot be empty");
+
         IgnoreWhitespace(in);
+
         std::vector<char> num1 = ReadOnlyNumber(in, true);
-        R_ASSERT(!num1.empty());
+        R_ASSERT(!num1.empty(), "2nd number of vector cannot be empty");
+
         IgnoreWhitespace(in);
+
         std::vector<char> num2 = ReadOnlyNumber(in, true);
-        R_ASSERT(!num2.empty());
+        R_ASSERT(!num2.empty(), "3rd number of vector cannot be empty");
+
         IgnoreWhitespace(in);
 
         c = in.peek();
@@ -45,10 +51,11 @@ namespace Decay::Map
             std::stoi(str(num2))
         };
     }
-    /// Read vector+value inside square brackets
+    /// Read vector+value inside square brackets.
+    /// The float value is optional.
     void ReadTextureVector(std::istream& in, glm::vec3& vec, float& val)
     {
-        R_ASSERT(in.good());
+        R_ASSERT(in.good(), "Input stream is not in a good shape");
         int c;
         IgnoreWhitespace(in);
 
@@ -61,17 +68,23 @@ namespace Decay::Map
         in.ignore(); // Skip '['
 
         IgnoreWhitespace(in);
+
         std::vector<char> num0 = ReadOnlyNumber(in, true, true);
-        R_ASSERT(!num0.empty());
+        R_ASSERT(!num0.empty(), "1st number of vector cannot be empty");
+
         IgnoreWhitespace(in);
+
         std::vector<char> num1 = ReadOnlyNumber(in, true, true);
-        R_ASSERT(!num1.empty());
+        R_ASSERT(!num1.empty(), "2nd number of vector cannot be empty");
+
         IgnoreWhitespace(in);
+
         std::vector<char> num2 = ReadOnlyNumber(in, true, true);
-        R_ASSERT(!num2.empty());
+        R_ASSERT(!num2.empty(), "3rd number of vector cannot be empty");
+
         IgnoreWhitespace(in);
+
         std::vector<char> num3 = ReadOnlyNumber(in, true, true);
-        R_ASSERT(!num3.empty());
         IgnoreWhitespace(in);
 
         c = in.peek();
@@ -84,7 +97,8 @@ namespace Decay::Map
             std::stof(str(num1)),
             std::stof(str(num2))
         };
-        val = std::stof(str(num3));
+        if(!num3.empty())
+            val = std::stof(str(num3));
     }
 }
 
@@ -112,7 +126,7 @@ namespace Decay::Map
 {
     std::istream& operator>>(std::istream& in, MapFile::Face& plane)
     {
-        R_ASSERT(in.good());
+        R_ASSERT(in.good(), "Input stream is not in a good shape");
 
         IgnoreWhitespace(in);
 
@@ -178,7 +192,7 @@ namespace Decay::Map
         out << "\t\t";
 #endif
         // cross((p3 - p1), (p2 - p1)) != null
-        R_ASSERT(glm::cross(glm::vec3(PlaneVertices[2] - PlaneVertices[0]), glm::vec3(PlaneVertices[1] - PlaneVertices[0])) != glm::vec3{});
+        R_ASSERT(glm::cross(glm::vec3(PlaneVertices[2] - PlaneVertices[0]), glm::vec3(PlaneVertices[1] - PlaneVertices[0])) != glm::vec3{}, "Vertices defining MAP Face's plane cannot be on same line");
 
         for(int i = 0; i < MapFile::Face::PlaneVertexCount; i++)
         {
@@ -186,7 +200,7 @@ namespace Decay::Map
             out << "( " << pv.x << ' ' << pv.y << ' ' << pv.z << " ) ";
         }
 
-        R_ASSERT(Texture.find(' ') == std::string::npos);
+        R_ASSERT(Texture.find(' ') == std::string::npos, "Texture name cannot contain a space character");
         out << Texture << ' ';
 
         switch(variant)
@@ -211,7 +225,7 @@ namespace Decay::Map
 
     std::istream& operator>>(std::istream& in, MapFile::Brush& brush)
     {
-        R_ASSERT(in.good());
+        R_ASSERT(in.good(), "Input stream is not in a good shape");
 
         IgnoreWhitespace(in);
 
@@ -239,7 +253,7 @@ namespace Decay::Map
             }
             else
             {
-                R_ASSERT(in.good());
+                R_ASSERT(in.good(), "Input stream is not in a good shape");
                 MapFile::Face plane;
                 in >> plane;
                 if(in.fail())
@@ -256,7 +270,7 @@ namespace Decay::Map
 #endif
         out << "{\n";
         {
-            R_ASSERT(Faces.size() >= 4);
+            R_ASSERT(Faces.size() >= 4, "MAP Brush must contain at least 4 faces to form 3D object");
             for(const MapFile::Face& face : Faces)
             {
                 face.Write(out, variant);
@@ -271,7 +285,7 @@ namespace Decay::Map
 
     std::istream& operator>>(std::istream& in, MapFile::Entity& entity)
     {
-        R_ASSERT(in.good());
+        R_ASSERT(in.good(), "Input stream is not in a good shape");
 
         IgnoreWhitespace(in);
 
@@ -299,7 +313,7 @@ namespace Decay::Map
             }
             else if(c == '{') // Start of brush
             {
-                R_ASSERT(in.good());
+                R_ASSERT(in.good(), "Input stream is not in a good shape");
                 MapFile::Brush brush;
                 in >> brush;
                 if(in.fail())
@@ -335,9 +349,9 @@ namespace Decay::Map
 #ifdef MAP_TAB_OFFSET
             out << '\t';
 #endif
-            R_ASSERT(!kv.first.empty());
-            R_ASSERT(kv.first.find('\"') == std::string::npos);
-            R_ASSERT(kv.second.find('\"') == std::string::npos);
+            R_ASSERT(!kv.first.empty(), "Key cannot be empty");
+            R_ASSERT(kv.first.find('\"') == std::string::npos, "Key must not contain '\"' character");
+            R_ASSERT(kv.second.find('\"') == std::string::npos, "value must not contain '\"' character");
             out << '\"' << kv.first << "\" \"" << kv.second << "\"\n";
         }
         for(const auto& brush : Brushes)
@@ -350,7 +364,7 @@ namespace Decay::Map
 
     std::istream& operator>>(std::istream& in, MapFile& mapFile)
     {
-        R_ASSERT(in.good());
+        R_ASSERT(in.good(), "Input stream is not in a good shape");
 
         while(true)
         {
@@ -363,7 +377,7 @@ namespace Decay::Map
                 return in;
             else if(c == '{')
             {
-                R_ASSERT(in.good());
+                R_ASSERT(in.good(), "Input stream is not in a good shape");
                 MapFile::Entity entity;
                 in >> entity;
                 if(in.fail())

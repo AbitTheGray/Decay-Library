@@ -98,7 +98,7 @@ int Exec_help(int argc, const char** argv)
             auto& command = it.second;
             std::cout << "\t" << ansi_commandName << it.first << ansi_reset;
 
-            R_ASSERT(!command.Help_Description.empty());
+            R_ASSERT(!command.Help_Description.empty(), "Command help description cannot be empty");
             std::cout << "\t\t" << ansi_description << command.Help_Description << ansi_reset << std::endl;
         }
 

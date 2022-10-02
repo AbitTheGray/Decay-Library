@@ -72,6 +72,24 @@ if(DECAY_JSON_LIB)
     add_compile_definitions("DECAY_JSON_LIB")
 endif()
 
+# Do not check length of values (and some other string) against official limits
+option(DECAY_RMF_NO_LIMITS "No length limits in RMF file" OFF)
+if(DECAY_RMF_NO_LIMITS)
+    add_compile_definitions("RMF_NO_LIMITS")
+endif()
+
+# Will include "wad" in RMF which is otherwise omitted because it usually exceeds maximum value length
+option(DECAY_RMF_INCLUDE_WAD "Include `wad` key-value in RMF (recommends DECAY_RMF_NO_LIMITS)" OFF)
+if(DECAY_RMF_INCLUDE_WAD)
+    add_compile_definitions("RMF_INCLUDE_WAD")
+endif()
+
+#
+option(DECAY_RMF_PATH_TYPE_CHECK "Limith RMF's Path records only to `path_corner` and `path_track` entities" ON)
+if(DECAY_RMF_PATH_TYPE_CHECK)
+    add_compile_definitions("RMF_PATH_TYPE_CHECK")
+endif()
+
 #--------------------------------
 # Compiler configuration
 #--------------------------------

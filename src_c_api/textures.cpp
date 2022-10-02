@@ -9,7 +9,7 @@ using namespace Decay::Wad::Wad3;
 
 static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, int* length)
 {
-    R_ASSERT(textures.size() < std::numeric_limits<int>::max());
+    R_ASSERT(textures.size() < std::numeric_limits<int>::max(), "Too many images to load");
     *length = textures.size();
     if(*length == 0)
         return nullptr;
@@ -32,7 +32,7 @@ static wad_texture* LoadTextures(const std::vector<WadFile::Texture>& textures, 
         auto& wt = wadTextures[i];
 
         // Copy name
-        R_ASSERT(tex.Name.size() < 16);
+        R_ASSERT(tex.Name.size() < 16, "Texture name is too long");
         CopyString(tex.Name, wt.name, 16);
 
         // Copy size

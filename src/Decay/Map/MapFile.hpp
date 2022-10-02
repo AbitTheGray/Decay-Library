@@ -44,9 +44,9 @@ namespace Decay::Map
 #ifdef DEBUG
                 double d1 = (normal.x * PlaneVertices[1].x) + (normal.y * PlaneVertices[1].y) + (normal.z * PlaneVertices[1].z);
                 double d2 = (normal.x * PlaneVertices[2].x) + (normal.y * PlaneVertices[2].y) + (normal.z * PlaneVertices[2].z);
-                D_ASSERT(abs(d0 - d1) < 0.001);
-                D_ASSERT(abs(d0 - d2) < 0.001);
-                D_ASSERT(abs(d1 - d2) < 0.001);
+                D_ASSERT(abs(d0 - d1) < 0.001, "Distance difference is too much");
+                D_ASSERT(abs(d0 - d2) < 0.001, "Distance difference is too much");
+                D_ASSERT(abs(d1 - d2) < 0.001, "Distance difference is too much");
 #endif
                 return d0;
             }
