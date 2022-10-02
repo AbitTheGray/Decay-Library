@@ -64,6 +64,14 @@ std::unordered_map<std::string, Command> Commands = {
             Help_rmf2map,
             "Convert RMf to MAP format (in-development map)"
         }
+    },
+    {
+        "fgd",
+        Command{
+            Exec_fgd,
+            Help_fgd,
+            "Manipulate FGD files (entity definitions)"
+        }
     }
 };
 

@@ -113,21 +113,23 @@ Use other command after `help` (for example `help bsp2obj`) to show help for the
 - Using both `--goldsrc` and `--idtech2` is not valid
 
 ## FGD operations
-~~`fgd`~~ - NOT IMPLEMENTED
+`fgd`
 
 | Argument                    | Required | Multiple | Description                                            |
 |-----------------------------|:--------:|:--------:|--------------------------------------------------------|
-| `--file <file.fgd>`         |    ✓     |          | Source FGD file                                        |
+| `--file <file.fgd>`         |          |          | Source FGD file                                        |
 | `--add <file.fgd>`          |          |    ✓     | Add other FGD into current one (new priority)          |
 | `--include <file.fgd>`      |          |    ✓     | Add other FGD into current one (old priority)          |
 | `--subtract <file.fgd>`     |          |    ✓     | Subtract other FGD from current one                    |
-| `--includes`                |          |          | Process `@Include`s                                    |
+| `--process_includes`        |          |          | Process `@Include`s                                    |
 | `--include_dir <directory>` |          |          | Working directory for `@Include`s, implies `--include` |
 | `--process_base`            |          |          | Process `base(...)` and discard `@BaseClass` classes   |
-| `--json <file.fgd>`         |          |          | Output as JSON file                                    |
+| `--output <file.fgd>`       |    ~     |          | Output as FGD file                                     |
+| `--output_json <file.json>` |          |          | Output as JSON file                                    |
 
 - Can process `@Include` to include referenced files
   - No need to use `--includes` when you use `--include_dir`
+- Use `--json` only if you have problems reading `fgd` file and want to lear as no command accepts JSON FGD
 
 ## WAD Find
 ~~`wad_find`~~ - NOT IMPLEMENTED

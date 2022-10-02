@@ -35,8 +35,8 @@ set_tests_properties(Test_CMD_help_bsp2wad PROPERTIES LABELS "cmd;cmd_help;GoldS
 
 # bsp_entity
 add_test(
-        NAME Test_CMD_help_bsp_entity
-        COMMAND DecayLib_Command
+    NAME Test_CMD_help_bsp_entity
+    COMMAND DecayLib_Command
         help
         bsp_entity
 )
@@ -50,3 +50,30 @@ add_test(
         wad_add
 )
 set_tests_properties(Test_CMD_help_wad_add PROPERTIES LABELS "cmd;cmd_help;GoldSrc;wad;wad3")
+
+# map2rmf
+add_test(
+    NAME Test_CMD_help_map2rmf
+    COMMAND DecayLib_Command
+        help
+        map2rmf
+)
+set_tests_properties(Test_CMD_help_map2rmf PROPERTIES LABELS "cmd;cmd_help;GoldSrc;map;rmf")
+
+# rmf2map
+add_test(
+    NAME Test_CMD_help_rmf2map
+    COMMAND DecayLib_Command
+        help
+        rmf2map
+)
+set_tests_properties(Test_CMD_help_rmf2map PROPERTIES LABELS "cmd;cmd_help;GoldSrc;map;rmf")
+
+# fgd
+add_test(
+    NAME Test_CMD_help_fgd
+    COMMAND DecayLib_Command
+        help
+        fgd
+)
+set_tests_properties(Test_CMD_help_fgd PROPERTIES LABELS "cmd;cmd_help;GoldSrc;Sopurce;fgd")

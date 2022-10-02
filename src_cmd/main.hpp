@@ -31,3 +31,6 @@ int Help_map2rmf(int argc, const char** argv);
 
 int Exec_rmf2map(int argc, const char** argv);
 int Help_rmf2map(int argc, const char** argv);
+
+int Exec_fgd(int argc, const char** argv);
+int Help_fgd(int argc, const char** argv);

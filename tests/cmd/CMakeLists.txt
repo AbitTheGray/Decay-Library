@@ -102,3 +102,16 @@ add_test(
         --rmf test_map2rmf.rmf
 )
 set_tests_properties(Test_CMD_map2rmf PROPERTIES LABELS "cmd;GoldSrc;rmf;map")
+
+# fgd
+configure_file(test_fgd.fgd ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
+add_test(
+    NAME Test_CMD_fgd
+    COMMAND DecayLib_Command
+        fgd
+        --file test_fgd.fgd
+        --add test_entity.fgd
+        --output test_fgd_out.fgd
+        --output_json test_fgd_out.json
+)
+set_tests_properties(Test_CMD_fgd PROPERTIES LABELS "cmd;GoldSrc;Source;fgd")

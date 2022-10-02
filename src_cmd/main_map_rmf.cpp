@@ -21,6 +21,8 @@ cxxopts::Options Options_map2rmf(int argc, const char** argv)
     ;
 
     options.positional_help("-f <file.map> --rmf <file.rmf>");
+
+    options.set_width(200);
     return options;
 }
 int Help_map2rmf(int argc, const char** argv)
@@ -128,6 +130,8 @@ cxxopts::Options Options_rmf2map(int argc, const char** argv)
     ;
 
     options.positional_help("-f <file.rmf> --map <file.map>");
+
+    options.set_width(200);
     return options;
 }
 int Help_rmf2map(int argc, const char** argv)

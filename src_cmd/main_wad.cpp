@@ -23,6 +23,8 @@ cxxopts::Options Options_wad_add(int argc, const char** argv)
 
     options.positional_help("-f <file.wad> <textures...");
     options.parse_positional("texture");
+
+    options.set_width(200);
     return options;
 }
 int Help_wad_add(int argc, const char** argv)
@@ -37,32 +39,13 @@ int Exec_wad_add(int argc, const char** argv)
     auto result = options.parse(argc, argv);
 
 #pragma region --file
-    if(!result.count("file"))
-    {
-        const char* errorMsg = "You need to specify input file, use `--file path/to/file.wad`";
-#ifdef DEBUG
-        throw std::runtime_error(errorMsg);
-#else
-        std::cerr << errorMsg << std::endl;
-#endif
-        return 1;
-    }
     std::filesystem::path wadPath;
+    if(GetFilePath_Existing(result, "file", wadPath, ".wad"))
     {
-        wadPath = result["file"].as<std::string>();
-        if(std::filesystem::exists(wadPath) && !std::filesystem::is_regular_file(wadPath))
-        {
-            const char* errorMsg = "`--file` must point to a valid existing file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
-            return 1;
-        }
-        if(wadPath.extension() != ".wad")
-            std::cerr << "WARNING: WAD file path should have `.wad` extension" << std::endl;
+
     }
+    else
+        return 1;
 #pragma endregion
 
     using namespace Decay::Wad::Wad3;
@@ -73,7 +56,7 @@ int Exec_wad_add(int argc, const char** argv)
     {
         std::vector<std::string> texturePaths = result["textures"].as<std::vector<std::string>>();
 
-#pragma region Add textures
+#   pragma region Add textures
         {
             textures.reserve(texturePaths.size());
             for(std::filesystem::path tPath : texturePaths)
@@ -82,22 +65,12 @@ int Exec_wad_add(int argc, const char** argv)
                     continue;
                 if(!std::filesystem::exists(tPath))
                 {
-                    std::string errorMsg = "Texture file '" + tPath.string() + "' not found";
-#ifdef DEBUG
-                    throw std::runtime_error(errorMsg);
-#else
-                    std::cerr << errorMsg << std::endl;
-#endif
+                    std::cerr << "Texture file '" << tPath.string() << "' not found" << std::endl;
                     return 1;
                 }
                 if(!std::filesystem::is_regular_file(tPath))
                 {
-                    std::string errorMsg = "Texture file '" + tPath.string() + "' does not refer to valid file";
-#ifdef DEBUG
-                    throw std::runtime_error(errorMsg);
-#else
-                    std::cerr << errorMsg << std::endl;
-#endif
+                    std::cerr << "Texture file '" << tPath.string() << "' does not refer to valid file" << std::endl;
                     return 1;
                 }
 
@@ -113,7 +86,7 @@ int Exec_wad_add(int argc, const char** argv)
                 }
             }
         }
-#pragma endregion
+#   pragma endregion
     }
 #pragma endregion
 

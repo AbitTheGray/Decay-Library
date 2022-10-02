@@ -23,6 +23,9 @@ cxxopts::Options Options_bsp2obj(int argc, const char** argv)
        ("textures", "Export textures to directory", cxxopts::value<std::string>(), "<texture_directory>")
     ;
 
+    options.positional_help("-f <map.bsp> ...");
+
+    options.set_width(200);
     return options;
 }
 int Help_bsp2obj(int argc, const char** argv)
@@ -257,6 +260,9 @@ cxxopts::Options Options_bsp2wad(int argc, const char** argv)
        ("newbspwad", "How to mention the new WAD in `--newbsp` BSP (omitting this will not add any WAD into the map)", cxxopts::value<std::string>(), R"(<\half-life\valve\map.wad>)")
     ;
 
+    options.positional_help("-f <map.bsp> ...");
+
+    options.set_width(200);
     return options;
 }
 int Help_bsp2wad(int argc, const char** argv)
@@ -408,6 +414,9 @@ cxxopts::Options Options_bsp_lightmap(int argc, const char** argv)
        //TODO "hole" color
     ;
 
+    options.positional_help("-f <map.bsp> ...");
+
+    options.set_width(200);
     return options;
 }
 int Help_bsp_lightmap(int argc, const char** argv)
@@ -484,17 +493,26 @@ cxxopts::Options Options_bsp_entity(int argc, const char** argv)
     ;
     options.add_options("Manipulate")
        ("replace", "Replace cached (--file) entities by entities from KeyValue file", cxxopts::value<std::string>(), "<entities.kv>")
+#ifdef DECAY_JSON_LIB
        ("replace_json", "Replace cached (--file) entities by entities from JSON file", cxxopts::value<std::string>(), "<entities.json>")
+#endif
        ("add", "Add entities from KeyValue file to currently cached entities", cxxopts::value<std::vector<std::string>>(), "<entities.kv>")
+#ifdef DECAY_JSON_LIB
        ("add_json", "Add entities from JSON file to currently cached entities", cxxopts::value<std::vector<std::string>>(), "<entities.json>")
+#endif
     ;
     options.add_options("Output")
        ("validate", "Use FGD file to validate entities", cxxopts::value<std::string>(), "<gamemode.fgd>")
        ("o,outbsp", "Output BSP file (after changes, requires `--file`)", cxxopts::value<std::string>(), "<map.bsp>")
        ("extract", "Extract entities as key-value file", cxxopts::value<std::string>(), "<map_entities.kv>")
+#ifdef DECAY_JSON_LIB
        ("extract_json", "Extract entities as JSON file", cxxopts::value<std::string>(), "<map_entities.json>")
+#endif
     ;
 
+    options.positional_help("-f <map.bsp> ...");
+
+    options.set_width(200);
     return options;
 }
 int Help_bsp_entity(int argc, const char** argv)
