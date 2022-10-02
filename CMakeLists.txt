@@ -128,20 +128,6 @@ if(DECAY_JSON_LIB)
 endif()
 
 #--------------------------------
-# Source - C API
-#--------------------------------
-
-if(DECAY_LIBRARY_API)
-    file(GLOB_RECURSE DECAY_LIBRARY_API_SOURCE src_c_api/*.hpp src_c_api/*.cpp src_c_api/*.h src_c_api/*.c)
-
-    add_library(DecayLib_API SHARED ${DECAY_LIBRARY_API_SOURCE})
-    target_include_directories(DecayLib_API PUBLIC src_c_api/)
-    add_library(Decay::LibraryAPI ALIAS DecayLib_API)
-
-    target_link_libraries(DecayLib_API DecayLib)
-endif()
-
-#--------------------------------
 # Source - Command
 #--------------------------------
 

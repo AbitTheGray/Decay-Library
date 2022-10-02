@@ -1,11 +1,8 @@
 # Decay Library
 
-Library for parsing BSP and WAD files from GoldSource (and later IdTech2 and Source) engine.
+Library for parsing files from IdTech 2 (Quake 1/2), GoldSource (Half-Life) and Source (Half-Life 2) engine.
 
-Also contains C API which can be used from other programming languages.
-[C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) is being worked on (for future use in Unity3D) but may lag-behind in features.
-
-Can also be used as Command-line program.
+Can be used as Command-line program, see [Commands.md](Commands.md).
 
 ## Goal
 
@@ -97,7 +94,4 @@ They recommend having only 1 `.xml` file per application but several are used so
 
 Decay Library does not support and is not supported by any game engine.
 
-In the future, it is planned to use [C# wrapper](https://github.com/AbitTheGray/Decay-Library_Csharp) for [Unity3D](https://unity.com/) (with additional scripts to create, for example, working doors).
-
-Version for [Unreal Engine](https://www.unrealengine.com/en-US/) should be possible but is currently not planned.
-If (or When) it will be in making, it will contain both C++ and Blueprint access.
+C API was removed due to too many missing features, last commit was `9a3b8aeea4d6b3b7c100e0a5f308406da621a6d1`.

@@ -10,7 +10,6 @@ add_subdirectory(cmd)
 #--------------------------------
 
 add_subdirectory(bsp30_parse)
-add_subdirectory(bsp30_parse_c)
 
 add_subdirectory(bsp30_export_obj)
 
@@ -22,8 +21,6 @@ add_subdirectory(bsp30_export_entities)
 
 add_subdirectory(wad3_parse)
 add_subdirectory(wad3_parse_all)
-
-add_subdirectory(wad3_parse_c)
 
 add_subdirectory(wad3_test_image)
 add_subdirectory(wad3_test_font)
