@@ -59,16 +59,17 @@ Use other command after `help` (for example `help bsp2obj`) to show help for the
 ## Add texture to WAD
 `wad_add`
 
-| Argument                  | Required | Multiple | Description                                       |
-|---------------------------|:--------:|:--------:|---------------------------------------------------|
-| `--file <file.wad>`       |    ✓     |          | Source WAD file                                   |
-| `--texture <texture.png>` |          |    ✓     | Textures to add to the BSP                        |
-| ~~`--font <font.png>`~~   |          |    ✓     | ~~16x16 font characters image to add to the BSP~~ |
-| ~~`--image <image.png>`~~ |          |    ✓     | ~~Image to add to the BSP~~                       |
+| Argument                      | Required | Multiple | Description                                       |
+|-------------------------------|:--------:|:--------:|---------------------------------------------------|
+| `--file <file.wad>`           |    ✓     |          | Source WAD file                                   |
+| `--texture <texture.png>`     |          |    ✓     | Textures to add to the BSP                        |
+| `--image <image.png>`         |          |    ✓     | ~~Image to add to the BSP~~                       |
+| ~~`--font_atlas <font.png>`~~ |          |    ✓     | ~~16x16 font characters image to add to the BSP~~ |
 
-- `--textures` is not needed after other arguments (=at the end) to allow you to add multiple textures easier
+- Modifies file from `--file` (the original file), there is no `--output` which would save a copy
+- `--texture` is not needed after other arguments (=at the end) to allow you to add multiple textures easier
   - `--file map.bsp texture1.png texture2.png texture3.png`
-  - `--file map.bsp --font font1.png texture1.png texture2.png texture3.png`
+  - `--file map.bsp --font_atlas font1.png texture1.png texture2.png texture3.png`
 
 ## Optimize WAD
 ~~`wad_optimize`~~ - NOT IMPLEMENTED

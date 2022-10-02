@@ -23,7 +23,7 @@ inline bool GetFilePath_Existing(
 #endif
     if(!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
     {
-        std::cerr << "File from --" << optionName << " does not exist" << std::endl;
+        std::cerr << "File '" << path << "' from --" << optionName << " does not exist" << std::endl;
         return false;
     }
 
@@ -61,7 +61,7 @@ inline bool GetFilePath_NewOrOverride(
 #endif
     if(std::filesystem::exists(path) && !std::filesystem::is_regular_file(path))
     {
-        std::cerr << "File from --" << optionName << " exist but is not a file" << std::endl;
+        std::cerr << "File '" << path << "' from --" << optionName << " exist but is not a file" << std::endl;
         return false;
     }
 
@@ -105,7 +105,7 @@ inline bool GetFilePath_Existing(
 #endif
         if(!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
         {
-            std::cerr << "File from --" << optionName << " does not exist" << std::endl;
+            std::cerr << "File '" << path << "' from --" << optionName << " does not exist" << std::endl;
             continue;
         }
 
@@ -150,7 +150,7 @@ inline bool GetFilePath_NewOrOverride(
 #endif
         if(std::filesystem::exists(path) && !std::filesystem::is_regular_file(path))
         {
-            std::cerr << "File from --" << optionName << " exist but is not a file" << std::endl;
+            std::cerr << "File '" << path << "' from --" << optionName << " exist but is not a file" << std::endl;
             continue;
         }
 

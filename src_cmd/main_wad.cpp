@@ -17,8 +17,8 @@ cxxopts::Options Options_wad_add(int argc, const char** argv)
     ;
     options.add_options("Output")
        ("texture", "Textures to add (filesystem paths)", cxxopts::value<std::vector<std::string>>(), "<texture.png>")
-        //TODO images
-        //TODO fonts
+       ("image", "Images to add (filesystem paths)", cxxopts::value<std::vector<std::string>>(), "<image.png>")
+       ("font_atlas", "Images to add (filesystem paths)", cxxopts::value<std::vector<std::string>>(), "<font_atlas.png>")
     ;
 
     options.positional_help("-f <file.wad> <textures...");
@@ -30,7 +30,8 @@ cxxopts::Options Options_wad_add(int argc, const char** argv)
 int Help_wad_add(int argc, const char** argv)
 {
     std::cout << Options_wad_add(argc, argv).help({ "Input", "Output" }) << std::endl;
-    std::cout << "Does not parse textures/content in the WAD, only WAD header" << std::endl;
+    std::cout << "All files without `--image` or `--font_atlas` are added as textures (you can also explicitly use `--texture`." << std::endl;
+    std::cout << "Does not parse textures/content in the WAD, only WAD header." << std::endl;
     return 0;
 }
 int Exec_wad_add(int argc, const char** argv)
@@ -40,7 +41,7 @@ int Exec_wad_add(int argc, const char** argv)
 
 #pragma region --file
     std::filesystem::path wadPath;
-    if(GetFilePath_Existing(result, "file", wadPath, ".wad"))
+    if(GetFilePath_NewOrOverride(result, "file", wadPath, ".wad"))
     {
 
     }
@@ -52,28 +53,14 @@ int Exec_wad_add(int argc, const char** argv)
 
 #pragma region --textures
     std::vector<WadFile::Texture> textures = {};
-    if(result.count("textures"))
+    if(result.count("texture"))
     {
-        std::vector<std::string> texturePaths = result["textures"].as<std::vector<std::string>>();
-
-#   pragma region Add textures
+        std::vector<std::filesystem::path> texturePaths{};
+        if(GetFilePath_Existing(result, "texture", texturePaths, ".png"))
         {
             textures.reserve(texturePaths.size());
-            for(std::filesystem::path tPath : texturePaths)
+            for(const auto& tPath : texturePaths)
             {
-                if(tPath.empty())
-                    continue;
-                if(!std::filesystem::exists(tPath))
-                {
-                    std::cerr << "Texture file '" << tPath.string() << "' not found" << std::endl;
-                    return 1;
-                }
-                if(!std::filesystem::is_regular_file(tPath))
-                {
-                    std::cerr << "Texture file '" << tPath.string() << "' does not refer to valid file" << std::endl;
-                    return 1;
-                }
-
                 try
                 {
                     auto texture = WadFile::Texture::FromFile(tPath);
@@ -86,30 +73,82 @@ int Exec_wad_add(int argc, const char** argv)
                 }
             }
         }
-#   pragma endregion
+        else
+            return 1;
     }
 #pragma endregion
 
-    if(!textures.empty())
+#pragma region --images
+    std::map<std::string, WadFile::Image> images = {};
+    if(result.count("image"))
     {
-        try
+        std::vector<std::filesystem::path> imagePaths{};
+        if(GetFilePath_Existing(result, "image", imagePaths, ".png"))
         {
-            //TODO images
-            //TODO fonts
-            WadFile::AddToFile(wadPath, textures, {}, {});
+            for(const auto& tPath : imagePaths)
+            {
+                try
+                {
+                    auto image = WadFile::Image::FromFile(tPath);
+                    images[tPath.filename().replace_extension().string()] = image;
+                }
+                catch(std::runtime_error& ex)
+                {
+                    std::cerr << "Failed to load image from '" << tPath << "' - " << ex.what() << std::endl;
+                    continue;
+                }
+            }
         }
-        catch(std::runtime_error& ex)
-        {
-            std::cerr << "Failed to add textures into WAD file" << std::endl;
+        else
             return 1;
-        }
+    }
+#pragma endregion
 
-        std::cout << "Textures successfully added into WAD file" << std::endl;
-    }
-    else
+#pragma region --font_atlas
+    std::map<std::string, WadFile::Font> fonts = {};
+    if(result.count("font_atlas"))
     {
-        std::cout << "No textures to add into WAD file" << std::endl;
+        std::vector<std::filesystem::path> fontPaths{};
+        if(GetFilePath_Existing(result, "font_atlas", fontPaths, ".png"))
+        {
+            for(const auto& tPath : fontPaths)
+            {
+                throw std::runtime_error("--font_atlas is not implemented");
+                try
+                {
+                    /*
+                    auto font = WadFile::Font::FromFile(tPath);
+                    fonts[tPath.filename().replace_extension().string()] = font;
+                    */
+                }
+                catch(std::runtime_error& ex)
+                {
+                    std::cerr << "Failed to font atlasfrom '" << tPath << "' - " << ex.what() << std::endl;
+                    continue;
+                }
+            }
+        }
+        else
+            return 1;
     }
+#pragma endregion
+
+    if(textures.empty() && images.empty() && fonts.empty())
+    {
+        std::cerr << "No textures, images or fonts to add into WAD file" << std::endl;
+        return 1;
+    }
+    try
+    {
+        WadFile::AddToFile(wadPath, textures, fonts, images);
+    }
+    catch(std::runtime_error& ex)
+    {
+        std::cerr << "Failed to add textures into WAD file" << std::endl;
+        return 1;
+    }
+
+    std::cout << "All successfully added into WAD file" << std::endl;
     return 0;
 }
 #pragma endregion

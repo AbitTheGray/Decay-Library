@@ -61,11 +61,13 @@ set_tests_properties(Test_CMD_bsp_entity_dump PROPERTIES LABELS "cmd;GoldSrc;bsp
 
 # wad_add
 configure_file(test.png ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
+configure_file(test_img.png ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
 add_test(
     NAME Test_CMD_wad_add
     COMMAND DecayLib_Command
         wad_add
         --file test.wad
+        --image test_img.png
         test.png
 )
 set_tests_properties(Test_CMD_wad_add PROPERTIES LABELS "cmd;GoldSrc;wad;wad3")
