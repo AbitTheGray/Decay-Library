@@ -4,6 +4,11 @@
   - `R_ASSERT` / `D_ASSERT`
     -[ ] Look for places where `R_ASSERT` can simplify the code (instead of `if` + `throw`)
   -[ ] Verify all formats in Valve Hammer Editor
+- BSP (v30)
+  -[ ] Change `BspFile` constructor to accept `std::istream` instead of `std::filesystem::path`
+    - Make sure every `in.seekg` will work correctly even if the provided input does not start at index `0`
+  -[ ] Add utility function to convert `BspEntities` into `std::string`
+    - Use in place of existing code (search for usages of `BspFile::SetEntities`)
 - FGD
   -[ ] Test for `Fgd::FgdFile::Subtract(...)`
   -[ ] `Fgd::FgdFile::Add(...)`, `Fgd::FgdFile::Subtract(...)` and `Fgd::FgdFile::Include(...)` should look at base classes

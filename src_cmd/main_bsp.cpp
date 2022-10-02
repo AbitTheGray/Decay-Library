@@ -327,7 +327,7 @@ int Exec_bsp2wad(int argc, const char** argv)
         using namespace Decay::Wad::Wad3;
         auto textures = bsp->GetTextures();
 
-        for(std::size_t i = 0; i < textures.size(); i++)
+        for(std::size_t i = 0; i < textures.size(); i++) // NOLINT(modernize-loop-convert)
             textures[i] = textures[i].CopyWithoutData();
 
         bsp->SetTextures(textures);
@@ -529,92 +529,95 @@ int Exec_bsp_entity(int argc, const char** argv)
     BspEntities entities{};
 
 #pragma region --file
-    if(!result.count("file"))
-    {
-        const char* errorMsg = "You need to specify input file, use `--file path/to/map.bsp`";
-#ifdef DEBUG
-        throw std::runtime_error(errorMsg);
-#else
-        std::cerr << errorMsg << std::endl;
-#endif
-        return 1;
-    }
+    std::shared_ptr<BspFile> bsp{}; ///< Can be NULL
     if(result.count("file"))
     {
-        std::filesystem::path bspPath = result["file"].as<std::string>();
-        if(!std::filesystem::exists(bspPath) || !std::filesystem::is_regular_file(bspPath))
+        std::filesystem::path bspPath{};
+        if(GetFilePath_Existing(result, "file", bspPath, ".bsp"))
         {
-            const char* errorMsg = "`--file` must point to a valid file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
+            try
+            {
+                bsp = std::make_shared<BspFile>(bspPath);
+                R_ASSERT(bsp != nullptr, "Failed to load BSP");
+                entities = BspEntities(*bsp);
+            }
+            catch(std::runtime_error& ex)
+            {
+                std::cerr << "Failed to read/parse BSP file - " << ex.what() << std::endl;
+                return 1;
+            }
+        }
+        else
             return 1;
-        }
-        if(bspPath.extension() != ".bsp")
-            std::cerr << "WARNING: BSP file path should have `.bsp` extension" << std::endl;
-        try
-        {
-            std::shared_ptr<BspFile> bsp = std::make_shared<BspFile>(bspPath);
-            R_ASSERT(bsp != nullptr, "Failed to load BSP");
-            entities = BspEntities(*bsp);
-        }
-        catch(std::runtime_error& ex)
-        {
-            const char* errorMsg = "Failed to read/parse BSP file - ";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg + std::string(ex.what()));
-#else
-            std::cerr << errorMsg << ex.what() << std::endl;
-#endif
-            return 1;
-        }
     }
 #pragma endregion
 
 #pragma region --replace (+json)
     if(result.count("replace"))
     {
-        std::fstream in(result["replace"].as<std::string>(), std::ios_base::in);
-        entities = BspEntities(in);
+        std::filesystem::path replacePath{};
+        if(GetFilePath_Existing(result, "replace", replacePath, ".kv"))
+        {
+            std::fstream in(replacePath, std::ios_base::in);
+            entities = BspEntities(in);
+        }
+        else
+            return 1;
     }
-#ifdef DECAY_JSON_LIB
+#   ifdef DECAY_JSON_LIB
     if(result.count("replace_json"))
     {
-        std::fstream in(result["replace"].as<std::string>(), std::ios_base::in);
-        nlohmann::json inJson = nlohmann::json::parse(in);;
-        entities = BspEntities(inJson);
+        std::filesystem::path replacePath{};
+        if(GetFilePath_Existing(result, "replace_json", replacePath, ".json"))
+        {
+            std::fstream in(replacePath, std::ios_base::in);
+            nlohmann::json inJson = nlohmann::json::parse(in);
+            entities = BspEntities(inJson);
+        }
+        else
+            return 1;
     }
-#endif
+#   endif
 #pragma endregion
 
 #pragma region --add (+json)
     if(result.count("add"))
     {
-        for(const std::string& addPath : result["add"].as<std::vector<std::string>>())
+        std::vector<std::filesystem::path> addPaths{};
+        if(GetFilePath_Existing(result, "add", addPaths, ".kv"))
         {
-            std::fstream in(result["add"].as<std::string>(), std::ios_base::in);
-            BspEntities newEntities(in);
+            for(const auto& addPath : addPaths)
+            {
+                std::fstream in(addPath, std::ios_base::in);
+                BspEntities newEntities(in);
 
-            for(int i = 0; i < newEntities.size(); i++)
-                entities.emplace(newEntities[i]);
+                for(int i = 0; i < newEntities.size(); i++)
+                    entities.emplace(newEntities[i]);
+            }
         }
+        else
+            return 1;
     }
-#ifdef DECAY_JSON_LIB
+#   ifdef DECAY_JSON_LIB
     if(result.count("add_json"))
     {
-        for(const std::string& addPath : result["add_json"].as<std::vector<std::string>>())
+        std::vector<std::filesystem::path> addPaths{};
+        if(GetFilePath_Existing(result, "add_json", addPaths, ".json"))
         {
-            std::fstream in(result["add_json"].as<std::string>(), std::ios_base::in);
-            nlohmann::json inJson = nlohmann::json::parse(in);;
-            BspEntities newEntities(inJson);
+            for(const auto& addPath : addPaths)
+            {
+                std::fstream in(addPath, std::ios_base::in);
+                nlohmann::json inJson = nlohmann::json::parse(in);
+                BspEntities newEntities(inJson);
 
-            for(int i = 0; i < newEntities.size(); i++)
-                entities.emplace(newEntities[i]);
+                for(int i = 0; i < newEntities.size(); i++)
+                    entities.emplace(newEntities[i]);
+            }
         }
+        else
+            return 1;
     }
-#endif
+#   endif
 #pragma endregion
 
 #pragma region --validate (FGD)
@@ -623,12 +626,7 @@ int Exec_bsp_entity(int argc, const char** argv)
         std::filesystem::path validatePath = result["validate"].as<std::string>();
         if(!std::filesystem::exists(validatePath) || !std::filesystem::is_regular_file(validatePath))
         {
-            const char* errorMsg = "`--validate` must point to a valid file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
+            std::cerr << "`--validate` must point to a valid file" << std::endl;
             return 1;
         }
         if(validatePath.extension() != ".fgd")
@@ -637,6 +635,11 @@ int Exec_bsp_entity(int argc, const char** argv)
         using namespace Decay::Fgd;
         std::fstream in(validatePath, std::ios_base::in);
         FgdFile fgd(in);
+        {
+            std::vector<std::filesystem::path> filesToIgnore{};
+            filesToIgnore.emplace_back(std::filesystem::canonical(validatePath));
+            fgd.ProcessIncludes(filesToIgnore[0].parent_path() /* Relative to the file */, filesToIgnore);
+        }
         fgd.Classes = fgd.ProcessClassDependency();
 
         for(int i = 0; i < entities.size(); i++)
@@ -713,50 +716,52 @@ int Exec_bsp_entity(int argc, const char** argv)
 #pragma region --extract (+json)
     if(result.count("extract"))
     {
-        std::filesystem::path extractPath = result["extract"].as<std::string>();
-        if(std::filesystem::exists(extractPath) && !std::filesystem::is_regular_file(extractPath))
+        std::filesystem::path extractPath{};
+        if(GetFilePath_NewOrOverride(result, "extract", extractPath, ".kv"))
         {
-            const char* errorMsg = "`--extract` must not exist or be a valid file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
-            return 1;
+            std::fstream out(extractPath, std::ios_base::out);
+            out << entities; //THINK check empty
         }
-        if(extractPath.extension() != ".kv")
-            std::cerr << "WARNING: Entity KV file should have `.kv` extension" << std::endl;
-
-        std::fstream out(extractPath, std::ios_base::out | std::ios_base::binary);
-        out << entities; //THINK check empty
+        else
+            return 1;
     }
-#ifdef DECAY_JSON_LIB
+#   ifdef DECAY_JSON_LIB
     if(result.count("extract_json"))
     {
-        std::filesystem::path extractJsonPath = result["extract_json"].as<std::string>();
-        if(std::filesystem::exists(extractJsonPath) && !std::filesystem::is_regular_file(extractJsonPath))
+        std::filesystem::path extractPath{};
+        if(GetFilePath_NewOrOverride(result, "extract_json", extractPath, ".json"))
         {
-            const char* errorMsg = "`--extract_json` must not exist or be a valid file";
-#ifdef DEBUG
-            throw std::runtime_error(errorMsg);
-#else
-            std::cerr << errorMsg << std::endl;
-#endif
-            return 1;
+            std::fstream out(extractPath, std::ios_base::out);
+            out << entities.AsJson().dump(4); //THINK check empty
         }
-        if(extractJsonPath.extension() != ".json")
-            std::cerr << "WARNING: Entity JSON (--extract_json) file should have `.json` extension" << std::endl;
-
-        std::fstream out(extractJsonPath, std::ios_base::out);
-        out << entities.AsJson().dump(4); //THINK check empty
+        else
+            return 1;
     }
-#endif
+#   endif
 #pragma endregion
 
 #pragma region --outbsp
     if(result.count("outbsp"))
     {
-        //TODO
+        if(bsp == nullptr)
+        {
+            std::cerr << "--outbsp specified but valid BSP is not loaded - did you use --file ?" << std::endl;
+            return 1;
+        }
+
+        std::filesystem::path outBspPath{};
+        if(GetFilePath_NewOrOverride(result, "outbsp", outBspPath, ".bsp"))
+        {
+            std::fstream out(outBspPath, std::ios_base::out | std::ios_base::binary);
+            {
+                std::stringstream ss;
+                ss << entities;
+                bsp->SetEntities(ss.str());
+            }
+            out << bsp;
+        }
+        else
+            return 1;
     }
 #pragma endregion
 
