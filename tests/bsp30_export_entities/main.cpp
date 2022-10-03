@@ -10,8 +10,12 @@ int main()
     auto bsp = std::make_shared<BspFile>("../../../half-life/cstrike/maps/de_dust2.bsp");
     auto entities = BspEntities(*bsp);
 
-#ifdef DECAY_JSON_LIB
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     entities.ExportJson("entities_raw.json");
+#pragma clang diagnostic pop
+
+#ifdef DECAY_JSON_LIB
 
     {
         nlohmann::json jEntities = entities.AsJson();

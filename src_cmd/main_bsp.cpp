@@ -362,12 +362,8 @@ int Exec_bsp2wad(int argc, const char** argv)
                         }
                     }
 
-                    // Convert to string
-                    std::stringstream ss;
-                    ss << entities;
-
-                    // Save entities string into BSP
-                    bsp->SetEntities(ss.str());
+                    // Save entities into BSP
+                    bsp->SetEntities(to_string(entities));
                 }
 #ifdef DEBUG
                 {
@@ -754,9 +750,7 @@ int Exec_bsp_entity(int argc, const char** argv)
         {
             std::fstream out(outBspPath, std::ios_base::out | std::ios_base::binary);
             {
-                std::stringstream ss;
-                ss << entities;
-                bsp->SetEntities(ss.str());
+                bsp->SetEntities(to_string(entities));
             }
             out << bsp;
         }

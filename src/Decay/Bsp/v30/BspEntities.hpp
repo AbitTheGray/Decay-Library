@@ -71,4 +71,11 @@ namespace Decay::Bsp::v30
     };
 
     std::ostream& operator<<(std::ostream& out, const BspEntities&);
+
+    [[nodiscard]] inline std::string to_string(const BspEntities& entities)
+    {
+        std::stringstream ss;
+        ss << entities;
+        return ss.str();
+    }
 }
