@@ -31,10 +31,26 @@ namespace Decay::Wad::Wad3
         };
         struct Item
         {
-            std::string Name;
-            ItemType Type;
-            std::size_t Size;
-            void* Data;
+            std::string Name{};
+            ItemType Type{};
+            std::size_t Size = 0;
+            ///
+            void* Data = nullptr;
+
+        public:
+            Item() = default;
+            Item(std::string name, ItemType type)
+              : Name(std::move(name)),
+                Type(type)
+            {
+            }
+
+        public:
+            ~Item()
+            {
+                if(Data != nullptr)
+                    std::free(Data);
+            }
         };
 
     private:
