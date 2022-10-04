@@ -586,11 +586,7 @@ namespace Decay::Wad::Wad3
             in.read(name, Texture::MaxNameLength);
             texture.Name = Cstr2Str(name, Texture::MaxNameLength);
             R_ASSERT(!texture.Name.empty(), "Texture name cannot be empty");
-
-            if(!StringCaseInsensitiveEqual(item.Name, texture.Name))
-            {
-                std::cerr << "WARNING: Item and texture names do not match: " << item.Name << " != " << texture.Name << std::endl;
-            }
+            R_ASSERT(StringCaseInsensitiveEqual(item.Name, texture.Name), "Item and texture names do not match: " << item.Name << " != " << texture.Name);
         }
 
         // Dimensions

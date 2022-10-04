@@ -13,6 +13,7 @@ namespace Decay::Wad::Wad3
     class WadFile
     {
     public:
+        WadFile() = default;
         explicit WadFile(const std::filesystem::path& filename);
 
         ~WadFile();
@@ -61,7 +62,7 @@ namespace Decay::Wad::Wad3
         static std::vector<WadEntry> ReadWadEntries(std::istream& stream);
 
     private:
-        std::vector<Item> m_Items = {};
+        std::vector<Item> m_Items{};
     public:
         [[nodiscard]] inline const std::vector<Item>& GetItems() const noexcept { return m_Items; }
 
@@ -190,10 +191,22 @@ namespace Decay::Wad::Wad3
         class Image
         {
         public:
-            uint32_t Width, Height;
+            union
+            {
+                struct
+                {
+                    uint32_t Width, Height;
+                };
+                glm::u32vec2 Size{};
+            };
             /// Length = Width * Height
-            std::vector<uint8_t> Data;
-            std::vector<glm::u8vec3> Palette;
+            std::vector<uint8_t> Data{};
+            std::vector<glm::u8vec3> Palette{};
+
+        public:
+            Image() = default;
+            Image(uint32_t width, uint32_t height) : Width(width), Height(height) {}
+            explicit Image(std::istream&);
 
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb() const
@@ -219,11 +232,21 @@ namespace Decay::Wad::Wad3
                 }
                 return pixels;
             }
-            void WriteRgbPng(const std::filesystem::path& filename) const;
-            void WriteRgbaPng(const std::filesystem::path& filename) const;
+            void WriteRgbPng(const std::filesystem::path& filename) const
+            {
+                std::vector<glm::u8vec3> pixels = AsRgb();
+                auto func = ImageWriteFunction_RGB(filename.extension());
+                func(filename.string().c_str(), Width, Height, pixels.data());
+            }
+            void WriteRgbaPng(const std::filesystem::path& filename) const
+            {
+                std::vector<glm::u8vec4> pixels = AsRgba();
+                auto func = ImageWriteFunction_RGBA(filename.extension());
+                func(filename.string().c_str(), Width, Height, pixels.data());
+            }
 
-            static Image FromFile(const std::filesystem::path& filename);
 
+        public:
             /// Converts Image to raw WAD-ready Item
             /// Caller has to deallocate Item.Data
             [[nodiscard]] virtual Item AsItem(std::string name) const;
@@ -242,10 +265,15 @@ namespace Decay::Wad::Wad3
         class Font : public Image
         {
         public:
-            uint32_t RowCount;
-            uint32_t RowHeight;
+            uint32_t RowCount{};
+            uint32_t RowHeight{};
             static const std::size_t CharacterCount = 256;
-            FontChar Characters[CharacterCount];
+            FontChar Characters[CharacterCount]{};
+
+        public:
+            Font() = default;
+            Font(uint32_t width, uint32_t height) : Image(width, height) {}
+            explicit Font(std::istream&);
 
         public:
             [[nodiscard]] Item AsItem(std::string name) const override;
@@ -267,15 +295,21 @@ namespace Decay::Wad::Wad3
                 {
                     uint32_t Width, Height;
                 };
-                glm::u32vec2 Size;
+                glm::u32vec2 Size{};
             };
             static_assert(sizeof(Size) == sizeof(Width) + sizeof(Height));
 
             static const std::size_t MipMapLevels = 4;
-            glm::u32vec2 MipMapDimensions[MipMapLevels];
-            std::vector<uint8_t> MipMapData[MipMapLevels];
+            glm::u32vec2 MipMapDimensions[MipMapLevels]{};
+            std::vector<uint8_t> MipMapData[MipMapLevels]{};
 
-            std::vector<glm::u8vec3> Palette;
+            std::vector<glm::u8vec3> Palette{};
+
+        public:
+            Texture() = default;
+            Texture(std::string name, uint32_t width, uint32_t height);
+            Texture(std::string name, glm::u32vec2 size);
+            Texture(std::istream&);
 
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
@@ -309,20 +343,10 @@ namespace Decay::Wad::Wad3
             void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
 
         public:
-            [[nodiscard]] static Texture FromFile(const std::filesystem::path& filename);
-
+            //[[nodiscard]] static Texture FromFile(const std::filesystem::path& filename);
             [[nodiscard]] Item AsItem() const;
-
-            [[nodiscard]] bool HasData() const noexcept { return MipMapData[0].size() != 0; }
-
-            [[nodiscard]] Texture CopyWithoutData() const
-            {
-                Texture texture = {};
-                texture.Name = Name;
-                texture.Size = Size;
-
-                return texture;
-            }
+            [[nodiscard]] inline bool HasData() const noexcept { return !MipMapData[0].empty(); }
+            [[nodiscard]] inline Texture CopyWithoutData() const { return Texture(Name, Size); }
 
         };
 
@@ -339,6 +363,7 @@ namespace Decay::Wad::Wad3
         )
         {
             std::vector<Item> items = {};
+            items.reserve(textures.size() + fonts.size() + images.size());
 
             for(auto& texture : textures)
                 if(texture.HasData())
@@ -350,12 +375,10 @@ namespace Decay::Wad::Wad3
             for(auto& it : images)
                 items.emplace_back(it.second.AsItem(it.first));
 
-            items.shrink_to_fit();
-
             std::size_t count = AddToFile(filename, items);
 
-            for(auto& item : items)
-                free(item.Data);
+            //for(auto& item : items)
+            //    free(item.Data);
 
             return count;
         }

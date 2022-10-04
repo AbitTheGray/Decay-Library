@@ -72,6 +72,18 @@ add_test(
 )
 set_tests_properties(Test_CMD_wad_add PROPERTIES LABELS "cmd;GoldSrc;wad;wad3")
 
+# wad
+configure_file(test_wad.wad ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
+add_test(
+    NAME Test_CMD_wad
+    COMMAND DecayLib_Command
+        wad
+        --file test_wad.wad
+        --info
+        --dump test_wad
+)
+set_tests_properties(Test_CMD_wad PROPERTIES LABELS "cmd;GoldSrc;wad;wad3")
+
 # rmf2map (GoldSrc)
 configure_file(test_rmf2map.rmf ${CMAKE_BINARY_DIR}/tests/cmd COPYONLY)
 add_test(

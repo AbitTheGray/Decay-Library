@@ -51,6 +51,15 @@ add_test(
 )
 set_tests_properties(Test_CMD_help_wad_add PROPERTIES LABELS "cmd;cmd_help;GoldSrc;wad;wad3")
 
+# wad
+add_test(
+    NAME Test_CMD_help_wad
+    COMMAND DecayLib_Command
+        help
+        wad
+)
+set_tests_properties(Test_CMD_help_wad PROPERTIES LABELS "cmd;cmd_help;GoldSrc;wad;wad3")
+
 # map2rmf
 add_test(
     NAME Test_CMD_help_map2rmf

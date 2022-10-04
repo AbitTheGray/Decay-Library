@@ -34,6 +34,14 @@ std::unordered_map<std::string, Command> Commands = {
         }
     },
     {
+        "wad",
+        Command{
+            Exec_wad,
+            Help_wad,
+            "Info and dumping WAD"
+        }
+    },
+    {
         "bsp_lightmap",
         Command{
             Exec_bsp_lightmap,

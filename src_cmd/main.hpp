@@ -20,6 +20,9 @@ int Help_bsp2wad(int argc, const char** argv);
 int Exec_wad_add(int argc, const char** argv);
 int Help_wad_add(int argc, const char** argv);
 
+int Exec_wad(int argc, const char** argv);
+int Help_wad(int argc, const char** argv);
+
 int Exec_bsp_lightmap(int argc, const char** argv);
 int Help_bsp_lightmap(int argc, const char** argv);
 

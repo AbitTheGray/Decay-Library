@@ -22,6 +22,8 @@ add_subdirectory(bsp30_export_entities)
 add_subdirectory(wad3_parse)
 add_subdirectory(wad3_parse_all)
 
+add_subdirectory(wad3_out_and_in)
+
 add_subdirectory(wad3_test_image)
 add_subdirectory(wad3_test_font)
 add_subdirectory(wad3_test_texture)
