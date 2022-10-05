@@ -22,7 +22,7 @@
 
 namespace Decay::Wad::Wad3
 {
-    std::vector<WadFile::WadEntry> WadFile::ReadWadEntries(std::istream& stream)
+    std::vector<WadFile::EntryHeader> WadFile::ReadWadEntries(std::istream& stream)
     {
         // Magic1 Number
         {
@@ -52,206 +52,60 @@ namespace Decay::Wad::Wad3
         if(entriesCount == 0) // No entries in the file
             return {};
 
-        /// Offset in file to WadEntry structure
+        /// Offset in file to EntryHeader structure
         uint32_t entriesOffset;
         stream.read(reinterpret_cast<char*>(&entriesOffset), sizeof(entriesOffset));
         R_ASSERT(entriesOffset >= ((sizeof(uint32_t) * 2) + (sizeof(char) * 4)), "Offset of entry inside WAD file starts too soon");
 
         stream.seekg(entriesOffset);
 
-        std::vector<WadEntry> entries(entriesCount);
-        stream.read(reinterpret_cast<char*>(entries.data()), sizeof(WadEntry) * entriesCount);
+        std::vector<EntryHeader> entries(entriesCount);
+        stream.read(reinterpret_cast<char*>(entries.data()), sizeof(EntryHeader) * entriesCount);
 
         return entries;
     }
 
-    WadFile::WadFile(const std::filesystem::path& filename)
+    WadFile::WadFile(std::istream& in)
     {
-        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
-            throw std::runtime_error("File not found");
+        auto startOffset = in.tellg();
 
-        std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
-
-        std::vector<WadEntry> entries = ReadWadEntries(in);
+        std::vector<EntryHeader> entries = ReadWadEntries(in);
         if(entries.empty())
             return;
 
         m_Items.resize(entries.size());
 
-        for(const WadEntry& entry : entries)
+        for(const EntryHeader& entry : entries)
         {
-            in.seekg(entry.Offset);
+            in.seekg((int64_t)startOffset + entry.Offset, std::ios_base::beg);
 
             std::size_t dataLength = entry.DiskSize;
-            void* data = std::malloc(dataLength);
-            in.read(static_cast<char*>(data), dataLength);
+            std::vector<uint8_t> data(dataLength);
+            in.read(reinterpret_cast<char*>(data.data()), data.size());
 
             if(entry.Compression)
             {
-                throw std::runtime_error("Not Supported");
+                throw std::runtime_error("WAD entry compression is not supported");
 
                 std::size_t dataRawLength = entry.Size;
-                void* dataRaw = std::malloc(dataRawLength);
 
                 //TODO Uncompress `dataRaw` into `data`
                 // Not implemented inside GoldSrc
                 // but it seems they decided on LZSS (Lempel–Ziv–Storer–Szymanski, https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Storer%E2%80%93Szymanski)
-
-                std::free(data);
-
-                dataLength = dataRawLength;
-                data = dataRaw;
             }
 
-            m_Items.emplace_back(Item{ entry.Name_str(), static_cast<ItemType>(entry.Type), dataLength, data});
+            m_Items.emplace_back(entry.Name_str(), entry.Type, std::move(data));
         }
     }
-
-    std::size_t WadFile::AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items)
+    WadFile::Image WadFile::Image(WadFile::Item& item)
     {
-        if(items.empty())
-            return 0;
-
-        char magic[4];
-        std::vector<WadEntry> entries = {};
-        std::vector<void*> entryData = {};
-        if(std::filesystem::exists(filename))
-        {
-            if(!std::filesystem::is_regular_file(filename))
-                throw std::runtime_error("File exists but is not valid");
-
-            try
-            {
-                std::ifstream in(filename, std::ios_base::binary | std::ios_base::in);
-
-                // Store magic number
-                in.read(magic, sizeof(magic));
-                in.seekg(0);
-
-                entries = ReadWadEntries(in);
-                if(!entries.empty())
-                {
-                    entryData.reserve(entries.size());
-
-                    for(const WadEntry& entry : entries)
-                    {
-                        in.seekg(entry.Offset);
-
-                        std::size_t dataLength = entry.DiskSize;
-                        void* data = std::malloc(dataLength);
-                        in.read(static_cast<char*>(data), dataLength);
-
-                        entryData.emplace_back(data);
-                    }
-                }
-
-                in.close();
-            }
-            catch(const std::exception& ex)
-            {
-                std::cerr << ex.what() << std::endl;
-
-                magic[0] = 'W';
-                magic[1] = 'A';
-                magic[2] = 'D';
-                magic[3] = '3';
-            }
-        }
-        else
-        {
-            magic[0] = 'W';
-            magic[1] = 'A';
-            magic[2] = 'D';
-            magic[3] = '3';
-        }
-        int originalEntryCount = entries.size();
-
-        // Add items to entries
-        {
-            for(const Item& item : items)
-            {
-                WadEntry entry = {};
-                entry.Compression = false;
-                entry.Type = static_cast<int8_t>(item.Type);
-
-                entry.DiskSize = item.Size;
-                entry.Size = item.Size;
-
-                // Copy name
-                R_ASSERT(item.Name.length() <= 15, "WAD Entry name is too long");
-                std::copy(item.Name.c_str(), item.Name.c_str() + item.Name.size(), entry.Name);
-                std::fill(entry.Name + item.Name.size(), entry.Name + 16, '\0');
-
-                entries.emplace_back(entry);
-                entryData.emplace_back(item.Data);
-            }
-        }
-
-        std::ofstream out(filename, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
-
-        // Write original magic number
-        out.write(magic, sizeof(magic));
-
-        // Write item count
-        {
-            uint32_t itemCount = entries.size();
-            out.write(reinterpret_cast<const char*>(&itemCount), sizeof(itemCount));
-        }
-
-        // Write entry offset
-        uint32_t entriesOffset = sizeof(magic) + sizeof(uint32_t) + sizeof(uint32_t); // magic + itemCount + entriesOffset
-        out.write(reinterpret_cast<const char*>(&entriesOffset), sizeof(entriesOffset));
-
-        // Write entries
-        out.write(reinterpret_cast<const char*>(entries.data()), sizeof(WadEntry) * entries.size());
-
-        // Write entry data
-        std::vector<typeof(WadEntry::Offset)> offsets(entries.size());
-        for(int i = 0; i < entries.size(); i++)
-        {
-            offsets[i] = out.tellp();
-
-            if(entries[i].DiskSize != 0)
-            {
-                R_ASSERT(entryData[i] != nullptr, "WAD Entry has size (of data) but no data (NULL pointer)");
-                out.write(static_cast<const char*>(entryData[i]), entries[i].DiskSize);
-            }
-        }
-
-        // Override Offset in Entries
-        for(int i = 0; i < entries.size(); i++)
-        {
-            out.seekp(entriesOffset + sizeof(WadEntry) * i + offsetof(WadEntry, Offset));
-
-            out.write(reinterpret_cast<const char*>(&offsets[i]), sizeof(WadEntry::Offset));
-        }
-
-        // Free allocated memory from existing data
-        for(int i = 0; i < originalEntryCount; i++)
-            free(entryData[i]);
-
-        return entries.size() - originalEntryCount;
-    }
-
-    WadFile::~WadFile()
-    {
-        for(Item& item : m_Items)
-        {
-            std::free(item.Data);
-            item.Data = nullptr;
-        }
-    }
-
-    WadFile::Image WadFile::ReadImage(const WadFile::Item& item)
-    {
-        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
+        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data.data()), item.Data.size());
         std::istream in(&itemDataBuffer);
 
-        Image image = {};
-        in.read(reinterpret_cast<char*>(&image.Width), sizeof(image.Width));
-        in.read(reinterpret_cast<char*>(&image.Height), sizeof(image.Height));
-        R_ASSERT(image.Width > 0, "Invalid image width: " << (int)image.Width);
-        R_ASSERT(image.Height > 0, "Invalid image height: " << (int)image.Height);
+        in.read(reinterpret_cast<char*>(&Width), sizeof(Width));
+        in.read(reinterpret_cast<char*>(&Height), sizeof(Height));
+        R_ASSERT(image.Width > 0, "Invalid image width: " << (int)Width);
+        R_ASSERT(image.Height > 0, "Invalid image height: " << (int)Height);
 
         // Calculate data length
         std::size_t dataLength = static_cast<std::size_t>(image.Width) * image.Height;

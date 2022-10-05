@@ -14,28 +14,32 @@ namespace Decay::Wad::Wad3
     {
     public:
         WadFile() = default;
-        explicit WadFile(const std::filesystem::path& filename);
+        explicit WadFile(std::istream&);
 
-        ~WadFile();
+        ~WadFile() = default;
 
     public:
         // https://developer.valvesoftware.com/wiki/WAD
         enum class ItemType : uint8_t
         {
+            /* WAD2 = IdTech 2 // https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_7.htm
+            ColorPalette = 0x40, // 64 / @
+            MipMapTexture = 0x44, // 44 / D
+            // "flat"
+            ConsolePicture = 0x45, // 69 / E
+            */
             /// Simple image with any size.
-            Image = 0x42, // 66
+            Image = 0x42, // 66 / B
             /// Image with mipmap levels.
-            Texture = 0x43, // 67
+            Texture = 0x43, // 67 / C
             /// 256 ASCII characters.
-            Font = 0x46, // 70
+            Font = 0x46, // 70 / F
         };
         struct Item
         {
             std::string Name{};
             ItemType Type{};
-            std::size_t Size = 0;
-            ///
-            void* Data = nullptr;
+            std::vector<uint8_t> Data{};
 
         public:
             Item() = default;
@@ -44,38 +48,37 @@ namespace Decay::Wad::Wad3
                 Type(type)
             {
             }
-
-        public:
-            ~Item()
+            Item(std::string name, ItemType type, std::vector<uint8_t> data)
+              : Name(std::move(name)),
+                Type(type),
+                Data(std::move(data))
             {
-                if(Data != nullptr)
-                    std::free(Data);
             }
         };
 
     private:
-        static const std::size_t EntryNameLength = 16;
-        struct WadEntry
+        struct EntryHeader
         {
             int32_t Offset;
             int32_t DiskSize;
             /// Uncompressed size
             int32_t Size;
-            int8_t Type;
+            ItemType Type;
             /// Not implemented in official code
             bool Compression;
             /// Not used
             /// Referred to in official code as `pad1` and `pad2`
             int16_t Dummy;
 
+            static const std::size_t Name_Length = 16;
             /// Must be null-terminated.
-            char Name[EntryNameLength];
+            char Name[Name_Length];
 
-            [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, EntryNameLength); }
-            inline void Name_str(const std::string& val) { Str2Cstr(val, Name, EntryNameLength); }
+            [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, Name_Length); }
+            inline void Name_str(const std::string& val) { Str2Cstr(val, Name, Name_Length); }
         };
 
-        static std::vector<WadEntry> ReadWadEntries(std::istream& stream);
+        static std::vector<EntryHeader> ReadWadEntries(std::istream& stream);
 
     private:
         std::vector<Item> m_Items{};
