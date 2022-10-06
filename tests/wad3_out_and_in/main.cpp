@@ -4,22 +4,26 @@ using namespace Decay::Wad::Wad3;
 
 void Test_Image(const WadFile::Image& original)
 {
-    std::stringstream ss;
-    ss << original;
-    R_ASSERT(ss.good(), "Stream is not in a good state");
+    auto item = original.AsItem("test");
+    R_ASSERT(!item.Data.empty(), "Image has no data");
 
-#ifdef DEBUG
-    std::cout << ss.str() << std::endl;
-#endif
-    ss.seekg(0, std::ios_base::beg);
-    ss.seekp(0, std::ios_base::beg);
+    Decay::MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data.data()), item.Data.size());
+    std::istream in(&itemDataBuffer);
 
-    MapFile::Face result = {};
-    ss >> result;
-    R_ASSERT(ss.good() || ss.eof(), "Stream is not in a good state after reading");
+    WadFile::Image result(in);
+    R_ASSERT(in.good() || in.eof(), "Stream is not in a good state after reading");
 
-    R_ASSERT(result.Texture == original.Texture, "Face texture does not match");
-    R_ASSERT(result == original, "Result does not match the original");
+    R_ASSERT(result.Size == original.Size, "Image does not match");
+
+    R_ASSERT(result.Data.size() == original.Data.size(), "Image data size does not match");
+    for(int i = 0; i < result.Data.size(); i++)
+        R_ASSERT(result.Data[i] == original.Data[i], "Pixel at index " << i << " does not match");
+
+    R_ASSERT(result.Palette.size() == original.Palette.size(), "Image data size does not match");
+    for(int i = 0; i < result.Palette.size(); i++)
+        R_ASSERT(result.Palette[i] == original.Palette[i], "Pixel at index " << i << " does not match");
+
+    //R_ASSERT(result == original, "Result does not match the original");
 }
 
 int main()
@@ -28,9 +32,10 @@ int main()
     {
         std::cout << "Image" << std::endl;
 
-        WadFile::Image image0 = {
-            //TODO
-        };
+        WadFile::Image image0(32, 64);
+        for(int i = 0; i < image0.Data.size(); i++)
+            image0.Data[i] = i % 256;
+        image0.Palette = WadFile::Image::RainbowPalette;
 
         Test_Image(image0);
 

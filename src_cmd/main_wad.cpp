@@ -3,6 +3,9 @@
 #include "Decay/Common.hpp"
 #include "cxxopts.hpp"
 
+#include "stb_image_write.h"
+#include "stb_image.h"
+
 #include "Decay/Wad/Wad3/WadFile.hpp"
 
 #include "util.hpp"
@@ -66,7 +69,23 @@ int Exec_wad_add(int argc, const char** argv)
             {
                 try
                 {
-                    auto texture = WadFile::Texture::FromFile(tPath);
+                    int width, height, originalChannels;
+                    glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(tPath.string().c_str(), &width, &height, &originalChannels, 4));
+
+                    if(data == nullptr)
+                        throw std::runtime_error("Failed to load image file");
+                    if(width == 0 || height == 0)
+                        throw std::runtime_error("Loaded empty image");
+
+
+                    std::vector<glm::u8vec4> rgba(width * height);
+                    std::copy(data, data + rgba.size(), rgba.data());
+
+
+                    stbi_image_free(data);
+
+
+                    auto texture = WadFile::Texture(tPath.filename().string(), width, height, rgba);
                     textures.emplace_back(texture);
                 }
                 catch(std::runtime_error& ex)
@@ -92,7 +111,23 @@ int Exec_wad_add(int argc, const char** argv)
             {
                 try
                 {
-                    auto image = WadFile::Image::FromFile(tPath);
+                    int width, height, originalChannels;
+                    glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(tPath.string().c_str(), &width, &height, &originalChannels, 4));
+
+                    if(data == nullptr)
+                        throw std::runtime_error("Failed to load image file");
+                    if(width == 0 || height == 0)
+                        throw std::runtime_error("Loaded empty image");
+
+
+                    std::vector<glm::u8vec4> rgba(width * height);
+                    std::copy(data, data + rgba.size(), rgba.data());
+
+
+                    stbi_image_free(data);
+
+
+                    auto image = WadFile::Image(width, height, rgba);
                     images[tPath.filename().replace_extension().string()] = image;
                 }
                 catch(std::runtime_error& ex)
@@ -122,7 +157,24 @@ int Exec_wad_add(int argc, const char** argv)
 
                     WadFile::Font font{};
                     {
-                        WadFile::Image fontImage = WadFile::Image::FromFile(tPath);
+                        int width, height, originalChannels;
+                        glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(tPath.string().c_str(), &width, &height, &originalChannels, 4));
+
+                        if(data == nullptr)
+                            throw std::runtime_error("Failed to load image file");
+                        if(width == 0 || height == 0)
+                            throw std::runtime_error("Loaded empty image");
+
+
+                        std::vector<glm::u8vec4> rgba(width * height);
+                        std::copy(data, data + rgba.size(), rgba.data());
+
+
+                        stbi_image_free(data);
+
+
+                        WadFile::Image fontImage = WadFile::Image(width, height, rgba);
+
                         font.Width = fontImage.Width;
                         font.Height = fontImage.Height;
                         R_ASSERT(font.Width == 256, "Font image must have width 256");
@@ -213,7 +265,9 @@ int Exec_wad(int argc, const char** argv)
         std::filesystem::path wadPath;
         if(GetFilePath_NewOrOverride(result, "file", wadPath, ".wad"))
         {
-            wad = WadFile(wadPath);
+            std::fstream in(wadPath, std::ios_base::in | std::ios_base::binary);
+            R_ASSERT(in.good(), "Failed to open the file");
+            wad = WadFile(in);
         }
         else
             return 1;

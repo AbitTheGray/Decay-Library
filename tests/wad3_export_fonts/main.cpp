@@ -4,8 +4,10 @@ int main()
 {
     using namespace Decay::Wad::Wad3;
 
-    auto wad = WadFile("../../../half-life/valve/fonts.wad");
-    //auto wad = WadFile("../../../half-life/valve/gfx.wad");
+    std::fstream in("../../../half-life/valve/fonts.wad", std::ios_base::in | std::ios_base::binary);
+    //std::fstream in("../../../half-life/valve/gfx.wad", std::ios_base::in | std::ios_base::binary);
+    R_ASSERT(in.good(), "Failed to open the file");
+    auto wad = WadFile(in);
 
     {
         for(const auto& item : wad.GetItems())
@@ -13,7 +15,8 @@ int main()
             if(item.Type != WadFile::ItemType::Font)
                 continue;
 
-            std::fstream(item.Name + ".bin", std::ios_base::out | std::ios_base::binary).write(static_cast<const char*>(item.Data), item.Size);
+            std::fstream itemOut(item.Name + ".bin", std::ios_base::out | std::ios_base::binary);
+            itemOut.write(reinterpret_cast<const char*>(item.Data.data()), item.Data.size());
         }
     }
 

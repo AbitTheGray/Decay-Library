@@ -449,7 +449,7 @@ int Exec_bsp_lightmap(int argc, const char** argv)
 
 #pragma region --lightmap
     std::filesystem::path lightmapPath{};
-    if(GetFilePath_Existing(result, "lightmap", lightmapPath, ".png"))
+    if(GetFilePath_NewOrOverride(result, "lightmap", lightmapPath, ".png"))
     {
         std::shared_ptr<BspTree> bspTree;
         try

@@ -16,7 +16,9 @@ int main()
         {
             std::cout << dir.path() << std::endl;
 
-            auto wadIt = WadFile(dir.path());
+            std::fstream in(dir.path(), std::ios_base::in | std::ios_base::binary);
+            R_ASSERT(in.good(), "Failed to open the file");
+            auto wadIt = WadFile(in);
 
             std::size_t countTexture = 0;
             std::size_t countImage = 0;

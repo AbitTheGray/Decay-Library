@@ -4,8 +4,10 @@ int main()
 {
     using namespace Decay::Wad::Wad3;
 
-    auto wad = WadFile("../../../half-life/valve/gfx.wad");
-    //auto wad = WadFile("../../../half-life/valve/cached.wad");
+    std::fstream in("../../../half-life/valve/gfx.wad", std::ios_base::in | std::ios_base::binary);
+    //std::fstream in("../../../half-life/valve/cached.wad", std::ios_base::in | std::ios_base::binary);
+    R_ASSERT(in.good(), "Failed to open the file");
+    auto wad = WadFile(in);
 
     /*
     {

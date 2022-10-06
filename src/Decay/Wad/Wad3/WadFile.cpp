@@ -1,24 +1,9 @@
 #define GLM_FORCE_SWIZZLE
 #include "WadFile.hpp"
 
-// Use to test images if you are getting weird results.
-// Will replace palette for all images with HSL/HSV noise.
-//#define WAD_PALETTE_DUMMY 1
-
-// Use to replace all images by their palette.
-//#define WAD_PALETTE_RESULT 1
-
-#include <fstream>
 #include <iostream>
 
-#include "stb_image_write.h"
-#include "stb_image.h"
-
-#include "Decay/Bsp/v30/BspTree.hpp"
-
-#ifdef WAD_PALETTE_DUMMY
-#   include <glm/gtx/color_space.hpp>
-#endif
+#include <glm/gtx/color_space.hpp>
 
 namespace Decay::Wad::Wad3
 {
@@ -97,23 +82,23 @@ namespace Decay::Wad::Wad3
             m_Items.emplace_back(entry.Name_str(), entry.Type, std::move(data));
         }
     }
-    WadFile::Image WadFile::Image(WadFile::Item& item)
-    {
-        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data.data()), item.Data.size());
-        std::istream in(&itemDataBuffer);
 
+#pragma region Image
+    WadFile::Image::Image(std::istream& in)
+    {
         in.read(reinterpret_cast<char*>(&Width), sizeof(Width));
         in.read(reinterpret_cast<char*>(&Height), sizeof(Height));
-        R_ASSERT(image.Width > 0, "Invalid image width: " << (int)Width);
-        R_ASSERT(image.Height > 0, "Invalid image height: " << (int)Height);
+        R_ASSERT(Width > 0, "Invalid image width: " << (int)Width)
+        R_ASSERT(Height > 0, "Invalid image height: " << (int)Height);
 
         // Calculate data length
-        std::size_t dataLength = static_cast<std::size_t>(image.Width) * image.Height;
+        std::size_t dataLength = static_cast<std::size_t>(Width) * Height;
         R_ASSERT(dataLength > 0, "Invalid image data pixel count: " << (int)dataLength);
+        R_ASSERT(dataLength == Width * Height, "Invalid image data pixel count: " << (int)dataLength << " (expected " << (Width * Height) << ")");
 
         // Read data
-        image.Data.resize(dataLength);
-        in.read(reinterpret_cast<char*>(image.Data.data()), dataLength);
+        Data.resize(dataLength);
+        in.read(reinterpret_cast<char*>(Data.data()), dataLength);
 
         // Read palette length
         uint16_t paletteSize;
@@ -124,69 +109,61 @@ namespace Decay::Wad::Wad3
             throw std::runtime_error("Palette size too big");
 
         // Read palette
-        image.Palette.resize(paletteSize);
-        in.read(reinterpret_cast<char*>(image.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
+        Palette.resize(paletteSize);
+        in.read(reinterpret_cast<char*>(Palette.data()), sizeof(glm::u8vec3) * paletteSize);
+    }
+    inline decltype(WadFile::Image::Palette) CreateRainbowPalette()
+    {
+        decltype(WadFile::Image::Palette) palette{};
+        palette.resize(256);
 
-#ifdef WAD_PALETTE_DUMMY
-        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteSize; i += 360 / paletteSize, pi++)
+        for(int i = 0; i < palette.size(); i++)
         {
-            double hue = i;
-            double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
-            double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
-            glm::dvec3 hsv = {hue, saturation, lightness};
-            glm::dvec3 rgb = glm::rgbColor(hsv);
+            if(i < 32) // Grayscale
+            {
+                // 0 <= i < 32
+                palette[i] = { i * 8, i * 8, i * 8 };
+            }
+            else if(i < 64) // Low-lightness
+            {
+                // 32 <= i < 64
+                double hue = (i - 32) % 32;
+                // ((i - 64) / 64) = 0 to 3
+                double saturation = 64 + ((i - 32) / 32.0f) * 48;
+                double lightness = 32;
+                glm::dvec3 hsv = { hue, saturation, lightness };
+                glm::dvec3 rgb = glm::rgbColor(hsv);
 
-            image.Palette[pi] = {rgb.r, rgb.g, rgb.b};
+                palette[i] = { rgb.r, rgb.g, rgb.b };
+            }
+            else // i >= 64
+            {
+                // 64 <= i < 256
+                double hue = ((i - 64) % 64) * (360 / 3); // 0, 1, 2
+                // (i - 64) = 0 to 191
+                // (i - 64) / 3 = 0 to 63
+                double saturation = 128 + ((i - 64) / 3) * 2;
+                // (i - 64) = 0 to 191
+                // (i - 64) / 64 = 0 to 3
+                double lightness = 64 + ((i - 64) / 64);
+                glm::dvec3 hsv = { hue, saturation, lightness };
+                glm::dvec3 rgb = glm::rgbColor(hsv);
+
+                palette[i] = { rgb.r, rgb.g, rgb.b };
+            }
+
         }
-#endif
 
-#ifdef WAD_PALETTE_RESULT
-        image.Width = 16;
-        image.Height = paletteLength / 16 + (paletteLength % 16 ? 1 : 0);
-
-        image.Data.resize(image.Width * image.Height);
-        for(std::size_t i = 0; i < paletteLength; i++)
-            image.Data[i] = i;
-
-        for(std::size_t i = paletteLength; i < image.Width * image.Height; i++)
-            image.Data[i] = paletteLength - 1;
-#endif
-
-        return image;
+        return palette;
     }
-
-    void WadFile::Image::WriteRgbPng(const std::filesystem::path& filename) const
+    const decltype(WadFile::Image::Palette) WadFile::Image::RainbowPalette = CreateRainbowPalette();
+    WadFile::Image::Image(uint32_t width, uint32_t height, std::vector<glm::u8vec4> data)
+      : Width(width), Height(height)
     {
-        std::vector<glm::u8vec3> pixels = AsRgb();
-        R_ASSERT(pixels.size() == Width * Height, "Too many pixels to write");
-        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 3, "Width is too big (numeric overflow)");
-        stbi_write_png(filename.string().c_str(), Width, Height, 3, pixels.data(), static_cast<int32_t>(Width) * 3);
-    }
-    void WadFile::Image::WriteRgbaPng(const std::filesystem::path& filename) const
-    {
-        std::vector<glm::u8vec4> pixels = AsRgba();
-        R_ASSERT(pixels.size() == Width * Height, "Too many pixels to write");
-        R_ASSERT(Width <= std::numeric_limits<int32_t>::max() / 4, "Width is too big (numeric overflow)");
-        stbi_write_png(filename.string().c_str(), Width, Height, 4, pixels.data(), static_cast<int32_t>(Width) * 4);
-    }
-
-    WadFile::Image WadFile::Image::FromFile(const std::filesystem::path& filename)
-    {
-        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
-            throw std::runtime_error("File not found");
-
-        int width, height, originalChannels;
-        glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(filename.string().c_str(), &width, &height, &originalChannels, 4));
-
-        if(data == nullptr)
-            throw std::runtime_error("Failed to load image file");
-        if(width == 0 || height == 0)
-            throw std::runtime_error("Loaded empty image");
-
-        Image image = Image();
-        image.Width = width;
-        image.Height = height;
-        image.Data.resize(width * height);
+        R_ASSERT(width > 0, "Invalid image width");
+        R_ASSERT(height > 0, "Invalid image height");
+        R_ASSERT(width * height == data.size(), "Number of provided pixels does not match dimensions of the image");
+        Data.resize(data.size());
 
         bool transparent = false;
         for(std::size_t i = 0; i < width * height; i++)
@@ -195,43 +172,71 @@ namespace Decay::Wad::Wad3
             if(data[i].a == 0xFFu)
             {
                 transparent = true;
-                image.Data[i] = 255;
+                Data[i] = 255;
                 continue;
             }
 
-            auto paletteIterator = std::find(image.Palette.begin(), image.Palette.end(), rgb);
-            if(paletteIterator == image.Palette.end())
+            auto paletteIterator = std::find(Palette.begin(), Palette.end(), rgb);
+            if(paletteIterator == Palette.end())
             { // Not found
-                if(image.Palette.size() == (transparent ? 255 : 256))
+                if(Palette.size() == (transparent ? 255 : 256))
                     throw std::runtime_error("Exceeded palette size");
 
-                image.Data[i] = image.Palette.size();
+                Data[i] = Palette.size();
 
-                image.Palette.emplace_back(rgb);
+                Palette.emplace_back(rgb);
             }
             else
-                image.Data[i] = paletteIterator - image.Palette.begin();
+                Data[i] = paletteIterator - Palette.begin();
         }
 
         if(transparent)
         {
-            image.Palette.resize(256, {0x00u, 0x00u, 0x00u});
+            if(Palette.size() < 256)
+                Palette.resize(256, {0x00u, 0x00u, 0x00u});
 
-            image.Palette[255] = {0x00u, 0x00u, 0xFFu};
+            Palette[255] = {0x00u, 0x00u, 0xFFu};
         }
-
-#ifdef DEBUG
-        std::cout << "Loaded image from '" << filename << "' with palette size " << image.Palette.size();
-        if(transparent)
-            std::cout << " including transparency";
-        std::cout << std::endl;
-#endif
-
-        stbi_image_free(data);
-
-        return image;
     }
+    WadFile::Item WadFile::Image::AsItem(std::string name) const
+    {
+        Item item(std::move(name), ItemType::Image);
 
+        item.Data.resize(
+            sizeof(Width) + sizeof(Height) + // Dimensions
+            sizeof(uint8_t) * Data.size() + // Image data
+            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size() // Palette
+        );
+
+        MemoryBuffer itemDataBuffer(
+            reinterpret_cast<char*>(item.Data.data()),
+            item.Data.size()
+        );
+        std::ostream out(&itemDataBuffer);
+
+        // Dimensions
+        out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
+        out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+
+        // Image data
+        R_ASSERT(Width * Height == Data.size(), "Pixel data does not match image's pixel count");
+        out.write(reinterpret_cast<const char*>(Data.data()), Data.size());
+
+        // Palette
+        uint16_t paletteSize = Palette.size();
+        if(paletteSize == 0)
+            throw std::runtime_error("Empty Palette");
+        if(paletteSize > 256)
+            throw std::runtime_error("Palette size too big");
+        out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
+        out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
+
+        out.flush();
+        return item;
+    }
+#pragma endregion
+
+#pragma region Texture
     static std::vector<uint8_t> GenerateMipMap(const glm::u32vec2& dimension, const std::vector<uint8_t>& image)
     {
         if(dimension.x == 1 && dimension.y == 1)
@@ -258,24 +263,13 @@ namespace Decay::Wad::Wad3
         return low;
     }
 
-    WadFile::Texture WadFile::Texture::FromFile(const std::filesystem::path& filename)
+    WadFile::Texture::Texture(std::string name, uint32_t width, uint32_t height, std::vector<glm::u8vec4> data)
+        : Name(std::move(name)), Width(width), Height(height)
     {
-        if(!std::filesystem::exists(filename) || !std::filesystem::is_regular_file(filename))
-            throw std::runtime_error("File not found");
-
-        int width, height, originalChannels;
-        glm::u8vec4* data = reinterpret_cast<glm::u8vec4*>(stbi_load(filename.string().c_str(), &width, &height, &originalChannels, 4));
-
-        if(data == nullptr)
-            throw std::runtime_error("Failed to load image file");
-        if(width == 0 || height == 0)
-            throw std::runtime_error("Loaded empty image");
-
-        Texture texture = Texture();
-        texture.Name = filename.filename().string();
-        texture.Width = width;
-        texture.Height = height;
-        texture.MipMapData[0].resize(width * height);
+        R_ASSERT(width > 0, "Invalid image width");
+        R_ASSERT(height > 0, "Invalid image height");
+        R_ASSERT(width * height == data.size(), "Number of provided pixels does not match dimensions of the image");
+        MipMapData[0].resize(data.size());
 
         bool transparent = false;
         for(std::size_t i = 0; i < width * height; i++)
@@ -283,174 +277,64 @@ namespace Decay::Wad::Wad3
             if(data[i].a == 0x00u)
             {
                 transparent = true;
-                texture.MipMapData[0][i] = 255;
+                MipMapData[0][i] = 255;
                 continue;
             }
 
             glm::u8vec3 rgb = data[i].rgb();
 
-            auto paletteIterator = std::find(texture.Palette.begin(), texture.Palette.end(), rgb);
-            if(paletteIterator == texture.Palette.end())
+            auto paletteIterator = std::find(Palette.begin(), Palette.end(), rgb);
+            if(paletteIterator == Palette.end())
             { // Not found
-                if(texture.Palette.size() == (transparent ? 255 : 256))
+                if(Palette.size() == (transparent ? 255 : 256))
                     throw std::runtime_error("Exceeded palette size");
 
-                texture.MipMapData[0][i] = texture.Palette.size();
+                MipMapData[0][i] = Palette.size();
 
-                texture.Palette.emplace_back(rgb);
+                Palette.emplace_back(rgb);
             }
             else
-                texture.MipMapData[0][i] = paletteIterator - texture.Palette.begin();
+                MipMapData[0][i] = paletteIterator - Palette.begin();
         }
 
         // Generate Mip-Maps
         {
-            texture.MipMapDimensions[0] = glm::u32vec2(texture.Width, texture.Height);
-            texture.MipMapDimensions[1] = glm::u32vec2(texture.Width / 2u, texture.Height / 2u);
-            texture.MipMapDimensions[2] = glm::u32vec2(texture.Width / 4u, texture.Height / 4u);
-            texture.MipMapDimensions[3] = glm::u32vec2(texture.Width / 8u, texture.Height / 8u);
+            MipMapDimensions[0] = glm::u32vec2(Width, Height);
+            MipMapDimensions[1] = glm::u32vec2(Width / 2u, Height / 2u);
+            MipMapDimensions[2] = glm::u32vec2(Width / 4u, Height / 4u);
+            MipMapDimensions[3] = glm::u32vec2(Width / 8u, Height / 8u);
 
-            texture.MipMapData[1] = GenerateMipMap(texture.MipMapDimensions[0], texture.MipMapData[0]);
-            texture.MipMapData[2] = GenerateMipMap(texture.MipMapDimensions[1], texture.MipMapData[1]);
-            texture.MipMapData[3] = GenerateMipMap(texture.MipMapDimensions[2], texture.MipMapData[2]);
+            MipMapData[1] = GenerateMipMap(MipMapDimensions[0], MipMapData[0]);
+            MipMapData[2] = GenerateMipMap(MipMapDimensions[1], MipMapData[1]);
+            MipMapData[3] = GenerateMipMap(MipMapDimensions[2], MipMapData[2]);
         }
 
         if(transparent)
         {
-            texture.Palette.resize(256, {0x00u, 0x00u, 0x00u});
+            Palette.resize(256, {0x00u, 0x00u, 0x00u});
 
-            texture.Palette[255] = {0x00u, 0x00u, 0xFFu};
+            Palette[255] = {0x00u, 0x00u, 0xFFu};
         }
-
-#ifdef DEBUG
-        std::cout << "Loaded texture from '" << filename << "' with palette size " << texture.Palette.size();
-        if(transparent)
-            std::cout << " including transparency";
-        std::cout << std::endl;
-#endif
-
-        stbi_image_free(data);
-
-        return texture;
     }
-
-    WadFile::Item WadFile::Image::AsItem(std::string name) const
+    WadFile::Texture::Texture(std::istream& in)
     {
-        Item item = {};
-        item.Name = std::move(name);
-        item.Type = ItemType::Image;
-
-        item.Size =
-            sizeof(Width) + sizeof(Height) +
-            sizeof(uint8_t) * Data.size() +
-            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
-        item.Data = malloc(item.Size);
-
-        MemoryBuffer itemDataBuffer(
-            reinterpret_cast<char*>(item.Data),
-            item.Size
-        );
-        std::ostream out(&itemDataBuffer);
-
-        out.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
-        out.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
-
-        out.write(reinterpret_cast<const char*>(Data.data()), Data.size());
-
-        short paletteSize = Palette.size();
-        out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
-        out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
-
-        return item;
-    }
-
-    WadFile::Font WadFile::ReadFont(const WadFile::Item& item)
-    {
-        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
-        std::istream in(&itemDataBuffer);
-
-        Font font = {};
-
-        // Dimensions
-        {
-            glm::u32vec4 dimensions; // width, height, row count + height
-            in.read(reinterpret_cast<char*>(&dimensions), sizeof(dimensions));
-            font.Width = dimensions.x;
-            font.Height = dimensions.y;
-            font.RowCount = dimensions.z;
-            font.RowHeight = dimensions.w;
-        }
-        font.Width = 256;// Fonts have Width=256 ( https://developer.valvesoftware.com/wiki/WAD ) but 2 tested fonts had different values there
-        R_ASSERT(font.RowCount > 0, "Invalid number of font rows");
-        R_ASSERT(font.RowHeight > 0, "Invalid font row height");
-        R_ASSERT(font.Height >= font.RowCount * font.RowHeight, "Font image won't fit " << font.RowCount << " rows (of height " << font.RowHeight << ")");
-
-        // Character offsets
-        in.read(reinterpret_cast<char*>(&font.Characters), sizeof(FontChar) * Font::CharacterCount);
-
-        // Calculate data length
-        std::size_t dataLength = static_cast<std::size_t>(font.Width) * font.Height;
-        R_ASSERT(dataLength > 0, "Invalid data length of font image");
-
-        // Read data
-        font.Data.resize(dataLength);
-        in.read(reinterpret_cast<char*>(font.Data.data()), dataLength);
-
-        // Read palette length
-        uint16_t paletteSize;
-        in.read(reinterpret_cast<char*>(&paletteSize), sizeof(paletteSize));
-        if(paletteSize == 0)
-            throw std::runtime_error("Empty Palette");
-        if(paletteSize > 256)
-        {
-            std::cerr<< "Font palette size too big" << std::endl;
-            paletteSize = 256;
-        }
-
-        // Read palette
-        font.Palette.resize(paletteSize);
-        in.read(reinterpret_cast<char*>(font.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
-
-#ifdef WAD_PALETTE_DUMMY
-        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteSize; i += 360 / paletteSize, pi++)
-        {
-            double hue = i;
-            double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
-            double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
-            glm::dvec3 hsv = {hue, saturation, lightness};
-            glm::dvec3 rgb = glm::rgbColor(hsv);
-
-            font.Palette[pi] = {rgb.r, rgb.g, rgb.b};
-        }
-#endif
-
-        return font;
-    }
-
-    WadFile::Texture WadFile::ReadTexture(const WadFile::Item& item)
-    {
-        MemoryBuffer itemDataBuffer(reinterpret_cast<char*>(item.Data), item.Size);
-        std::istream in(&itemDataBuffer);
-
-        Texture texture = {};
-
         // Name
         {
             char name[Texture::MaxNameLength];
             in.read(name, Texture::MaxNameLength);
-            texture.Name = Cstr2Str(name, Texture::MaxNameLength);
-            R_ASSERT(!texture.Name.empty(), "Texture name cannot be empty");
-            R_ASSERT(StringCaseInsensitiveEqual(item.Name, texture.Name), "Item and texture names do not match: " << item.Name << " != " << texture.Name);
+            Name = Cstr2Str(name, Texture::MaxNameLength);
+            R_ASSERT(!Name.empty(), "Texture name cannot be empty");
         }
 
         // Dimensions
-        in.read(reinterpret_cast<char*>(&texture.Width), sizeof(Texture::Width) + sizeof(Texture::Height));
-        R_ASSERT(texture.Width >= (1u << Texture::MipMapLevels), "Texture width is too small to fit " << Texture::MipMapLevels << " mip-map levels");
-        R_ASSERT(texture.Height >= (1u << Texture::MipMapLevels), "Texture height is too small to fit " << Texture::MipMapLevels << " mip-map levels");
-        if(!IsMultipleOf2(texture.Width))
-            R_ASSERT(texture.Width % 16 == 0, "Texture width must be divisible by 16 (to allow mip-maps to work correctly)");
-        if(!IsMultipleOf2(texture.Height))
-            R_ASSERT(texture.Height % 16 == 0, "Texture height must be divisible by 16 (to allow mip-maps to work correctly)");
+        in.read(reinterpret_cast<char*>(&Width), sizeof(Texture::Width));
+        in.read(reinterpret_cast<char*>(&Height), sizeof(Texture::Height));
+        R_ASSERT(Width >= (1u << Texture::MipMapLevels), "Texture width is too small to fit " << Texture::MipMapLevels << " mip-map levels");
+        R_ASSERT(Height >= (1u << Texture::MipMapLevels), "Texture height is too small to fit " << Texture::MipMapLevels << " mip-map levels");
+        if(!IsMultipleOf2(Width))
+            R_ASSERT(Width % 16 == 0, "Texture width must be divisible by 16 (to allow mip-maps to work correctly)");
+        if(!IsMultipleOf2(Height))
+            R_ASSERT(Height % 16 == 0, "Texture height must be divisible by 16 (to allow mip-maps to work correctly)");
 
         // Offsets
         uint32_t mipMapOffsets[Texture::MipMapLevels];
@@ -460,18 +344,18 @@ namespace Decay::Wad::Wad3
         {
             in.seekg(mipMapOffsets[level]);
 
-            texture.MipMapDimensions[level] = {
-                texture.Width >> level,
-                texture.Height >> level
+            MipMapDimensions[level] = {
+                Width >> level,
+                Height >> level
             };
-            std::size_t dataLength = static_cast<std::size_t>(texture.MipMapDimensions[level].x) * texture.MipMapDimensions[level].y;
+            std::size_t dataLength = static_cast<std::size_t>(MipMapDimensions[level].x) * MipMapDimensions[level].y;
 
-            std::vector<uint8_t>& data = texture.MipMapData[level];
+            std::vector<uint8_t>& data = MipMapData[level];
             data.resize(dataLength);
             in.read(reinterpret_cast<char*>(data.data()), dataLength);
         }
-        R_ASSERT(texture.Width == texture.MipMapDimensions[0].x, "MipMap 0 does not match texture width");
-        R_ASSERT(texture.Height == texture.MipMapDimensions[0].y, "MipMap 0 does not match texture height");
+        R_ASSERT(Width == MipMapDimensions[0].x, "MipMap 0 does not match texture width");
+        R_ASSERT(Height == MipMapDimensions[0].y, "MipMap 0 does not match texture height");
 
         // Palette size after last MipMap level
         uint16_t paletteSize;
@@ -482,88 +366,9 @@ namespace Decay::Wad::Wad3
             throw std::runtime_error("Palette size too big");
 
         // Palette
-        texture.Palette.resize(paletteSize);
-        in.read(reinterpret_cast<char*>(texture.Palette.data()), sizeof(glm::u8vec3) * paletteSize);
-
-#ifdef WAD_PALETTE_DUMMY
-        for(std::size_t i = 0, pi = 0; i < 360 && pi < paletteSize; i += 360 / paletteSize, pi++)
-        {
-            double hue = i;
-            double saturation = 90 + std::rand() / (double)RAND_MAX * 10;
-            double lightness = 50 + std::rand() / (double)RAND_MAX * 10;
-            glm::dvec3 hsv = {hue, saturation, lightness};
-            glm::dvec3 rgb = glm::rgbColor(hsv);
-
-            texture.Palette[pi] = {rgb.r, rgb.g, rgb.b};
-        }
-#endif
-
-        return texture;
+        Palette.resize(paletteSize);
+        in.read(reinterpret_cast<char*>(Palette.data()), sizeof(glm::u8vec3) * paletteSize);
     }
-
-    void WadFile::ExportTextures(const std::filesystem::path& directory, const std::string& extension) const
-    {
-        if(!std::filesystem::exists(directory))
-            std::filesystem::create_directory(directory);
-
-        R_ASSERT(extension.size() > 1, "Invalid texture extension");
-        R_ASSERT(extension[0] == '.', "Invaldi texture extension - must start with '.' character");
-
-        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> writeFunc = ImageWriteFunction_RGBA(extension);
-
-        for(auto& texture : ReadAllTextures())
-        {
-            std::vector<glm::u8vec4> rgba = texture.AsRgba();
-
-            writeFunc(
-                (directory / (texture.Name + extension)).string().c_str(),
-                texture.Width,
-                texture.Height,
-                rgba.data()
-            );
-        }
-    }
-
-    void WadFile::Texture::WriteRgbPng(const std::filesystem::path& filename, std::size_t level) const
-    {
-        R_ASSERT(level < MipMapLevels, "Requested mip-map level is too high");
-
-        std::vector<glm::u8vec3> pixels = AsRgb(level);
-        glm::u32vec2 dimension = MipMapDimensions[level];
-
-        R_ASSERT(pixels.size() == dimension.x * dimension.y, "Too many pixels to write");
-        R_ASSERT(dimension.x <= std::numeric_limits<int32_t>::max() / 3, "Width is too big (numeric overflow)");
-
-        stbi_write_png(
-            filename.string().c_str(),
-            dimension.x,
-            dimension.y,
-            3,
-            pixels.data(),
-            static_cast<int32_t>(dimension.x) * 3
-        );
-    }
-
-    void WadFile::Texture::WriteRgbaPng(const std::filesystem::path& filename, std::size_t level) const
-    {
-        R_ASSERT(level < MipMapLevels, "Requested mip-map level is too high");
-
-        std::vector<glm::u8vec4> pixels = AsRgba(level);
-        glm::u32vec2 dimension = MipMapDimensions[level];
-
-        R_ASSERT(pixels.size() == dimension.x * dimension.y, "Too many pixels to write");
-        R_ASSERT(dimension.x <= std::numeric_limits<int32_t>::max() / 4, "Width is too big (numeric overflow)");
-
-        stbi_write_png(
-            filename.string().c_str(),
-            dimension.x,
-            dimension.y,
-            4,
-            pixels.data(),
-            static_cast<int32_t>(dimension.x) * 4
-        );
-    }
-
     WadFile::Item WadFile::Texture::AsItem() const
     {
         if(!HasData())
@@ -576,17 +381,17 @@ namespace Decay::Wad::Wad3
 
         item.Type = ItemType::Texture;
 
-        item.Size =
-            sizeof(char) * MaxNameLength +
-            sizeof(Width) + sizeof(Height) +
-            sizeof(uint32_t) * Texture::MipMapLevels +
-            sizeof(uint8_t) * (MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size()) +
-            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size() + 1;
-        item.Data = malloc(item.Size);
+        item.Data.resize(
+            sizeof(char) * MaxNameLength + // Name
+            sizeof(Width) + sizeof(Height) + // Dimensions
+            sizeof(uint32_t) * Texture::MipMapLevels + // MipMap memory offsets
+            sizeof(uint8_t) * (MipMapData[0].size() + MipMapData[1].size() + MipMapData[2].size() + MipMapData[3].size()) + // MipMap data
+            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size() + 1 // Palette
+        );
 
         MemoryBuffer itemDataBuffer(
-            reinterpret_cast<char*>(item.Data),
-            item.Size
+            reinterpret_cast<char*>(item.Data.data()),
+            item.Data.size()
         );
         {
             std::ostream out(&itemDataBuffer);
@@ -611,8 +416,8 @@ namespace Decay::Wad::Wad3
             // Data offsets
             {
                 uint32_t offset = sizeof(char) * MaxNameLength +
-                        sizeof(Width) + sizeof(Height) +
-                        sizeof(uint32_t) * Texture::MipMapLevels;
+                                  sizeof(Width) + sizeof(Height) +
+                                  sizeof(uint32_t) * Texture::MipMapLevels;
                 for(std::size_t i = 0; i < MipMapLevels; i++)
                 {
                     auto& dim = MipMapDimensions[i];
@@ -629,7 +434,7 @@ namespace Decay::Wad::Wad3
 
             // Palette
             {
-                short paletteSize = Palette.size();
+                uint16_t paletteSize = Palette.size();
                 R_ASSERT(paletteSize > 0, "Invalid palette size - <= 0 is not valid");
                 R_ASSERT(paletteSize <= 256, "Invalid palette size - > 256 is not valid");
                 out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
@@ -646,30 +451,31 @@ namespace Decay::Wad::Wad3
             out.flush();
         }
 
+#ifdef DEBUG
         // Name (1st char)
-        D_ASSERT(((const uint8_t*)item.Data)[0] != '\0', "Item name cannot start with NULL character");
+        D_ASSERT(((const uint8_t*)item.Data.data())[0] != '\0', "Item name cannot start with NULL character");
 
         // Width
         D_ASSERT(
-            ((const uint8_t*)item.Data)[MaxNameLength + 0] != 0 ||
-            ((const uint8_t*)item.Data)[MaxNameLength + 1] != 0 ||
-            ((const uint8_t*)item.Data)[MaxNameLength + 2] != 0 ||
-            ((const uint8_t*)item.Data)[MaxNameLength + 3] != 0,
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 0] != 0 ||
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 1] != 0 ||
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 2] != 0 ||
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 3] != 0,
             "Width cannot be zero"
         );
 
         // Height
         D_ASSERT(
-            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 0] != 0 ||
-            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 1] != 0 ||
-            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 2] != 0 ||
-            ((const uint8_t*)item.Data)[MaxNameLength + 4 + 3] != 0,
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 4 + 0] != 0 ||
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 4 + 1] != 0 ||
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 4 + 2] != 0 ||
+            ((const uint8_t*)item.Data.data())[MaxNameLength + 4 + 3] != 0,
             "Height cannot be zero"
         );
 
         // Offsets (1st mipmap offset)
         D_ASSERT(
-            ((const uint8_t*) item.Data)[
+            ((const uint8_t*) item.Data.data())[
                 MaxNameLength +
                 sizeof(uint32_t) * 2
             ] ==
@@ -681,7 +487,7 @@ namespace Decay::Wad::Wad3
 
         // First data index into palette
         D_ASSERT(
-            ((const uint8_t*)item.Data)[
+            ((const uint8_t*)item.Data.data())[
                 MaxNameLength +
                 sizeof(uint32_t) * 2 +
                 sizeof(uint32_t) * MipMapLevels
@@ -691,7 +497,7 @@ namespace Decay::Wad::Wad3
 
         // First pixel of palette
         D_ASSERT(
-            ((const uint8_t*)item.Data)[
+            ((const uint8_t*)item.Data.data())[
                 MaxNameLength +
                 sizeof(uint32_t) * 2 +
                 sizeof(uint32_t) * MipMapLevels +
@@ -700,25 +506,71 @@ namespace Decay::Wad::Wad3
             ] == Palette[0].x,
             "Checking Red component of 1st palette color failed"
         );
+#endif
 
         return item;
     }
+#pragma endregion
 
+#pragma region Font
+    WadFile::Font::Font(std::istream& in)
+    {
+        // Dimensions
+        {
+            glm::u32vec4 dimensions; // width, height, row count + height
+            in.read(reinterpret_cast<char*>(&dimensions), sizeof(dimensions));
+            Width = dimensions.x;
+            Height = dimensions.y;
+            RowCount = dimensions.z;
+            RowHeight = dimensions.w;
+        }
+        Width = 256;// Fonts have Width=256 ( https://developer.valvesoftware.com/wiki/WAD ) but 2 tested fonts had different values there
+        R_ASSERT(RowCount > 0, "Invalid number of font rows");
+        R_ASSERT(RowHeight > 0, "Invalid font row height");
+        R_ASSERT(Height >= RowCount * RowHeight, "Font image won't fit " << RowCount << " rows (of height " << RowHeight << ")");
+
+        // Character offsets
+        in.read(reinterpret_cast<char*>(&Characters), sizeof(FontChar) * Font::CharacterCount);
+
+        // Calculate data length
+        std::size_t dataLength = static_cast<std::size_t>(Width) * Height;
+        R_ASSERT(dataLength > 0, "Invalid data length of font image");
+
+        // Read data
+        Data.resize(dataLength);
+        in.read(reinterpret_cast<char*>(Data.data()), dataLength);
+
+        // Read palette length
+        uint16_t paletteSize;
+        in.read(reinterpret_cast<char*>(&paletteSize), sizeof(paletteSize));
+        if(paletteSize == 0)
+            throw std::runtime_error("Empty Palette");
+        if(paletteSize > 256)
+        {
+            std::cerr<< "Font palette size too big" << std::endl;
+            paletteSize = 256;
+        }
+
+        // Read palette
+        Palette.resize(paletteSize);
+        in.read(reinterpret_cast<char*>(Palette.data()), sizeof(glm::u8vec3) * paletteSize);
+    }
     WadFile::Item WadFile::Font::AsItem(std::string name) const
     {
         Item item = {};
         item.Name = std::move(name);
         item.Type = ItemType::Font;
 
-        item.Size = sizeof(Width) + sizeof(Height) +
-                    sizeof(FontChar) * CharacterCount +
-                    sizeof(uint8_t) * Data.size() +
-                    sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size();
-        item.Data = malloc(item.Size);
+        item.Data.resize(
+            sizeof(Width) + sizeof(Height) +
+            sizeof(FontChar) * CharacterCount +
+            sizeof(uint8_t) * Data.size() +
+            sizeof(uint16_t) + sizeof(glm::u8vec3) * Palette.size()
+        );
 
         MemoryBuffer itemDataBuffer(
-                reinterpret_cast<char*>(item.Data),
-                item.Size
+            reinterpret_cast<char*>(item.Data.data()),
+            item.Data.size()
         );
         std::ostream out(&itemDataBuffer);
 
@@ -729,10 +581,11 @@ namespace Decay::Wad::Wad3
 
         out.write(reinterpret_cast<const char*>(Data.data()), Data.size());
 
-        short paletteSize = Palette.size();
+        uint16_t paletteSize = Palette.size();
         out.write(reinterpret_cast<const char*>(&paletteSize), sizeof(paletteSize));
         out.write(reinterpret_cast<const char*>(Palette.data()), sizeof(glm::u8vec3) * Palette.size());
 
+        out.flush();
         return item;
     }
     void WadFile::Font::WriteCharacterPngs(const std::filesystem::path& dir) const
@@ -766,5 +619,99 @@ namespace Decay::Wad::Wad3
 
             fc_img.WriteRgbaPng(dir / (std::to_string(charIndex) + ".png"));
         }
+    }
+#pragma endregion
+
+    void WadFile::ExportTextures(const std::filesystem::path& directory, const std::string& extension) const
+    {
+        if(!std::filesystem::exists(directory))
+            std::filesystem::create_directory(directory);
+
+        R_ASSERT(extension.size() > 1, "Invalid texture extension");
+        R_ASSERT(extension[0] == '.', "Invaldi texture extension - must start with '.' character");
+
+        std::function<void(const char* path, uint32_t width, uint32_t height, const glm::u8vec4* rgba)> writeFunc = ImageWriteFunction_RGBA(extension);
+
+        for(auto& texture : ReadAllTextures())
+        {
+            std::vector<glm::u8vec4> rgba = texture.AsRgba();
+
+            writeFunc(
+                (directory / (texture.Name + extension)).string().c_str(),
+                texture.Width,
+                texture.Height,
+                rgba.data()
+            );
+        }
+    }
+    std::ostream& operator<<(std::ostream& out, const WadFile& wad)
+    {
+        std::vector<WadFile::EntryHeader> entries{};
+        std::vector<const uint8_t*> entryData{};
+
+        entries.reserve(wad.m_Items.size());
+        entryData.reserve(wad.m_Items.size());
+
+        // Add items to entries
+        {
+            for(const WadFile::Item& item : wad.m_Items)
+            {
+                WadFile::EntryHeader entry = {};
+                entry.Compression = false;
+                entry.Type = item.Type;
+
+                entry.DiskSize = item.Data.size();
+                entry.Size = entry.DiskSize;
+
+                // Copy name
+                R_ASSERT(item.Name.length() <= 15, "WAD Entry name is too long");
+                std::copy(item.Name.c_str(), item.Name.c_str() + item.Name.size(), entry.Name);
+                std::fill(entry.Name + item.Name.size(), entry.Name + 16, '\0');
+
+                entries.emplace_back(entry);
+                entryData.emplace_back(item.Data.data());
+            }
+        }
+
+        int64_t startOffset = out.tellp();
+
+        // Write original magic number
+        out.write(WadFile::Magic, sizeof(WadFile::Magic));
+
+        // Write item count
+        {
+            uint32_t itemCount = entries.size();
+            out.write(reinterpret_cast<const char*>(&itemCount), sizeof(itemCount));
+        }
+
+        // Write entry offset
+        uint32_t entriesOffset = sizeof(WadFile::Magic) + sizeof(uint32_t) + sizeof(uint32_t); // magic + itemCount + entriesOffset
+        out.write(reinterpret_cast<const char*>(&entriesOffset), sizeof(entriesOffset));
+
+        // Write entries
+        out.write(reinterpret_cast<const char*>(entries.data()), sizeof(WadFile::EntryHeader) * entries.size());
+
+        // Write entry data
+        std::vector<typeof(WadFile::EntryHeader::Offset)> offsets(entries.size());
+        for(int i = 0; i < entries.size(); i++)
+        {
+            offsets[i] = out.tellp() - startOffset;
+
+            if(entries[i].DiskSize != 0)
+            {
+                R_ASSERT(entryData[i] != nullptr, "WAD Entry has size (of data) but no data (NULL pointer)");
+                out.write(reinterpret_cast<const char*>(entryData[i]), entries[i].DiskSize);
+            }
+        }
+
+        // Override Offset in Entries
+        for(int i = 0; i < entries.size(); i++)
+        {
+            out.seekp(startOffset + entriesOffset + sizeof(WadFile::EntryHeader) * i + offsetof(WadFile::EntryHeader, Offset), std::ios_base::beg);
+
+            out.write(reinterpret_cast<const char*>(&offsets[i]), sizeof(WadFile::EntryHeader::Offset));
+        }
+
+        return out;
     }
 }

@@ -4,7 +4,9 @@ int main()
 {
     using namespace Decay::Wad::Wad3;
 
-    auto wad = WadFile("../../../half-life/valve/halflife.wad");
+    std::fstream in("../../../half-life/valve/halflife.wad", std::ios_base::in | std::ios_base::binary);
+    R_ASSERT(in.good(), "Failed to open the file");
+    auto wad = WadFile(in);
 
     WadFile::Texture texture = wad.ReadTexture("AAATRIGGER");
 

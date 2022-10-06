@@ -13,6 +13,10 @@ namespace Decay::Wad::Wad3
     class WadFile
     {
     public:
+        friend std::ostream& operator<<(std::ostream& out, const WadFile&);
+        static constexpr const char Magic[4] = { 'W', 'A', 'D', '3' };
+
+    public:
         WadFile() = default;
         explicit WadFile(std::istream&);
 
@@ -77,10 +81,11 @@ namespace Decay::Wad::Wad3
             [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, Name_Length); }
             inline void Name_str(const std::string& val) { Str2Cstr(val, Name, Name_Length); }
         };
-
         static std::vector<EntryHeader> ReadWadEntries(std::istream& stream);
 
     private:
+        //TODO Make accessible
+        //TODO Add Emplace and EmplaceAll functions
         std::vector<Item> m_Items{};
     public:
         [[nodiscard]] inline const std::vector<Item>& GetItems() const noexcept { return m_Items; }
@@ -103,8 +108,14 @@ namespace Decay::Wad::Wad3
     public:
 #ifdef DEBUG
 #   define WADPARSER_READ_ITEM(type, funcName, funcNameAll, funcNameAll_map) \
-        [[nodiscard]] static type funcName(const Item& item);\
-        \
+        [[nodiscard]] inline static type funcName(const Item& item)\
+        {\
+            Decay::MemoryBuffer itemDataBuffer(const_cast<char*>(reinterpret_cast<const char*>(item.Data.data())), item.Data.size());\
+            std::istream in(&itemDataBuffer);\
+            type val = type(in);\
+            R_ASSERT(in.good(), "Stream is not in a good shape after reading " #type);\
+            return std::move(val);\
+        }\
         [[nodiscard]] inline type funcName(const std::string& name) const\
         {\
             for(const Item& item : m_Items)\
@@ -147,8 +158,14 @@ namespace Decay::Wad::Wad3
         }
 #else
 #   define WADPARSER_READ_ITEM(type, funcName, funcNameAll, funcNameAll_map) \
-        [[nodiscard]] static type funcName(const Item& item);\
-        \
+        [[nodiscard]] static type funcName(const Item& item)\
+        {\
+            Decay::MemoryBuffer itemDataBuffer(const_cast<char*>(reinterpret_cast<const char*>(item.Data.data())), item.Data.size());\
+            std::istream in(&itemDataBuffer);\
+            type val = type(in);\
+            R_ASSERT(in.good(), "Stream is not in a good shape after reading " #type);\
+            return std::move(val);\
+        }\
         [[nodiscard]] inline type funcName(const std::string& name) const\
         {\
             for(const Item& item : m_Items)\
@@ -224,7 +241,15 @@ namespace Decay::Wad::Wad3
 
         public:
             Image() = default;
-            Image(uint32_t width, uint32_t height) : Width(width), Height(height) {}
+
+            Image(uint32_t width, uint32_t height) : Width(width), Height(height), Data(width * height) {}
+            Image(uint32_t width, uint32_t height, std::vector<glm::u8vec3> data);
+            Image(uint32_t width, uint32_t height, std::vector<glm::u8vec4> data);
+
+            inline explicit Image(glm::u32vec2 size) : Image(size.x, size.y) {}
+            inline Image(glm::u32vec2 size, std::vector<glm::u8vec3> data) : Image(size.x, size.y, std::move(data)) {}
+            inline Image(glm::u32vec2 size, std::vector<glm::u8vec4> data) : Image(size.x, size.y, std::move(data)) {}
+
             explicit Image(std::istream&);
 
         public:
@@ -254,21 +279,23 @@ namespace Decay::Wad::Wad3
             void WriteRgbPng(const std::filesystem::path& filename) const
             {
                 std::vector<glm::u8vec3> pixels = AsRgb();
-                auto func = ImageWriteFunction_RGB(filename.extension());
+                auto func = ImageWriteFunction_RGB(filename.extension().string());
                 func(filename.string().c_str(), Width, Height, pixels.data());
             }
             void WriteRgbaPng(const std::filesystem::path& filename) const
             {
                 std::vector<glm::u8vec4> pixels = AsRgba();
-                auto func = ImageWriteFunction_RGBA(filename.extension());
+                auto func = ImageWriteFunction_RGBA(filename.extension().string());
                 func(filename.string().c_str(), Width, Height, pixels.data());
             }
-
 
         public:
             /// Converts Image to raw WAD-ready Item
             /// Caller has to deallocate Item.Data
             [[nodiscard]] virtual Item AsItem(std::string name) const;
+
+        public:
+            static const decltype(Palette) RainbowPalette;
         };
 
         WADPARSER_READ_ITEM(Image, ReadImage, ReadAllImages, ReadAllImages_Map)
@@ -291,12 +318,21 @@ namespace Decay::Wad::Wad3
 
         public:
             Font() = default;
+
             Font(uint32_t width, uint32_t height) : Image(width, height) {}
+            Font(uint32_t width, uint32_t height, std::vector<glm::u8vec3> data) : Image(width, height, data) {}
+            Font(uint32_t width, uint32_t height, std::vector<glm::u8vec4> data) : Image(width, height, data) {}
+
+            inline explicit Font(glm::u32vec2 size) : Image(size) {}
+            inline Font(glm::u32vec2 size, std::vector<glm::u8vec3> data) : Image(size, data) {}
+            inline Font(glm::u32vec2 size, std::vector<glm::u8vec4> data) : Image(size, data) {}
+
             explicit Font(std::istream&);
 
         public:
             [[nodiscard]] Item AsItem(std::string name) const override;
 
+        public:
             void WriteCharacterPngs(const std::filesystem::path& dir) const;
         };
 
@@ -326,9 +362,16 @@ namespace Decay::Wad::Wad3
 
         public:
             Texture() = default;
-            Texture(std::string name, uint32_t width, uint32_t height);
-            Texture(std::string name, glm::u32vec2 size);
-            Texture(std::istream&);
+
+            Texture(std::string name, uint32_t width, uint32_t height) : Name(std::move(name)), Width(width), Height(height) {}
+            Texture(std::string name, uint32_t width, uint32_t height, std::vector<glm::u8vec3> data);
+            Texture(std::string name, uint32_t width, uint32_t height, std::vector<glm::u8vec4> data);
+
+            inline Texture(std::string name, glm::u32vec2 size) : Texture(std::move(name), size.x, size.y) {}
+            inline Texture(std::string name, glm::u32vec2 size, std::vector<glm::u8vec3> data) : Texture(std::move(name), size.x, size.y, std::move(data)) {}
+            inline Texture(std::string name, glm::u32vec2 size, std::vector<glm::u8vec4> data) : Texture(std::move(name), size.x, size.y, std::move(data)) {}
+
+            explicit Texture(std::istream&);
 
         public:
             [[nodiscard]] inline std::vector<glm::u8vec3> AsRgb(std::size_t level = 0) const
@@ -358,11 +401,20 @@ namespace Decay::Wad::Wad3
                 }
                 return std::move(pixels);
             }
-            void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const;
-            void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const;
+            void WriteRgbPng(const std::filesystem::path& filename, std::size_t level = 0) const
+            {
+                std::vector<glm::u8vec3> pixels = AsRgb(level);
+                auto func = ImageWriteFunction_RGB(filename.extension().string());
+                func(filename.string().c_str(), Width, Height, pixels.data());
+            }
+            void WriteRgbaPng(const std::filesystem::path& filename, std::size_t level = 0) const
+            {
+                std::vector<glm::u8vec4> pixels = AsRgba(level);
+                auto func = ImageWriteFunction_RGBA(filename.extension().string());
+                func(filename.string().c_str(), Width, Height, pixels.data());
+            }
 
         public:
-            //[[nodiscard]] static Texture FromFile(const std::filesystem::path& filename);
             [[nodiscard]] Item AsItem() const;
             [[nodiscard]] inline bool HasData() const noexcept { return !MipMapData[0].empty(); }
             [[nodiscard]] inline Texture CopyWithoutData() const { return Texture(Name, Size); }
@@ -373,33 +425,60 @@ namespace Decay::Wad::Wad3
 
         void ExportTextures(const std::filesystem::path& directory, const std::string& extension = ".png") const;
 
-        static std::size_t AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
-        static std::size_t AddToFile(
-                const std::filesystem::path& filename,
-                const std::vector<Texture>& textures,
-                const std::map<std::string, Font>& fonts,
-                const std::map<std::string, Image>& images
-        )
-        {
-            std::vector<Item> items = {};
-            items.reserve(textures.size() + fonts.size() + images.size());
-
-            for(auto& texture : textures)
-                if(texture.HasData())
-                    items.emplace_back(texture.AsItem());
-
-            for(auto& it : fonts)
-                items.emplace_back(it.second.AsItem(it.first));
-
-            for(auto& it : images)
-                items.emplace_back(it.second.AsItem(it.first));
-
-            std::size_t count = AddToFile(filename, items);
-
-            //for(auto& item : items)
-            //    free(item.Data);
-
-            return count;
-        }
+        inline static std::size_t AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items);
+        inline static std::size_t AddToFile(
+            const std::filesystem::path& filename,
+            const std::vector<Texture>& textures,
+            const std::map<std::string, Font>& fonts,
+            const std::map<std::string, Image>& images
+        );
     };
+    std::ostream& operator<<(std::ostream& out, const WadFile&);
+}
+
+namespace Decay::Wad::Wad3
+{
+    std::size_t WadFile::AddToFile(const std::filesystem::path& filename, const std::vector<Item>& items)
+    {
+        WadFile wad{};
+        if(std::filesystem::exists(filename) && std::filesystem::is_regular_file(filename))
+        {
+            std::fstream in(filename, std::ios_base::in | std::ios_base::binary);
+            R_ASSERT(in.good(), "Failed to open the file");
+            wad = WadFile(in);
+        }
+
+        wad.m_Items.reserve(items.size());
+        for(const auto& item : items)
+            wad.m_Items.emplace_back(item);
+
+        {
+            std::fstream out(filename, std::ios_base::out | std::ios_base::binary);
+            out << wad;
+        }
+
+        return wad.m_Items.size();
+    }
+    std::size_t WadFile::AddToFile(
+        const std::filesystem::path& filename,
+        const std::vector<Texture>& textures,
+        const std::map<std::string, Font>& fonts,
+        const std::map<std::string, Image>& images
+    )
+    {
+        std::vector<Item> items = {};
+        items.reserve(textures.size() + fonts.size() + images.size());
+
+        for(auto& texture : textures)
+            if(texture.HasData())
+                items.emplace_back(texture.AsItem());
+
+        for(auto& it : fonts)
+            items.emplace_back(it.second.AsItem(it.first));
+
+        for(auto& it : images)
+            items.emplace_back(it.second.AsItem(it.first));
+
+        return AddToFile(filename, items);
+    }
 }
