@@ -455,8 +455,8 @@ namespace Decay::Rmf
         in.read(reinterpret_cast<char*>(path.Name), path.Name_Length);
         R_ASSERT(IsNullTerminated(path.Name, path.Name_Length), "RMF Path's name must end by NULL character");
 
-        in.read(reinterpret_cast<char*>(path.Class), path.Class_Length);
-        R_ASSERT(IsNullTerminated(path.Class, path.Class_Length), "RMF Path's name must end by NULL character");
+        in.read(reinterpret_cast<char*>(path.Classname), path.Class_Length);
+        R_ASSERT(IsNullTerminated(path.Classname, path.Class_Length), "RMF Path's name must end by NULL character");
 #ifdef RMF_PATH_TYPE_CHECK
         R_ASSERT(path.Class_str() == "path_corner" || path.Class_str() == "path_track", "RMF path can only be `path_corner` or `path_track`");
 #endif
@@ -487,7 +487,7 @@ namespace Decay::Rmf
 #ifdef RMF_PATH_TYPE_CHECK
         R_ASSERT(path.Class_str() == "path_corner" || path.Class_str() == "path_track", "RMF path can only be `path_corner` or `path_track`");
 #endif
-        out.write(path.Class, RmfFile::Path::Class_Length);
+        out.write(path.Classname, RmfFile::Path::Class_Length);
         out << path.Type;
 
         int cornerCount = path.Corners.size();
@@ -716,6 +716,9 @@ namespace Decay::Rmf
 
             float cameraVersion = 0;
             in.read(reinterpret_cast<char*>(&cameraVersion), sizeof(cameraVersion));
+#ifdef DEBUG
+            std::cout << "Camera version: " << cameraVersion << std::endl;
+#endif
 
             in.read(reinterpret_cast<char*>(&rmf.ActiveCamera), sizeof(rmf.ActiveCamera));
 

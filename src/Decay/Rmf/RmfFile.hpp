@@ -279,7 +279,6 @@ namespace Decay::Rmf
                 Vector_t position
             )
             {
-
             }
 
             int VisGroup{};
@@ -441,15 +440,15 @@ namespace Decay::Rmf
             static const int Class_Length = 128;
 
             char Name[Name_Length]{};
-            char Class[Class_Length]{};
+            char Classname[Class_Length]{};
             PathType Type{};
             std::vector<Corner> Corners{};
 
             [[nodiscard]] inline std::string Name_str() const { return Cstr2Str(Name, Name_Length); }
             inline void Name_str(const std::string& val) { Str2Cstr(val, Name, Name_Length); }
 
-            [[nodiscard]] inline std::string Class_str() const { return Cstr2Str(Class, Class_Length); }
-            inline void Class_str(const std::string& val) { Str2Cstr(val, Class, Class_Length); }
+            [[nodiscard]] inline std::string Class_str() const { return Cstr2Str(Classname, Class_Length); }
+            inline void Class_str(const std::string& val) { Str2Cstr(val, Classname, Class_Length); }
 
 
             [[nodiscard]] inline bool operator==(const Path& other) const
@@ -459,7 +458,7 @@ namespace Decay::Rmf
                         return false;
 
                 for(int i = 0; i < Class_Length; i++)
-                    if(Class[i] != other.Class[i])
+                    if(Classname[i] != other.Classname[i])
                         return false;
 
                 if(Type != other.Type)

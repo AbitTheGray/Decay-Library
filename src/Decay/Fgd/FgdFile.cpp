@@ -1472,7 +1472,7 @@ GOTO_OPTION_PARAM:
                     }
                 );
                 if(codename.empty())
-                    throw std::runtime_error("Class codename cannot be empty");
+                    throw std::runtime_error("Classname codename cannot be empty");
                 clss.Codename = str(codename);
             }
 
@@ -1556,7 +1556,7 @@ GOTO_OPTION_PARAM:
                         }
                     }
 
-                    throw std::runtime_error("Class can only contain properties and Inputs/Outputs");
+                    throw std::runtime_error("Classname can only contain properties and Inputs/Outputs");
                 }
             }
         }
@@ -1990,7 +1990,7 @@ GOTO_OPTION_PARAM:
                 std::cout << clss.Codename << std::endl;
 #endif
                 if(fgd.Classes.contains(clss.Codename))
-                    throw std::runtime_error("Class '" + clss.Codename + "' already exists in the FGD file");
+                    throw std::runtime_error("Classname '" + clss.Codename + "' already exists in the FGD file");
                 fgd.Classes.emplace(clss.Codename, clss);
             }
         }
