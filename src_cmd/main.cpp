@@ -1,86 +1,26 @@
 #include "main.hpp"
 
-std::unordered_map<std::string, Command> Commands = {
-    {
-        "help",
-        Command{
-            Exec_help,
-            Exec_help,
-            "Show this help"
-        }
-    },
-    {
-        "bsp2obj",
-        Command{
-            Exec_bsp2obj,
-            Help_bsp2obj,
-            "Extract OBJ (model) from BSP (map), including packed textures"
-        }
-    },
-    {
-        "bsp2wad",
-        Command{
-            Exec_bsp2wad,
-            Help_bsp2wad,
-            "Extracts textures from BSP to WAD"
-        }
-    },
-    {
-        "wad_add",
-        Command{
-            Exec_wad_add,
-            Help_wad_add,
-            "Add textures to WAD"
-        }
-    },
-    {
-        "wad",
-        Command{
-            Exec_wad,
-            Help_wad,
-            "Info and dumping WAD"
-        }
-    },
-    {
-        "bsp_lightmap",
-        Command{
-            Exec_bsp_lightmap,
-            Help_bsp_lightmap,
-            "Extracts lightmap texture"
-        }
-    },
-    {
-        "bsp_entity",
-        Command{
-            Exec_bsp_entity,
-            Help_bsp_entity,
-            "Manipulate BSP entities"
-        }
-    },
-    {
-        "map2rmf",
-        Command{
-            Exec_map2rmf,
-            Help_map2rmf,
-            "Convert MAP to RMF format (in-development map)"
-        }
-    },
-    {
-        "rmf2map",
-        Command{
-            Exec_rmf2map,
-            Help_rmf2map,
-            "Convert RMf to MAP format (in-development map)"
-        }
-    },
-    {
-        "fgd",
-        Command{
-            Exec_fgd,
-            Help_fgd,
-            "Manipulate FGD files (entity definitions)"
-        }
+#define COMMAND(a_name, a_description) \
+    {\
+        #a_name,\
+        Command {\
+            Exec_##a_name,\
+            Help_##a_name,\
+            a_description\
+        }\
     }
+
+std::unordered_map<std::string, Command> Commands = {
+    COMMAND(help, "Show this help"),
+    COMMAND(bsp2obj, "Extract OBJ (model) from BSP (map), including packed textures"),
+    COMMAND(bsp2wad, "Extracts textures from BSP to WAD"),
+    COMMAND(wad_add, "Add textures to WAD"),
+    COMMAND(wad, "Info and dumping WAD"),
+    COMMAND(bsp_lightmap, "Extracts lightmap texture"),
+    COMMAND(bsp_entity, "Manipulate BSP entities"),
+    COMMAND(map2rmf, "Convert MAP to RMF format (in-development map)"),
+    COMMAND(rmf2map, "Convert RMf to MAP format (in-development map)"),
+    COMMAND(fgd, "Manipulate FGD files (entity definitions)")
 };
 
 int main(int argc, const char** argv)

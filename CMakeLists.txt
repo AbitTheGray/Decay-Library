@@ -12,10 +12,6 @@ cmake_policy(SET CMP0077 NEW) # set() overrides option()
 add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>") # Define DEBUG in Debug builds
 
 
-# Enable C API
-# Builds another target as Shared library
-option(DECAY_LIBRARY_API "Enable C API build." ON)
-
 # Enable Command-line utility target
 option(DECAY_LIBRARY_CMD "Enable Commandline interface/executable utility." ON)
 

@@ -10,6 +10,7 @@ struct Command
 };
 
 int Exec_help(int argc, const char** argv);
+inline int Help_help(int argc, const char** argv) { return Exec_help(argc, argv); }
 
 int Exec_bsp2obj(int argc, const char** argv);
 int Help_bsp2obj(int argc, const char** argv);

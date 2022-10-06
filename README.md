@@ -8,11 +8,9 @@ Can be used as Command-line program, see [Commands.md](Commands.md).
 
 Goal of this project is to learn, test and document.
 
-Learn = get to know how others approached the problem before, what decisions they made and how it shaped further development.
-
-Test = write a code that can interpret the data, see whenever it can be done easier today, validate files.
-
-Document = write documentation for others and "share the knowledge" (as did people before this project).
+- **Learn** = get to know how others approached the problem before, what decisions they made and how it shaped further development.
+- **Test** = write a code that can interpret the data, see whenever it can be done easier today, validate files.
+- **Document** = write documentation for others and "share the knowledge" (as did people before this project).
 
 ## Libraries
 
@@ -25,38 +23,19 @@ All libraries are used as `static library` to maximize optimization and limit pr
 
 ## Formats
 
-- IdTech 2 (Quake, Quake 2)
-  - MAP - in-development map (text)
-    - Can be read by GoldSrc MAP reader
-    - Exporting to this type is possible but not complete
-- GoldSrc (Half-Life, Counter-Strike...)
-  - BSP (v30) - compiled map
-    - Extract/Export:
-      - Textures
-        - RGB/RGBA or raw data with palette
-        - Generate WAD
-      - Entity configuration
-      - Map into .obj
-        - Mtl with correct UV
-        - ~~Separate collision map (clipping)~~
-      - ~~Lightmap blob as texture~~
-      - Nodes with map
-        - Map components
-        - ~~Visibility~~
-          - Simple per-face textures
-      - ~~Command entities as scripts~~
-  - WAD (WAD2 + WAD3) - data (texture) storage
-    - Textures
-      - Raw data with palette
-      - RGB and RGBA export supported
-    - Images
-    - Fonts
-  - MAP - in-development map (text)
-  - RMF - in-development map (binary)
-  - FGD - entity definitions
-    - See `Source` implementation which is extension of this format
-- Source
-  - FGD - entity definitions
+File formats are [documented here](docs/README.md).
+
+Supported engines:
+- IdTech 2 (Quake / Quake 2)
+  - MAP
+- GoldSrc (Half-Life)
+  - BSP v30
+  - MAP
+  - WAD v3
+  - RMF
+  - FGD (backwards compatible)
+- Source (Half-Life 2)
+  - FGD
       
 ## Compile & Use
 

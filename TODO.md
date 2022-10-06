@@ -17,10 +17,6 @@
   -[ ] Utility functions to simplify entity manipulation / polygon conversion
   -[ ] Document in [MAP.md](docs/GoldSrc/MAP.md) how to convert brush into polygons
   -[ ] Cleanup entity properties using [FGD file](docs/Source/FGD.md)
-- WAD
-  -[ ] Add function to parse Font Atlas from image
-    - Use in `wad_add` command, `--font_atlas` option
 - Commands
   -[ ] Move command `bsp_lightmap` into `bsp2obj`
-  -[ ] Maybe change `wad_add` to have `--output` and use `--file` as read-only
-    - Can also allow `--output` without specific path to use the one from `--file`
+  -[ ] Upgrade `wad_add --font_atlas` to allow width different from 256 (sort to fit)
