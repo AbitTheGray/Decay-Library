@@ -11,7 +11,7 @@ namespace Decay::Map
     /// Read vector inside round brackets.
     void ReadPlaneVector(std::istream& in, glm::i32vec3& vec)
     {
-        R_ASSERT(in.good(), "Input stream is not in a good state");
+        R_ASSERT(in.good(), "Input stream is not in a good shape");
         int c;
         IgnoreWhitespace(in);
 
@@ -89,7 +89,7 @@ namespace Decay::Map
 
         c = in.peek();
         if(c != ']')
-            throw std::runtime_error("Texture vector must end by ']'");
+            throw std::runtime_error("Raw_Texture vector must end by ']'");
         in.ignore(); // Skip ']'
 
         vec = {
@@ -200,7 +200,7 @@ namespace Decay::Map
             out << "( " << pv.x << ' ' << pv.y << ' ' << pv.z << " ) ";
         }
 
-        R_ASSERT(Texture.find(' ') == std::string::npos, "Texture name cannot contain a space character");
+        R_ASSERT(Texture.find(' ') == std::string::npos, "Raw_Texture name cannot contain a space character");
         out << Texture << ' ';
 
         switch(variant)

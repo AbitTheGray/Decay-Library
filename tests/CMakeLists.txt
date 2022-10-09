@@ -61,3 +61,9 @@ add_subdirectory(map_testfile)
 add_subdirectory(rmf_out_and_in)
 
 add_subdirectory(rmf_testfile)
+
+#--------------------------------
+# MDL (GoldSrc, Raw_Model)
+#--------------------------------
+
+add_subdirectory(mdl_testfile)

@@ -1,58 +1,10 @@
 #include "RmfFile.hpp"
 
+#include "Decay/CommonReadUtils.hpp"
+
 // Parsing utils
 namespace Decay::Rmf
 {
-    inline bool IsNullTerminated(const char* text, int maxLength)
-    {
-        for(int i = 0; i < maxLength; i++)
-        {
-            if(text[i] == '\0')
-                return true;
-        }
-        return false;
-    }
-
-    /// Read length-prefixed string
-    inline std::string ReadNString(std::istream& in, int maxLength = 0 /* no limit */)
-    {
-        R_ASSERT(maxLength >= 0, "Maximum length cannot be negative");
-
-        uint8_t length = 0;
-        in.read(reinterpret_cast<char*>(&length), sizeof(length));
-
-        if(maxLength > 0 && length > maxLength)
-            throw std::runtime_error("Failed to read NString - length is above allowed value");
-
-        if(length > 1) // Contains data
-        {
-            std::string rtn = std::string(length - 1, ' ');
-            in.read(rtn.data(), length - 1);
-            R_ASSERT(in.get() == '\0', "length-prefixed string must end by NULL character");
-            return rtn;
-        }
-        else if(length == 1) // 1 = only null-termination
-        {
-            R_ASSERT(in.get() == '\0', "length-prefixed string must end by NULL character");
-            return std::string{};
-        }
-        else // length == 0
-        {
-            return std::string{};
-        }
-    }
-    /// Write length-prefixed string
-    inline void WriteNString(std::ostream& out, const std::string& text)
-    {
-        R_ASSERT(text.size() <= std::numeric_limits<uint8_t>::max(), "length-prefixed string is too long");
-        uint8_t length = text.size() + 1;
-        out.write(reinterpret_cast<const char*>(&length), sizeof(length));
-
-        out.write(text.data(), text.size());
-
-        uint8_t byte = 0;
-        out.write(reinterpret_cast<const char*>(&byte), sizeof(byte));
-    }
     inline void ProcessGroupIntoEntityAndBrush(std::vector<Map::MapFile::Entity>& entities, Map::MapFile::Entity& worldspawn, const RmfFile::Group& group)
     {
         entities.reserve(group.Entities.size());
@@ -200,7 +152,7 @@ namespace Decay::Rmf
     }
     std::ostream& operator<<(std::ostream& out, const RmfFile::Brush& brush)
     {
-        WriteNString(out, brush.TypeName);
+        WriteNString<uint8_t>(out, brush.TypeName);
 
         out.write(reinterpret_cast<const char*>(&brush.VisGroup), sizeof(brush.VisGroup));
         out.write(reinterpret_cast<const char*>(&brush.DisplayColor), sizeof(brush.DisplayColor));
@@ -232,7 +184,7 @@ namespace Decay::Rmf
             entity.Brushes.reserve(brushCount);
             for(int i = 0; i < brushCount; i++)
             {
-                std::string type = ReadNString(in, 20);
+                std::string type = ReadNString<uint8_t>(in, 20);
                 R_ASSERT(type == RmfFile::Brush::TypeName, "RMF entity can only contain Brush sub-objects but '" << type << "' found");
 
                 RmfFile::Brush brush{};
@@ -243,7 +195,7 @@ namespace Decay::Rmf
             }
         }
 
-        entity.Classname = ReadNString(in, entity.Classname_MaxLength);
+        entity.Classname = ReadNString<uint8_t>(in, entity.Classname_MaxLength);
 
         in.read(reinterpret_cast<char*>(entity.Dummy), entity.Dummy_Length);
         in.read(reinterpret_cast<char*>(&entity.EntityFlags), sizeof(entity.EntityFlags));
@@ -256,11 +208,11 @@ namespace Decay::Rmf
             for(int i = 0; i < keyValueCount; i++)
             {
 #ifdef RMF_NO_LIMITS
-                const auto key = ReadNString(in);
-                entity.Values[key] = ReadNString(in);
+                const auto key = ReadNString<uint8_t>(in);
+                entity.Values[key] = ReadNString<uint8_t>(in);
 #else
-                const auto key = ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength);
-                entity.Values[key] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+                const auto key = ReadNString<uint8_t>(in, RmfFile::Entity::KeyValue_Key_MaxLength);
+                entity.Values[key] = ReadNString<uint8_t>(in, RmfFile::Entity::KeyValue_Value_MaxLength);
 #endif
             }
         }
@@ -273,7 +225,7 @@ namespace Decay::Rmf
     }
     std::ostream& operator<<(std::ostream& out, const RmfFile::Entity& entity)
     {
-        WriteNString(out, entity.TypeName);
+        WriteNString<uint8_t>(out, entity.TypeName);
 
         out.write(reinterpret_cast<const char*>(&entity.VisGroup), sizeof(RmfFile::Entity::VisGroup));
         out.write(reinterpret_cast<const char*>(&entity.DisplayColor), sizeof(RmfFile::Entity::DisplayColor));
@@ -288,7 +240,7 @@ namespace Decay::Rmf
 #ifndef RMF_NO_LIMITS
         R_ASSERT(entity.Classname.size() < RmfFile::Entity::Classname_MaxLength, "RMF Entity '" << entity.Classname << "' is too long (maximum " << (int)RmfFile::Entity::Classname_MaxLength << " characters)"); // < and not <= because there needs to be space for '\0'
 #endif
-        WriteNString(out, entity.Classname);
+        WriteNString<uint8_t>(out, entity.Classname);
 
         out.write(reinterpret_cast<const char*>(entity.Dummy), RmfFile::Entity::Dummy_Length);
         out.write(reinterpret_cast<const char*>(&entity.EntityFlags), sizeof(RmfFile::Entity::EntityFlags));
@@ -303,8 +255,8 @@ namespace Decay::Rmf
             R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength, "Key of RMF Entity value is too long");
             R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength, "Key of RMF Entity value is too long");
 #endif
-            WriteNString(out, kv.first);
-            WriteNString(out, kv.second);
+            WriteNString<uint8_t>(out, kv.first);
+            WriteNString<uint8_t>(out, kv.second);
         }
 
         out.write(reinterpret_cast<const char*>(entity.Dummy2), RmfFile::Entity::Dummy2_Length);
@@ -331,7 +283,7 @@ namespace Decay::Rmf
             group.Groups.reserve(objectCount);
             for(int i = 0; i < objectCount; i++)
             {
-                std::string type = ReadNString(in, 20);
+                std::string type = ReadNString<uint8_t>(in, 20);
                 if(type == RmfFile::Brush::TypeName)
                 {
                     RmfFile::Brush brush{};
@@ -365,7 +317,7 @@ namespace Decay::Rmf
     }
     std::ostream& operator<<(std::ostream& out, const RmfFile::Group& group)
     {
-        WriteNString(out, group.TypeName);
+        WriteNString<uint8_t>(out, group.TypeName);
 
         out.write(reinterpret_cast<const char*>(&group.VisGroup), sizeof(RmfFile::Entity::VisGroup));
         out.write(reinterpret_cast<const char*>(&group.DisplayColor), sizeof(RmfFile::Entity::DisplayColor));
@@ -399,11 +351,11 @@ namespace Decay::Rmf
             for(int i = 0; i < keyValueCount; i++)
             {
 #ifdef RMF_NO_LIMITS
-                const auto key = ReadNString(in);
-                corner.Values[key] = ReadNString(in);
+                const auto key = ReadNString<uint8_t>(in);
+                corner.Values[key] = ReadNString<uint8_t>(in);
 #else
-                const auto key = ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength);
-                corner.Values[key] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+                const auto key = ReadNString<uint8_t>(in, RmfFile::Entity::KeyValue_Key_MaxLength);
+                corner.Values[key] = ReadNString<uint8_t>(in, RmfFile::Entity::KeyValue_Value_MaxLength);
 #endif
             }
         }
@@ -426,8 +378,8 @@ namespace Decay::Rmf
             R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength, "Key of RMF Corner value is too long");
             R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength, "Key of RMF Corner value is too long");
 #endif
-            WriteNString(out, kv.first);
-            WriteNString(out, kv.second);
+            WriteNString<uint8_t>(out, kv.first);
+            WriteNString<uint8_t>(out, kv.second);
         }
 
         return out;
@@ -530,7 +482,7 @@ namespace Decay::Rmf
             world.Groups.reserve(objectCount);
             for(int i = 0; i < objectCount; i++)
             {
-                std::string type = ReadNString(in, 20);
+                std::string type = ReadNString<uint8_t>(in, 20);
                 if(type == RmfFile::Brush::TypeName)
                 {
                     RmfFile::Brush brush{};
@@ -561,7 +513,7 @@ namespace Decay::Rmf
             }
         }
 
-        world.Classname = ReadNString(in, RmfFile::Entity::Classname_MaxLength);
+        world.Classname = ReadNString<uint8_t>(in, RmfFile::Entity::Classname_MaxLength);
         R_ASSERT(world.Classname == "worldspawn", "RMF World must have classname `worldspawn`");
 
         in.read(reinterpret_cast<char*>(world.Dummy), world.Dummy_Length);
@@ -575,11 +527,11 @@ namespace Decay::Rmf
             for(int i = 0; i < keyValueCount; i++)
             {
 #ifdef RMF_NO_LIMITS
-                const auto key = ReadNString(in);
-                world.Values[key] = ReadNString(in);
+                const auto key = ReadNString<uint8_t>(in);
+                world.Values[key] = ReadNString<uint8_t>(in);
 #else
-                const auto key = ReadNString(in, RmfFile::Entity::KeyValue_Key_MaxLength);
-                world.Values[key] = ReadNString(in, RmfFile::Entity::KeyValue_Value_MaxLength);
+                const auto key = ReadNString<uint8_t>(in, RmfFile::Entity::KeyValue_Key_MaxLength);
+                world.Values[key] = ReadNString<uint8_t>(in, RmfFile::Entity::KeyValue_Value_MaxLength);
 #endif
             }
         }
@@ -606,7 +558,7 @@ namespace Decay::Rmf
     }
     std::ostream& operator<<(std::ostream& out, const RmfFile::World& world)
     {
-        WriteNString(out, world.TypeName);
+        WriteNString<uint8_t>(out, world.TypeName);
 
         out.write(reinterpret_cast<const char*>(&world.VisGroup), sizeof(RmfFile::World::VisGroup));
         out.write(reinterpret_cast<const char*>(&world.DisplayColor), sizeof(RmfFile::World::DisplayColor));
@@ -621,7 +573,7 @@ namespace Decay::Rmf
             out << subGroup;
 
         R_ASSERT(world.Classname == "worldspawn", "RMF World must have classname `worldspawn`");
-        WriteNString(out, world.Classname);
+        WriteNString<uint8_t>(out, world.Classname);
         out.write(reinterpret_cast<const char*>(world.Dummy), RmfFile::World::Dummy_Length);
         out.write(reinterpret_cast<const char*>(&world.EntityFlags), sizeof(RmfFile::World::EntityFlags));
 
@@ -647,8 +599,8 @@ namespace Decay::Rmf
                 R_ASSERT(kv.first.size() < RmfFile::Entity::KeyValue_Key_MaxLength, "Key of RMF World value is too long");
                 R_ASSERT(kv.second.size() < RmfFile::Entity::KeyValue_Value_MaxLength, "Key of RMF World value is too long");
 #endif
-                WriteNString(out, kv.first);
-                WriteNString(out, kv.second);
+                WriteNString<uint8_t>(out, kv.first);
+                WriteNString<uint8_t>(out, kv.second);
             }
         }
 
@@ -698,7 +650,7 @@ namespace Decay::Rmf
 
         // World Info
         {
-            std::string worldInfoType = ReadNString(in, 20);
+            std::string worldInfoType = ReadNString<uint8_t>(in, 20);
             R_ASSERT(in.good(), "Input stream is not in a good shape");
             R_ASSERT(worldInfoType == RmfFile::World::TypeName, "Invalid type of RMF Object - expected RMF World (\"" << RmfFile::World::TypeName << "\")");
             in >> rmf.WorldInfo;

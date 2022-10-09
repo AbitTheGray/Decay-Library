@@ -491,4 +491,57 @@ namespace Decay
         }
         return true;
     }
+
+    inline bool IsNullTerminated(const char* text, int maxLength)
+    {
+        for(int i = 0; i < maxLength; i++)
+        {
+            if(text[i] == '\0')
+                return true;
+        }
+        return false;
+    }
+
+    /// Read length-prefixed string
+    template<typename T>
+    inline std::string ReadNString(std::istream& in, int maxLength = 0 /* no limit */)
+    {
+        R_ASSERT(maxLength >= 0, "Maximum length cannot be negative");
+
+        T length = 0;
+        in.read(reinterpret_cast<char*>(&length), sizeof(length));
+
+        if(maxLength > 0 && length > maxLength)
+            throw std::runtime_error("Failed to read NString - length is above allowed value");
+
+        if(length > 1) // Contains data
+        {
+            std::string rtn = std::string(length - 1, ' ');
+            in.read(rtn.data(), length - 1);
+            R_ASSERT(in.get() == '\0', "length-prefixed string must end by NULL character");
+            return rtn;
+        }
+        else if(length == 1) // 1 = only null-termination
+        {
+            R_ASSERT(in.get() == '\0', "length-prefixed string must end by NULL character");
+            return std::string{};
+        }
+        else // length == 0
+        {
+            return std::string{};
+        }
+    }
+    /// Write length-prefixed string
+    template<typename T>
+    inline void WriteNString(std::ostream& out, const std::string& text)
+    {
+        R_ASSERT(text.size() < std::numeric_limits<T>::max(), "length-prefixed string is too long");
+        T length = text.size() + 1;
+        out.write(reinterpret_cast<const char*>(&length), sizeof(length));
+
+        out.write(text.data(), text.size());
+
+        uint8_t byte = 0;
+        out.write(reinterpret_cast<const char*>(&byte), sizeof(byte));
+    }
 }
