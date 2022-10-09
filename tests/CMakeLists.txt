@@ -67,3 +67,5 @@ add_subdirectory(rmf_testfile)
 #--------------------------------
 
 add_subdirectory(mdl_testfile)
+
+add_subdirectory(mdl_obj)

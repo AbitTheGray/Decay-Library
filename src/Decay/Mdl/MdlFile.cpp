@@ -45,7 +45,9 @@ namespace Decay::Mdl
 
             //TODO check
 
+#ifdef DEBUG
             std::cout << magic[0] << magic[1] << magic[2] << magic[3] << std::endl;
+#endif
         }
         R_ASSERT(in.good(), "Input stream is not in a good shape");
         { // Version
@@ -169,7 +171,7 @@ namespace Decay::Mdl
                         outBodyPart.Models.reserve(models.size());
                         for(const auto& model : models)
                         {
-                            std::cout << "Model: " << model.Name_str() << std::endl;
+                            //std::cout << "Model: " << model.Name_str() << std::endl;
 
                             MdlFile::Model outModel{};
                             outModel.Name = model.Name_str();
@@ -217,14 +219,8 @@ namespace Decay::Mdl
                                     in.read(reinterpret_cast<char*>(meshes.data()), sizeof(MdlFile::Raw_Mesh) * meshes.size());
                                     R_ASSERT(in.good(), "Input stream is not in a good shape");
 
-                                    int totalVertices = 0;
                                     for(const auto& mesh : meshes)
                                     {
-#ifdef MDL_OBJ
-                                        static int vertexIndex = 0;
-                                        vertexIndex = 0;
-#endif
-
                                         in.seekg(mesh.TriangleIndex, std::ios_base::beg);
                                         for(int ti = 0; ti < mesh.TriangleCount; ti++) // Triangle Fans
                                         {
@@ -233,20 +229,18 @@ namespace Decay::Mdl
                                             R_ASSERT(in.good(), "Input stream is not in a good shape");
 
                                             if(count == 0)
-                                                continue;
+                                                break; // End before finish
 
                                             int count_abs = std::abs(count);
                                             std::vector<MdlFile::Raw_Vertex> triangleVertices(count_abs);
                                             in.read(reinterpret_cast<char*>(triangleVertices.data()), sizeof(MdlFile::Raw_Vertex) * triangleVertices.size());
                                             R_ASSERT(in.good(), "Input stream is not in a good shape");
 
-                                            totalVertices += count_abs;
-
                                             R_ASSERT(count_abs >= 3, "Triangle fan must have at least 3 vertices");
                                             std::vector<MdlFile::Vertex>& meshVertices = outModel.Meshes[mesh.TextureID];
                                             if(count > 0) // Triangle Strip
                                             {
-                                                std::cout << "# " << ti << " Triangle Strip (" << count_abs << ")" << std::endl;
+                                                //std::cout << "# " << ti << " Triangle Strip (" << count_abs << ")" << std::endl;
 
                                                 meshVertices.reserve((count_abs - 2) * 3);
 
@@ -285,7 +279,7 @@ namespace Decay::Mdl
                                             }
                                             else // count < 0 // Triangle Fan
                                             {
-                                                std::cout << "# " << ti << " Triangle Fan (" << count_abs << ")" << std::endl;
+                                                //std::cout << "# " << ti << " Triangle Fan (" << count_abs << ")" << std::endl;
 
                                                 const auto& vi0 = triangleVertices[0];
                                                 R_ASSERT(vi0.VertexIndex < vertices.size(), "First vertex of triangle fan is out of bounds");
@@ -323,21 +317,6 @@ namespace Decay::Mdl
                                                     );
                                                 }
                                             }
-
-#ifdef MDL_OBJ
-                                            {
-                                                for(int vi = vertexIndex; vi + 2 < meshVertices.size(); vi += 3)
-                                                {
-                                                    std::cout << "v " << std::to_string(meshVertices[vi + 0].Vertex.x) << " " << std::to_string(meshVertices[vi + 0].Vertex.y) << " " << std::to_string(meshVertices[vi + 0].Vertex.z) << std::endl;
-                                                    std::cout << "v " << std::to_string(meshVertices[vi + 1].Vertex.x) << " " << std::to_string(meshVertices[vi + 1].Vertex.y) << " " << std::to_string(meshVertices[vi + 1].Vertex.z) << std::endl;
-                                                    std::cout << "v " << std::to_string(meshVertices[vi + 2].Vertex.x) << " " << std::to_string(meshVertices[vi + 2].Vertex.y) << " " << std::to_string(meshVertices[vi + 2].Vertex.z) << std::endl;
-
-                                                    std::cout << "f " << (vertexIndex + 1) << " " << (vertexIndex + 2) << " " << (vertexIndex + 3) << std::endl;
-
-                                                    vertexIndex += 3;
-                                                }
-                                            }
-#endif
                                         }
                                     }
                                 }
