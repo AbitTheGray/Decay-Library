@@ -48,10 +48,10 @@ int main(int argc, const char* argv[])
     else
         std::cout << "No hitboxes" << std::endl;
 
-    if(!mdl.SeqDescriptions.empty())
+    if(!mdl.Sequences.empty())
     {
-        std::cout << "Seqs: " << mdl.SeqDescriptions.size() << std::endl;
-        for(const auto& seq : mdl.SeqDescriptions)
+        std::cout << "Seqs: " << mdl.Sequences.size() << std::endl;
+        for(const auto& seq : mdl.Sequences)
             std::cout << " - " << seq.Label << std::endl;
     }
     else
