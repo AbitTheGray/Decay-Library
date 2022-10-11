@@ -171,8 +171,6 @@ namespace Decay::Mdl
                         outBodyPart.Models.reserve(models.size());
                         for(const auto& model : models)
                         {
-                            //std::cout << "Model: " << model.Name_str() << std::endl;
-
                             MdlFile::Model outModel{};
                             outModel.Name = model.Name_str();
                             outModel.Type = model.Type;
@@ -240,8 +238,6 @@ namespace Decay::Mdl
                                             std::vector<MdlFile::Vertex>& meshVertices = outModel.Meshes[mesh.TextureID];
                                             if(count > 0) // Triangle Strip
                                             {
-                                                //std::cout << "# " << ti << " Triangle Strip (" << count_abs << ")" << std::endl;
-
                                                 meshVertices.reserve((count_abs - 2) * 3);
 
                                                 for(int vi = 2; vi < count_abs; vi++)
@@ -253,7 +249,8 @@ namespace Decay::Mdl
                                                         vertices[vi0.VertexIndex],
                                                         normals[vi0.NormalIndex],
                                                         vi0.S,
-                                                        vi0.T
+                                                        vi0.T,
+                                                        verticeGroups[vi0.VertexIndex]
                                                     );
 
                                                     const auto& vi1 = triangleVertices[vi - 1];
@@ -263,7 +260,8 @@ namespace Decay::Mdl
                                                         vertices[vi1.VertexIndex],
                                                         normals[vi1.NormalIndex],
                                                         vi1.S,
-                                                        vi1.T
+                                                        vi1.T,
+                                                        verticeGroups[vi1.VertexIndex]
                                                     );
 
                                                     const auto& vi2 = triangleVertices[vi];
@@ -273,14 +271,13 @@ namespace Decay::Mdl
                                                         vertices[vi2.VertexIndex],
                                                         normals[vi2.NormalIndex],
                                                         vi2.S,
-                                                        vi2.T
+                                                        vi2.T,
+                                                        verticeGroups[vi2.VertexIndex]
                                                     );
                                                 }
                                             }
                                             else // count < 0 // Triangle Fan
                                             {
-                                                //std::cout << "# " << ti << " Triangle Fan (" << count_abs << ")" << std::endl;
-
                                                 const auto& vi0 = triangleVertices[0];
                                                 R_ASSERT(vi0.VertexIndex < vertices.size(), "First vertex of triangle fan is out of bounds");
                                                 R_ASSERT(vi0.NormalIndex < normals.size(), "First normal of triangle fan is out of bounds");
@@ -288,7 +285,8 @@ namespace Decay::Mdl
                                                     vertices[vi0.VertexIndex],
                                                     normals[vi0.NormalIndex],
                                                     vi0.S,
-                                                    vi0.T
+                                                    vi0.T,
+                                                    verticeGroups[vi0.VertexIndex]
                                                 };
 
                                                 meshVertices.reserve((count_abs - 2) * 3);
@@ -303,7 +301,8 @@ namespace Decay::Mdl
                                                         vertices[vi1.VertexIndex],
                                                         normals[vi1.NormalIndex],
                                                         vi1.S,
-                                                        vi1.T
+                                                        vi1.T,
+                                                        verticeGroups[vi1.VertexIndex]
                                                     );
 
                                                     const auto& vi2 = triangleVertices[vi];
@@ -313,7 +312,8 @@ namespace Decay::Mdl
                                                         vertices[vi2.VertexIndex],
                                                         normals[vi2.NormalIndex],
                                                         vi2.S,
-                                                        vi2.T
+                                                        vi2.T,
+                                                        verticeGroups[vi2.VertexIndex]
                                                     );
                                                 }
                                             }

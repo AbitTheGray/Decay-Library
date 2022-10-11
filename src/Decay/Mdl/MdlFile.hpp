@@ -301,7 +301,7 @@ namespace Decay::Mdl
             glm::vec3 Normal;
             int16_t S;
             int16_t T;
-            //TODO Vertex index for Bones
+            int16_t BoneID;
         };
 
         struct Model
