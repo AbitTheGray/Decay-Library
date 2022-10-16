@@ -377,97 +377,100 @@ namespace Decay::Mdl
 
                 if(sequence.BlendCount)
                 {
-                    R_ASSERT(sequence.BlendCount == 1, "Only BlendCount=1 is supported");
+                    //R_ASSERT(sequence.BlendCount == 1, "Only BlendCount=1 is supported"); //TODO Support
+
+                    enum class ComponentOffset
+                    {
+                        PositionX = 0,
+                        PositionY,
+                        PositionZ,
+
+                        RotationX,
+                        RotationY,
+                        RotationZ,
+
+                        _Count
+                    };
+                    static_assert(static_cast<int>(ComponentOffset::_Count) == 6);
 
                     in.seekg(sequence.AnimationOffset, std::ios_base::beg);
 
-                    std::vector<int16_t> blendOffsets(sequence.BlendCount * basicInfo.BoneCount * 6);
+                    std::vector<int16_t> blendOffsets(sequence.BlendCount * basicInfo.BoneCount * static_cast<int>(ComponentOffset::_Count));
                     in.read(reinterpret_cast<char*>(blendOffsets.data()), sizeof(int16_t) * blendOffsets.size());
 
                     seq.BoneData.resize(sequence.FrameCount * basicInfo.BoneCount);
 
-                    for(int boneId = 0; boneId < basicInfo.BoneCount; boneId++)
+                    for(int blendIndex = 0; blendIndex < sequence.BlendCount; blendIndex++)
                     {
-                        R_ASSERT(boneId < mdl.Bones.size(), "Bone index is not valid");
-                        const auto& bone = mdl.Bones[boneId];
-
-                        enum class ComponentOffset
+                        for(int boneId = 0; boneId < basicInfo.BoneCount; boneId++)
                         {
-                            PositionX = 0,
-                            PositionY,
-                            PositionZ,
+                            R_ASSERT(boneId < mdl.Bones.size(), "Bone index is not valid");
+                            const auto& bone = mdl.Bones[boneId];
 
-                            RotationX,
-                            RotationY,
-                            RotationZ,
-
-                            _Count
-                        };
-                        static_assert(static_cast<int>(ComponentOffset::_Count) == 6);
-
-                        std::array<std::vector<float>, static_cast<int>(ComponentOffset::_Count)> perComponentData{};
-                        for(int componentIndex = 0; componentIndex < static_cast<int>(ComponentOffset::_Count); componentIndex++)
-                        {
-                            auto& offset = blendOffsets[boneId * static_cast<int>(ComponentOffset::_Count) + componentIndex];
-                            auto& raw = perComponentData[componentIndex];
-                            raw.resize(sequence.FrameCount);
-                            if(offset > 0)
+                            std::array<std::vector<float>, static_cast<int>(ComponentOffset::_Count)> perComponentData{};
+                            for(int componentIndex = 0; componentIndex < static_cast<int>(ComponentOffset::_Count); componentIndex++)
                             {
-                                for(int frameIndex = 0; frameIndex < sequence.FrameCount;) // Until we have enough data for whole sequence
+                                auto& offset = blendOffsets[boneId * static_cast<int>(ComponentOffset::_Count) + componentIndex];
+                                auto& raw = perComponentData[componentIndex];
+                                raw.resize(sequence.FrameCount);
+                                if(offset > 0)
                                 {
-                                    // Last int16 of the sequence is repeated until the end of the sequence
-                                    // For 2 repeated characters there is no advantage of splitting into 2 sequences (unless you are getting close to 256 values and need to split without increasing data size).
-                                    // For 3+ repeated characters you should split sequences and use the repeating
-                                    // 4, 7, ABCD -> ABCDDDD
-                                    // 1, 5, A -> AAAAA
-                                    // 2, 3, AB -> ABB
-                                    // 2, 2, AB -> AB
-                                    // 3, 2, ABC -> AB (is this valid? will trigger R_ASSERT below)
-
-                                    uint8_t compressedSize, rawSize;
-                                    in.read(reinterpret_cast<char*>(&compressedSize), sizeof(compressedSize));
-                                    in.read(reinterpret_cast<char*>(&rawSize), sizeof(rawSize));
-                                    R_ASSERT(compressedSize > 0, "No data to decompress");
-                                    R_ASSERT(rawSize > 0, "No raw data");
-                                    R_ASSERT(compressedSize <= rawSize, "Compressed size cannot be smaller than raw size"); // More data before decompression - probably corrupted file
-                                    R_ASSERT(frameIndex + rawSize <= raw.size(), "Too much raw data");
-
-                                    // non-repeating part = load directly
-                                    in.read(reinterpret_cast<char*>(raw.data() + frameIndex), sizeof(uint16_t) * compressedSize);
-
-                                    if(compressedSize != rawSize) // has repeated data
+                                    for(int frameIndex = 0; frameIndex < sequence.FrameCount;) // Until we have enough data for whole sequence
                                     {
-                                        std::fill(
-                                            &raw[frameIndex + compressedSize], // First character after
-                                            &raw[frameIndex + rawSize], // `rawSize` used as length
-                                            raw[frameIndex + compressedSize - 1]
-                                        );
+                                        // Last int16 of the sequence is repeated until the end of the sequence
+                                        // For 2 repeated characters there is no advantage of splitting into 2 sequences (unless you are getting close to 256 values and need to split without increasing data size).
+                                        // For 3+ repeated characters you should split sequences and use the repeating
+                                        // 4, 7, ABCD -> ABCDDDD
+                                        // 1, 5, A -> AAAAA
+                                        // 2, 3, AB -> ABB
+                                        // 2, 2, AB -> AB
+                                        // 3, 2, ABC -> AB (is this valid? will trigger R_ASSERT below)
+
+                                        uint8_t compressedSize, rawSize;
+                                        in.read(reinterpret_cast<char*>(&compressedSize), sizeof(compressedSize));
+                                        in.read(reinterpret_cast<char*>(&rawSize), sizeof(rawSize));
+                                        R_ASSERT(compressedSize > 0, "No data to decompress");
+                                        R_ASSERT(rawSize > 0, "No raw data");
+                                        R_ASSERT(compressedSize <= rawSize, "Compressed size cannot be smaller than raw size"); // More data before decompression - probably corrupted file
+                                        R_ASSERT(frameIndex + rawSize <= raw.size(), "Too much raw data");
+
+                                        // non-repeating part = load directly
+                                        in.read(reinterpret_cast<char*>(raw.data() + frameIndex), sizeof(uint16_t) * compressedSize);
+
+                                        if(compressedSize != rawSize) // has repeated data
+                                        {
+                                            std::fill(
+                                                &raw[frameIndex + compressedSize], // First character after
+                                                &raw[frameIndex + rawSize], // `rawSize` used as length
+                                                raw[frameIndex + compressedSize - 1]
+                                            );
+                                        }
+
+                                        frameIndex += rawSize;
                                     }
-
-                                    frameIndex += rawSize;
                                 }
-                            }
-                        } // for(componentIndex)
+                            } // for(componentIndex)
 #ifdef DEBUG
-                        for(int componentIndex = 0; componentIndex < static_cast<int>(ComponentOffset::_Count); componentIndex++) R_ASSERT(perComponentData[componentIndex].size() == sequence.FrameCount, "Failed to load data of same length as frame count");
+                            for(int componentIndex = 0; componentIndex < static_cast<int>(ComponentOffset::_Count); componentIndex++) R_ASSERT(perComponentData[componentIndex].size() == sequence.FrameCount, "Failed to load data of same length as frame count");
 #endif
-                        for(int frameIndex = 0; frameIndex < sequence.FrameCount; frameIndex++)
-                        {
-                            seq.GetBoneData(frameIndex, boneId) = {
-                                {
-                                    perComponentData[static_cast<int>(ComponentOffset::PositionX)][frameIndex],
-                                    perComponentData[static_cast<int>(ComponentOffset::PositionY)][frameIndex],
-                                    perComponentData[static_cast<int>(ComponentOffset::PositionZ)][frameIndex]
-                                },
-                                {
-                                    perComponentData[static_cast<int>(ComponentOffset::RotationX)][frameIndex],
-                                    perComponentData[static_cast<int>(ComponentOffset::RotationY)][frameIndex],
-                                    perComponentData[static_cast<int>(ComponentOffset::RotationZ)][frameIndex]
-                                }
-                            };
-                        } // for(frameIndex)
+                            for(int frameIndex = 0; frameIndex < sequence.FrameCount; frameIndex++)
+                            {
+                                seq.GetBoneData(frameIndex, boneId) = {
+                                    {
+                                        perComponentData[static_cast<int>(ComponentOffset::PositionX)][frameIndex],
+                                        perComponentData[static_cast<int>(ComponentOffset::PositionY)][frameIndex],
+                                        perComponentData[static_cast<int>(ComponentOffset::PositionZ)][frameIndex]
+                                    },
+                                    {
+                                        perComponentData[static_cast<int>(ComponentOffset::RotationX)][frameIndex],
+                                        perComponentData[static_cast<int>(ComponentOffset::RotationY)][frameIndex],
+                                        perComponentData[static_cast<int>(ComponentOffset::RotationZ)][frameIndex]
+                                    }
+                                };
+                            } // for(frameIndex)
 
-                    } // for(boneId)
+                        } // for(boneId)
+                    } // for(blendIndex)
                 }
             } // for(sequence)
         }

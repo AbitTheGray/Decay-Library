@@ -39,7 +39,7 @@ namespace Decay::Mdl
         {
             char Name[32]; ///< Bone name for symbolic links
             int Parent; ///< Parent bone
-            int Flags;
+            int Flags; ///< X, Y, Z, XR, YR, ZR
             int BoneController[6]; ///< Bone controller index, -1 == none
             glm::vec3 Position[2]; ///< Default Degree-of-Freedom values
             glm::vec3 Rotation[2]; ///< Scale for delta Degree-of-Freedom values
