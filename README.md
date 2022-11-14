@@ -12,6 +12,8 @@ Goal of this project is to learn, test and document.
 - **Test** = write a code that can interpret the data, see whenever it can be done easier today, validate files.
 - **Document** = write documentation for others and "share the knowledge" (as did people before this project).
 
+You never really learn something until you teach it.
+
 ## Libraries
 
 | Name                                   | License                                                                    | Version                                                         |

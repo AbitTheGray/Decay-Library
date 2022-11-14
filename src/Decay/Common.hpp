@@ -138,8 +138,8 @@ namespace Decay
         int i = 0;
         for(; i < str.size() && i < maxLength - 1; i++)
             cstr[i] = str[i];
-        cstr[i] = '\0';
-        for(; i < maxLength; i++)
+        cstr[i] = '\0'; // Null-termination
+        for(; i < maxLength; i++) // Null-padding
             cstr[i] = '\0';
     }
 

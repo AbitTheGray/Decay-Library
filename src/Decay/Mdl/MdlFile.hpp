@@ -44,6 +44,7 @@ namespace Decay::Mdl
             glm::vec3 Position[2]; ///< Default Degree-of-Freedom values
             glm::vec3 Rotation[2]; ///< Scale for delta Degree-of-Freedom values
         };
+        static_assert(sizeof(Bone) == 112);
         /// bone controllers
         struct BoneController
         {
@@ -54,6 +55,7 @@ namespace Decay::Mdl
             int Rest; ///< byte index value at rest
             int Index; ///< 0-3 user set controller, 4 mouth
         };
+        static_assert(sizeof(BoneController) == 24);
         struct SequenceBoneInfo
         {
             glm::vec3 Position;
@@ -69,6 +71,7 @@ namespace Decay::Mdl
             glm::vec3 BB_Max;
             glm::vec3 BB_Min;
         };
+        static_assert(sizeof(BBox) == 32);
         /// demand loaded sequence groups
         struct SeqGroup
         {
@@ -87,6 +90,7 @@ namespace Decay::Mdl
             [[nodiscard]] inline std::string Label_str() const { return Cstr2Str(Label, Label_Length); }
             inline void Label_str(const std::string& val) { Str2Cstr(val, Label, Label_Length); }
         };
+        static_assert(sizeof(SeqGroup) == 104);
         struct Event
         {
             int Frame;
@@ -94,6 +98,7 @@ namespace Decay::Mdl
             int Type;
             char Options[64]; //TODO What can be inside?
         };
+        static_assert(sizeof(Event) == 76);
         /// pivots
         struct Pivot
         {

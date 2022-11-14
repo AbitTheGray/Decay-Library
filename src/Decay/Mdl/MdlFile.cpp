@@ -32,7 +32,7 @@ namespace Decay::Mdl
         uint32_t Flags{};
 
         uint32_t BoneCount{};
-        uint32_t BoneIndex{};
+        uint32_t BoneOffset{};
 
         uint32_t BoneControllerCount{};
         uint32_t BoneControllerOffset{};
@@ -198,6 +198,7 @@ namespace Decay::Mdl
         [[nodiscard]] inline std::string Label_str() const { return Cstr2Str(Label, Label_Length); }
         inline void Label_str(const std::string& val) { Str2Cstr(val, Label, Label_Length); }
     };
+    static_assert(sizeof(Raw_SeqDescription) == 176);
 }
 
 // Stream Operators
@@ -264,7 +265,7 @@ namespace Decay::Mdl
             int version{};
             in.read(reinterpret_cast<char*>(&version), sizeof(version));
 
-            R_ASSERT(version == 10, "Invalid file version");
+            R_ASSERT(version == MdlFile::FormatVersion, "Invalid file version");
         }
         R_ASSERT(in.good(), "Input stream is not in a good shape");
 
@@ -286,7 +287,7 @@ namespace Decay::Mdl
         if(basicInfo.BoneCount)
         {
             mdl.Bones.resize(basicInfo.BoneCount);
-            in.seekg(basicInfo.BoneIndex, std::ios_base::beg);
+            in.seekg(basicInfo.BoneOffset, std::ios_base::beg);
             in.read(reinterpret_cast<char*>(mdl.Bones.data()), sizeof(MdlFile::Bone) * mdl.Bones.size());
         }
         R_ASSERT(in.good(), "Input stream is not in a good shape");
