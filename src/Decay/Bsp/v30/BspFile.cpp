@@ -217,6 +217,14 @@ namespace Decay::Bsp::v30
         std::vector<Wad::Wad3::WadFile::Texture> textures(count);
         for(std::size_t i = 0; i < count; i++)
         {
+            if(static_cast<int32_t>(offsets[i]) == -1) // Missing texture
+            {
+#ifdef DEBUG
+                std::cerr << "Texture " << i << " is missing" << std::endl;
+#endif
+                continue;
+            }
+
             R_ASSERT(offsets[i] >= sizeof(uint32_t) + sizeof(uint32_t) * count, "Texture data offset points into offset list - too low value");
             R_ASSERT(offsets[i] < m_DataLength[static_cast<uint8_t>(LumpType::Textures)], "Texture data offset is outside of Textures Lump");
             in.seekg(offsets[i]);

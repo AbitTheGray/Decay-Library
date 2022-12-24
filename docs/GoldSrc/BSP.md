@@ -138,8 +138,12 @@ uint32_t TextureCount;
 Then there are `TextureCount` offsets to texture definitions.
 
 ```C++
-int32_t Offsets;
+int32_t TextureOffsets[TextureCount];
 ```
+
+`TextureOffsets` are relative to the `Textures` lump and point at `Texture` structure representing an image with mip-maps.
+
+The offset can also be `-1` / `0xFF'FF'FF'FF` if the texture is not knows (I do not know why it is still present there, but it is the case for more than one map in official GoldSrc games).
 
 ```C++
 struct Texture
