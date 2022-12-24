@@ -1,0 +1,6 @@
+add_executable(Text_Bsp30_ExportLightmap main.cpp)
+
+target_link_libraries(Text_Bsp30_ExportLightmap DecayLib)
+
+add_test(NAME Text_Bsp30_ExportLightmap COMMAND Text_Bsp30_ExportLightmap)
+set_tests_properties(Text_Bsp30_ExportLightmap PROPERTIES LABELS "GoldSrc;bsp;bsp30")

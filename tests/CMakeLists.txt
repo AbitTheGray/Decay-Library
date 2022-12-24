@@ -12,6 +12,7 @@ add_subdirectory(cmd)
 add_subdirectory(bsp30_parse)
 
 add_subdirectory(bsp30_export_obj)
+add_subdirectory(bsp30_export_lightmap)
 
 add_subdirectory(bsp30_export_entities)
 
